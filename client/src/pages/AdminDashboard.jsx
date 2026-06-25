@@ -71,6 +71,20 @@ const AdminDashboard = () => {
   const [faviconFile, setFaviconFile] = useState(null);
   const [newTableInput, setNewTableInput] = useState('');
 
+  // State for Admin credentials change
+  const [newUsername, setNewUsername] = useState(admin?.username || '');
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [credentialsLoading, setCredentialsLoading] = useState(false);
+
+  // Sync newUsername when admin data is loaded/updated
+  useEffect(() => {
+    if (admin) {
+      setNewUsername(admin.username || '');
+    }
+  }, [admin]);
+
   // Theme state
   const [primaryColor, setPrimaryColor] = useState('#d4a843');
   const [secondaryColor, setSecondaryColor] = useState('#b8860b');
@@ -362,6 +376,49 @@ const AdminDashboard = () => {
       setError(message);
     } finally {
       setSettingsLoading(false);
+    }
+  };
+
+  // Submit credentials update (username / password)
+  const handleCredentialsSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validations
+    if (!oldPassword) {
+      setError('Please enter your current password to save changes.');
+      return;
+    }
+    
+    if (newPassword && newPassword !== confirmPassword) {
+      setError('New passwords do not match.');
+      return;
+    }
+    
+    setCredentialsLoading(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const response = await api.put('/auth/update-credentials', {
+        newUsername,
+        oldPassword,
+        newPassword
+      });
+      
+      if (response.data.success) {
+        setSuccess('Credentials updated successfully!');
+        // Update auth context data (username)
+        updateAdminData({ username: response.data.data.username });
+        // Clear passwords fields
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+    } catch (err) {
+      console.error('Error updating credentials:', err);
+      setError(err.response?.data?.message || 'Failed to update credentials.');
+    } finally {
+      setCredentialsLoading(false);
     }
   };
 
@@ -711,6 +768,85 @@ const AdminDashboard = () => {
                 </button>
               </div>
             </form>
+
+            {/* Account Settings Section */}
+            <div className="border-t border-gray-200 pt-6 mt-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Change Username & Password</h3>
+              <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* New Username */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      New Username
+                    </label>
+                    <input
+                      type="text"
+                      value={newUsername}
+                      onChange={(e) => setNewUsername(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      minLength={3}
+                      maxLength={30}
+                    />
+                  </div>
+
+                  {/* Old Password */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Current Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      required
+                      placeholder="Required to save changes"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* New Password */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="Leave blank to keep current"
+                      minLength={6}
+                    />
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="submit"
+                    disabled={credentialsLoading}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                  >
+                    {credentialsLoading ? 'Updating...' : 'Update Account'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
