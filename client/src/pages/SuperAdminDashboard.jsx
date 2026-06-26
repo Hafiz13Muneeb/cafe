@@ -1,8 +1,7 @@
-// src/pages/SuperAdminDashboard.jsx - Superadmin panel with global theme control
+// src/pages/SuperAdminDashboard.jsx - Superadmin panel
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import api from '../api/axios';
 import {
   Plus,
@@ -17,12 +16,11 @@ import {
   CheckCircle,
   AlertCircle,
   RefreshCw,
-  Palette,
+  Settings,
 } from 'lucide-react';
 
 const SuperAdminDashboard = () => {
   const { user, logout, isSuperAdmin } = useAuth();
-  const { updateTheme, loadGlobalSettings } = useTheme();
   const navigate = useNavigate();
 
   // Redirect if not superadmin
@@ -32,18 +30,18 @@ const SuperAdminDashboard = () => {
     }
   }, [isSuperAdmin, navigate]);
 
-  // --- State for owners ---
+  // State
   const [owners, setOwners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // --- Modal states ---
+  // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState(null);
 
-  // --- Owner form states ---
+  // Form states
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -52,7 +50,7 @@ const SuperAdminDashboard = () => {
   });
   const [formLoading, setFormLoading] = useState(false);
 
-  // --- Edit owner form ---
+  // Edit form
   const [editFormData, setEditFormData] = useState({
     cafeName: '',
     whatsappNumber: '',
@@ -62,69 +60,7 @@ const SuperAdminDashboard = () => {
     mode: 'light',
   });
 
-  // ============================================================
-  // GLOBAL THEME STATE
-  // ============================================================
-  const [globalTheme, setGlobalTheme] = useState({
-    primaryColor: '#d4a843',
-    secondaryColor: '#b8860b',
-    mode: 'light',
-  });
-  const [themeLoading, setThemeLoading] = useState(false);
-  const [themeError, setThemeError] = useState('');
-  const [themeSuccess, setThemeSuccess] = useState('');
-
-  // --- Fetch global theme on mount ---
-  useEffect(() => {
-    const fetchGlobalTheme = async () => {
-      try {
-        const response = await api.get('/settings/global');
-        if (response.data.success) {
-          setGlobalTheme(response.data.data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch global theme:', err);
-      }
-    };
-    fetchGlobalTheme();
-  }, []);
-
-  // --- Handle global theme change ---
-  const handleGlobalThemeChange = (e) => {
-    const { name, value } = e.target;
-    setGlobalTheme(prev => ({ ...prev, [name]: value }));
-    // Clear previous messages
-    setThemeError('');
-    setThemeSuccess('');
-  };
-
-  // --- Submit global theme ---
-  const handleGlobalThemeSubmit = async (e) => {
-    e.preventDefault();
-    setThemeLoading(true);
-    setThemeError('');
-    setThemeSuccess('');
-    try {
-      const response = await api.put('/settings/global', globalTheme);
-      if (response.data.success) {
-        setThemeSuccess('✅ Global theme updated successfully!');
-        // Update the theme in context so it applies immediately without reload
-        updateTheme(globalTheme);
-        // Optionally reload global settings to ensure consistency
-        await loadGlobalSettings();
-      }
-    } catch (err) {
-      setThemeError(err.response?.data?.message || 'Failed to update global theme');
-    } finally {
-      setThemeLoading(false);
-    }
-  };
-
-  // ============================================================
-  // Owner Management Functions
-  // ============================================================
-
-  // Fetch owners
+  // Fetch owners on mount
   useEffect(() => {
     fetchOwners();
   }, []);
@@ -294,6 +230,13 @@ const SuperAdminDashboard = () => {
               <RefreshCw size={20} className="text-gray-600" />
             </button>
             <button
+              onClick={() => navigate('/admin/settings')}
+              className="p-2 hover:bg-gray-100 rounded-lg transition"
+              title="Settings"
+            >
+              <Settings size={20} className="text-gray-600" />
+            </button>
+            <button
               onClick={handleLogout}
               className="p-2 hover:bg-gray-100 rounded-lg transition"
               title="Logout"
@@ -319,78 +262,7 @@ const SuperAdminDashboard = () => {
           </div>
         )}
 
-        {/* ============================================================
-            GLOBAL THEME SETTINGS
-            ============================================================ */}
-        <div className="mb-8 bg-white rounded-xl shadow-soft p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Palette size={22} style={{ color: 'var(--primary-color)' }} />
-            <h2 className="text-2xl font-bold" style={{ color: 'var(--text-color)' }}>Global Theme Settings</h2>
-            <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-color)' }}>App-wide</span>
-          </div>
-          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-            These settings control the theme for the entire application (all dashboards, customer menu, login, etc.).
-          </p>
-          <form onSubmit={handleGlobalThemeSubmit} className="space-y-4">
-            {themeError && (
-              <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                {themeError}
-              </div>
-            )}
-            {themeSuccess && (
-              <div className="p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-                {themeSuccess}
-              </div>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Primary Color</label>
-                <input
-                  type="color"
-                  name="primaryColor"
-                  value={globalTheme.primaryColor}
-                  onChange={handleGlobalThemeChange}
-                  className="w-full h-10 p-1 border border-gray-300 rounded-lg cursor-pointer"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Secondary Color</label>
-                <input
-                  type="color"
-                  name="secondaryColor"
-                  value={globalTheme.secondaryColor}
-                  onChange={handleGlobalThemeChange}
-                  className="w-full h-10 p-1 border border-gray-300 rounded-lg cursor-pointer"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Theme Mode</label>
-                <select
-                  name="mode"
-                  value={globalTheme.mode}
-                  onChange={handleGlobalThemeChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
-                >
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                </select>
-              </div>
-            </div>
-            <button
-              type="submit"
-              disabled={themeLoading}
-              className="px-4 py-2 text-white rounded-lg shadow-md hover:opacity-90 transition disabled:opacity-50"
-              style={{ backgroundColor: 'var(--primary-color)' }}
-            >
-              {themeLoading ? 'Saving...' : 'Apply Global Theme'}
-            </button>
-          </form>
-        </div>
-
-        {/* ============================================================
-            CAFE OWNERS MANAGEMENT
-            ============================================================ */}
+        {/* Header with Add button */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold" style={{ color: 'var(--text-color)' }}>Cafe Owners</h2>

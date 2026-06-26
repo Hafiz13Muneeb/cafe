@@ -6,6 +6,7 @@ import CustomerMenu from './pages/CustomerMenu';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import SuperAdminSettings from './pages/SuperAdminSettings';
 
 // Protected route wrapper – redirects to login if not authenticated
 const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
@@ -51,6 +52,16 @@ function App() {
           element={
             <ProtectedRoute requireSuperAdmin>
               <SuperAdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* SuperAdmin Settings – protected (superadmin only) */}
+        <Route
+          path="/admin/settings"
+          element={
+            <ProtectedRoute requireSuperAdmin>
+              <SuperAdminSettings />
             </ProtectedRoute>
           }
         />

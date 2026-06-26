@@ -90,7 +90,6 @@ const createOwner = async (req, res, next) => {
       throw new Error('Username, email, and cafe name are required');
     }
 
-    // ❗ Password is now REQUIRED (no auto-generation)
     if (!temporaryPassword || temporaryPassword.length < 6) {
       res.status(400);
       throw new Error('Password is required and must be at least 6 characters');
@@ -104,7 +103,6 @@ const createOwner = async (req, res, next) => {
       throw new Error('Username or email already taken');
     }
 
-    // Generate slug from cafeName
     const baseSlug = cafeName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -123,7 +121,7 @@ const createOwner = async (req, res, next) => {
     const newOwner = await User.create({
       username: username.trim(),
       email: email.trim().toLowerCase(),
-      password: temporaryPassword.trim(), // will be hashed by pre-save
+      password: temporaryPassword.trim(),
       role: 'owner',
       isBlocked: false,
       cafeName: cafeName.trim(),
@@ -138,7 +136,6 @@ const createOwner = async (req, res, next) => {
       message: 'Cafe owner created successfully',
       data: {
         user: userResponse,
-        // We don't return the password anymore – superadmin provided it.
       },
     });
   } catch (error) {
@@ -192,9 +189,65 @@ const changePassword = async (req, res, next) => {
   }
 };
 
+// @desc    Update user profile (username, email)
+// @route   PUT /api/auth/update-profile
+// @access  Private
+const updateProfile = async (req, res, next) => {
+  try {
+    const { username, email } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+
+    if (username !== undefined) {
+      const trimmed = username.trim();
+      if (!trimmed || trimmed.length < 3 || trimmed.length > 30) {
+        res.status(400);
+        throw new Error('Username must be between 3 and 30 characters');
+      }
+      if (trimmed !== user.username) {
+        const existing = await User.findOne({ username: trimmed });
+        if (existing) {
+          res.status(400);
+          throw new Error('Username already taken');
+        }
+        user.username = trimmed;
+      }
+    }
+
+    if (email !== undefined) {
+      const trimmed = email.trim().toLowerCase();
+      if (!trimmed || !/^\S+@\S+\.\S+$/.test(trimmed)) {
+        res.status(400);
+        throw new Error('Please provide a valid email address');
+      }
+      if (trimmed !== user.email) {
+        const existing = await User.findOne({ email: trimmed });
+        if (existing) {
+          res.status(400);
+          throw new Error('Email already taken');
+        }
+        user.email = trimmed;
+      }
+    }
+
+    await user.save();
+    const updatedUser = await User.findById(user._id).select('-password');
+    res.status(200).json({
+      success: true,
+      data: updatedUser,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   loginUser,
   getProfile,
   createOwner,
   changePassword,
+  updateProfile,
 };
