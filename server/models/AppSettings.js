@@ -17,6 +17,10 @@ const AppSettingsSchema = new mongoose.Schema(
       enum: ['light', 'dark'],
       default: 'light',
     },
+    faviconUrl: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,

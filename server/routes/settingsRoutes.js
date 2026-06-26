@@ -5,6 +5,7 @@ const {
   updateSettings,
   getGlobalSettings,
   updateGlobalSettings,
+  updateGlobalFavicon,
 } = require('../controllers/settingsController');
 const { protect, restrictTo } = require('../middleware/auth');
 const upload = require('../config/multer');
@@ -33,8 +34,18 @@ router.put(
 );
 
 // ============================================================
-// SUPERADMIN ONLY – Update global settings
+// SUPERADMIN ONLY – Global settings
 // ============================================================
+
+// Update global colors & mode (JSON)
 router.put('/global', restrictTo('superadmin'), updateGlobalSettings);
+
+// Update global favicon (file upload)
+router.put(
+  '/global/favicon',
+  restrictTo('superadmin'),
+  upload.single('favicon'),
+  updateGlobalFavicon
+);
 
 module.exports = router;

@@ -174,7 +174,7 @@ const updateSettings = async (req, res, next) => {
 // GLOBAL SETTINGS (App-wide theme)
 // ============================================================
 
-// @desc    Get global app settings (theme)
+// @desc    Get global app settings (theme + favicon)
 // @route   GET /api/settings/global
 // @access  Public (anyone can read)
 const getGlobalSettings = async (req, res, next) => {
@@ -189,7 +189,7 @@ const getGlobalSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Update global app settings (SuperAdmin only)
+// @desc    Update global app settings (SuperAdmin only) – JSON only (colors, mode)
 // @route   PUT /api/settings/global
 // @access  Private (SuperAdmin)
 const updateGlobalSettings = async (req, res, next) => {
@@ -233,9 +233,46 @@ const updateGlobalSettings = async (req, res, next) => {
   }
 };
 
+// @desc    Update global favicon (SuperAdmin only) – file upload
+// @route   PUT /api/settings/global/favicon
+// @access  Private (SuperAdmin)
+const updateGlobalFavicon = async (req, res, next) => {
+  try {
+    const settings = await AppSettings.getSingleton();
+
+    if (!req.file) {
+      res.status(400);
+      throw new Error('Please upload a favicon image');
+    }
+
+    // Delete old favicon from Cloudinary (if exists)
+    if (settings.faviconUrl) {
+      const publicId = extractPublicId(settings.faviconUrl);
+      if (publicId) {
+        try {
+          await cloudinary.uploader.destroy(publicId);
+        } catch (cloudinaryError) {
+          console.error('Failed to delete old favicon from Cloudinary:', cloudinaryError);
+        }
+      }
+    }
+
+    settings.faviconUrl = req.file.path;
+    await settings.save();
+
+    res.status(200).json({
+      success: true,
+      data: settings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getSettings,
   updateSettings,
   getGlobalSettings,
   updateGlobalSettings,
+  updateGlobalFavicon,
 };

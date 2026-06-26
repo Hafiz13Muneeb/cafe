@@ -12,27 +12,23 @@ export const useTheme = () => {
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    // Try loading from localStorage for faster initial render
     const saved = localStorage.getItem('globalTheme');
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch (e) {
-        // Invalid JSON, fallback
-      }
+      } catch (e) {}
     }
-    // Fallback defaults
     return {
       mode: 'light',
       primaryColor: '#d4a843',
       secondaryColor: '#b8860b',
+      faviconUrl: '',
     };
   });
 
   const [loading, setLoading] = useState(true);
-  const [cafeSettings, setCafeSettings] = useState(null); // Kept for backward compatibility
+  const [cafeSettings, setCafeSettings] = useState(null);
 
-  // Apply theme CSS variables to root element
   const applyTheme = useCallback((themeObj) => {
     const root = document.documentElement;
     root.style.setProperty('--primary-color', themeObj.primaryColor);
@@ -40,16 +36,14 @@ export const ThemeProvider = ({ children }) => {
     root.style.setProperty('--primary-light', themeObj.primaryColor + '20');
     root.style.setProperty('--primary-dark', themeObj.primaryColor + '80');
 
-    // Update RGB values for cursor glow and other effects
     const hexToRgb = (hex) => {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
       return result
         ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
-        : '212, 168, 67'; // fallback
+        : '212, 168, 67';
     };
     root.style.setProperty('--primary-color-rgb', hexToRgb(themeObj.primaryColor));
 
-    // Mode
     root.classList.remove('light-mode', 'dark-mode');
     root.classList.add(`${themeObj.mode}-mode`);
 
@@ -68,7 +62,6 @@ export const ThemeProvider = ({ children }) => {
     }
   }, []);
 
-  // Load global settings from backend
   const loadGlobalSettings = useCallback(async () => {
     try {
       setLoading(true);
@@ -79,51 +72,40 @@ export const ThemeProvider = ({ children }) => {
           primaryColor: data.primaryColor || '#d4a843',
           secondaryColor: data.secondaryColor || '#b8860b',
           mode: data.mode || 'light',
+          faviconUrl: data.faviconUrl || '',
         };
         setTheme(newTheme);
-        // Save to localStorage for faster subsequent loads
         localStorage.setItem('globalTheme', JSON.stringify(newTheme));
         applyTheme(newTheme);
         return newTheme;
       }
     } catch (error) {
       console.error('Failed to load global theme, using defaults:', error);
-      // Use localStorage fallback if available
       const saved = localStorage.getItem('globalTheme');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
           setTheme(parsed);
           applyTheme(parsed);
-        } catch (e) {
-          // Use defaults
-        }
+        } catch (e) {}
       }
     } finally {
       setLoading(false);
     }
   }, [applyTheme]);
 
-  // Load theme on mount
   useEffect(() => {
     loadGlobalSettings();
   }, [loadGlobalSettings]);
 
-  // Apply theme whenever it changes
   useEffect(() => {
     applyTheme(theme);
   }, [theme, applyTheme]);
 
-  // --- Exposed functions ---
-
-  // Toggle between light/dark mode (can be used by any user)
   const toggleTheme = useCallback(() => {
     setTheme(prev => ({ ...prev, mode: prev.mode === 'dark' ? 'light' : 'dark' }));
-    // Note: This only updates the UI, not the database.
-    // To persist, call updateGlobalTheme from SuperAdminDashboard.
   }, []);
 
-  // Update entire theme (called from SuperAdminDashboard after saving)
   const updateTheme = useCallback((newTheme) => {
     const updatedTheme = { ...theme, ...newTheme };
     setTheme(updatedTheme);
@@ -131,7 +113,6 @@ export const ThemeProvider = ({ children }) => {
     applyTheme(updatedTheme);
   }, [theme, applyTheme]);
 
-  // For backward compatibility – loads cafe data but DOES NOT change theme
   const loadThemeFromSlug = useCallback(async (slug) => {
     try {
       const response = await api.get(`/menu/${slug}`);
@@ -146,17 +127,13 @@ export const ThemeProvider = ({ children }) => {
     return null;
   }, []);
 
-  // Load theme from user (legacy – kept for compatibility)
   const loadThemeFromUser = useCallback((user) => {
     if (user?.theme) {
-      const themeData = {
+      return {
         primaryColor: user.theme.primaryColor || '#d4a843',
         secondaryColor: user.theme.secondaryColor || '#b8860b',
         mode: user.theme.mode || 'light',
       };
-      // We DON'T override global theme with user theme
-      // Just update the local state if needed for backward compatibility
-      return themeData;
     }
     return null;
   }, []);
@@ -169,7 +146,7 @@ export const ThemeProvider = ({ children }) => {
     updateTheme,
     loadThemeFromSlug,
     loadThemeFromUser,
-    loadGlobalSettings, // expose for manual refresh
+    loadGlobalSettings,
   };
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
