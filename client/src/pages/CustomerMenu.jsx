@@ -1,8 +1,7 @@
-// src/pages/CustomerMenu.jsx - Dynamic customer menu with theme from backend
+// src/pages/CustomerMenu.jsx - Dynamic customer menu using global theme
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { useTheme } from '../context/ThemeContext';
 import { fetchPublicMenu } from '../api/axios';
 import MenuItemCard from '../components/MenuItemCard';
 import CategoryFilter from '../components/CategoryFilter';
@@ -30,7 +29,6 @@ const MenuSkeleton = () => (
 
 const CustomerMenu = () => {
   const { slug } = useParams();
-  const { loadThemeFromSlug } = useTheme();
   const { cart, getTotalItems, getTotalPrice } = useCart();
 
   const [menuItems, setMenuItems] = useState([]);
@@ -63,9 +61,8 @@ const CustomerMenu = () => {
         setFaviconUrl(cafe.faviconUrl || '');
         setTables(cafe.tables || ['1', '2', '3', '4', '5']);
 
-        if (cafe.theme) {
-          await loadThemeFromSlug(slug);
-        }
+        // NOTE: Theme is now global – we no longer override it with cafe.theme.
+        // The global theme is applied by ThemeContext and applies to all pages.
 
         setMenuItems(menu || []);
         setFilteredItems(menu || []);
@@ -89,7 +86,7 @@ const CustomerMenu = () => {
       setError('Invalid cafe slug');
       setLoading(false);
     }
-  }, [slug, loadThemeFromSlug]);
+  }, [slug]); // ← removed loadThemeFromSlug dependency
 
   // Update favicon
   useEffect(() => {

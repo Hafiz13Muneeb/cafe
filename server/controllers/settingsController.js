@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const AppSettings = require('../models/AppSettings');
 const cloudinary = require('../config/cloudinary');
 
 // Helper: extract Cloudinary public_id from URL
@@ -15,13 +16,17 @@ const extractPublicId = (imageUrl) => {
   return publicIdWithExt.replace(/\.[^/.]+$/, '');
 };
 
+// ============================================================
+// OWNER SETTINGS (per-cafe)
+// ============================================================
+
 // @desc    Get the logged-in owner's settings
 // @route   GET /api/settings
 // @access  Private (Owner)
 const getSettings = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select(
-      'cafeName whatsappNumber logoUrl faviconUrl tables theme'
+      'cafeName whatsappNumber logoUrl faviconUrl tables'
     );
     if (!user) {
       res.status(404);
@@ -36,7 +41,6 @@ const getSettings = async (req, res, next) => {
         logoUrl: user.logoUrl || '',
         faviconUrl: user.faviconUrl || '',
         tables: user.tables || [],
-        theme: user.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
       },
     });
   } catch (error) {
@@ -44,12 +48,12 @@ const getSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Update the logged-in owner's settings (text & theme)
+// @desc    Update the logged-in owner's settings (cafeName, whatsapp, tables, logo, favicon)
 // @route   PUT /api/settings
 // @access  Private (Owner)
 const updateSettings = async (req, res, next) => {
   try {
-    const { cafeName, whatsappNumber, tables, primaryColor, secondaryColor, mode } = req.body;
+    const { cafeName, whatsappNumber, tables } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -103,7 +107,6 @@ const updateSettings = async (req, res, next) => {
       if (Array.isArray(tables)) {
         tableArray = tables;
       } else if (typeof tables === 'string') {
-        // If sent as a comma-separated string (e.g., from form data)
         tableArray = tables.split(',').map(t => t.trim()).filter(t => t.length > 0);
       } else {
         res.status(400);
@@ -116,35 +119,10 @@ const updateSettings = async (req, res, next) => {
       user.tables = tableArray;
     }
 
-    // --- Update theme ---
-    if (primaryColor !== undefined) {
-      if (!/^#[0-9A-F]{6}$/i.test(primaryColor)) {
-        res.status(400);
-        throw new Error('Primary color must be a valid hex color');
-      }
-      user.theme.primaryColor = primaryColor;
-    }
-    if (secondaryColor !== undefined) {
-      if (!/^#[0-9A-F]{6}$/i.test(secondaryColor)) {
-        res.status(400);
-        throw new Error('Secondary color must be a valid hex color');
-      }
-      user.theme.secondaryColor = secondaryColor;
-    }
-    if (mode !== undefined) {
-      if (!['light', 'dark'].includes(mode)) {
-        res.status(400);
-        throw new Error('Mode must be either "light" or "dark"');
-      }
-      user.theme.mode = mode;
-    }
-
-    // --- Handle logo upload (if files are uploaded) ---
-    // Note: We're using req.files because multer fields are used
+    // --- Handle logo upload ---
     if (req.files) {
       if (req.files.logo && req.files.logo[0]) {
         const logoFile = req.files.logo[0];
-        // Delete old logo
         if (user.logoUrl) {
           const publicId = extractPublicId(user.logoUrl);
           if (publicId) {
@@ -160,7 +138,6 @@ const updateSettings = async (req, res, next) => {
 
       if (req.files.favicon && req.files.favicon[0]) {
         const faviconFile = req.files.favicon[0];
-        // Delete old favicon
         if (user.faviconUrl) {
           const publicId = extractPublicId(user.faviconUrl);
           if (publicId) {
@@ -177,7 +154,6 @@ const updateSettings = async (req, res, next) => {
 
     await user.save();
 
-    // Return updated settings (without sensitive fields)
     res.status(200).json({
       success: true,
       data: {
@@ -187,8 +163,70 @@ const updateSettings = async (req, res, next) => {
         logoUrl: user.logoUrl || '',
         faviconUrl: user.faviconUrl || '',
         tables: user.tables || [],
-        theme: user.theme,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================
+// GLOBAL SETTINGS (App-wide theme)
+// ============================================================
+
+// @desc    Get global app settings (theme)
+// @route   GET /api/settings/global
+// @access  Public (anyone can read)
+const getGlobalSettings = async (req, res, next) => {
+  try {
+    const settings = await AppSettings.getSingleton();
+    res.status(200).json({
+      success: true,
+      data: settings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update global app settings (SuperAdmin only)
+// @route   PUT /api/settings/global
+// @access  Private (SuperAdmin)
+const updateGlobalSettings = async (req, res, next) => {
+  try {
+    const { primaryColor, secondaryColor, mode } = req.body;
+
+    const settings = await AppSettings.getSingleton();
+
+    if (primaryColor !== undefined) {
+      if (!/^#[0-9A-F]{6}$/i.test(primaryColor)) {
+        res.status(400);
+        throw new Error('Primary color must be a valid hex color');
+      }
+      settings.primaryColor = primaryColor;
+    }
+
+    if (secondaryColor !== undefined) {
+      if (!/^#[0-9A-F]{6}$/i.test(secondaryColor)) {
+        res.status(400);
+        throw new Error('Secondary color must be a valid hex color');
+      }
+      settings.secondaryColor = secondaryColor;
+    }
+
+    if (mode !== undefined) {
+      if (!['light', 'dark'].includes(mode)) {
+        res.status(400);
+        throw new Error('Mode must be either "light" or "dark"');
+      }
+      settings.mode = mode;
+    }
+
+    await settings.save();
+
+    res.status(200).json({
+      success: true,
+      data: settings,
     });
   } catch (error) {
     next(error);
@@ -198,4 +236,6 @@ const updateSettings = async (req, res, next) => {
 module.exports = {
   getSettings,
   updateSettings,
+  getGlobalSettings,
+  updateGlobalSettings,
 };

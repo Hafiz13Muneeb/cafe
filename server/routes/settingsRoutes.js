@@ -1,13 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const { getSettings, updateSettings } = require('../controllers/settingsController');
-const { protect } = require('../middleware/auth');
-const upload = require('../config/multer'); // multer instance with fields
+const {
+  getSettings,
+  updateSettings,
+  getGlobalSettings,
+  updateGlobalSettings,
+} = require('../controllers/settingsController');
+const { protect, restrictTo } = require('../middleware/auth');
+const upload = require('../config/multer');
 
-// All routes are protected (owner only)
+// ============================================================
+// PUBLIC ROUTE – Global settings (no auth required)
+// ============================================================
+router.get('/global', getGlobalSettings);
+
+// ============================================================
+// PROTECTED ROUTES – Owner settings
+// ============================================================
 router.use(protect);
 
-// Get owner settings
+// Get owner settings (cafeName, whatsapp, tables, logo, favicon)
 router.get('/', getSettings);
 
 // Update owner settings (with logo & favicon upload)
@@ -19,5 +31,10 @@ router.put(
   ]),
   updateSettings
 );
+
+// ============================================================
+// SUPERADMIN ONLY – Update global settings
+// ============================================================
+router.put('/global', restrictTo('superadmin'), updateGlobalSettings);
 
 module.exports = router;
