@@ -1,8 +1,10 @@
-// src/pages/AdminLogin.jsx - Admin login page (works for both superadmin and owners)
+// src/pages/AdminLogin.jsx - Admin login page (refactored)
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock, User, AlertCircle } from 'lucide-react';
+import Input from '../components/common/Input';
+import Button from '../components/common/Button';
 
 const AdminLogin = () => {
   const [username, setUsername] = useState('');
@@ -24,14 +26,10 @@ const AdminLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) {
-      return;
-    }
+    if (!username.trim() || !password.trim()) return;
     setLoading(true);
-    const result = await login(username, password);
+    await login(username, password);
     setLoading(false);
-    // If login fails, error is already set in context
-    // If successful, the useEffect will redirect
   };
 
   return (
@@ -57,70 +55,37 @@ const AdminLogin = () => {
               </div>
             )}
 
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Username
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User size={18} className="text-gray-400" />
-                </div>
-                <input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
-                  placeholder="Enter your username"
-                  required
-                />
-              </div>
-            </div>
+            <Input
+              label="Username"
+              name="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              type="text"
+              required
+              placeholder="Enter your username"
+              leftIcon={User}
+            />
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock size={18} className="text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
-                  placeholder="Enter your password"
-                  required
-                />
-              </div>
-            </div>
+            <Input
+              label="Password"
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              required
+              placeholder="Enter your password"
+              leftIcon={Lock}
+            />
 
-            <button
+            <Button
               type="submit"
+              variant="primary"
               disabled={loading}
-              className={`w-full py-2.5 rounded-lg font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200 ${
-                loading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'hover:opacity-90 active:scale-95 shadow-md'
-              }`}
-              style={{
-                backgroundColor: loading ? '#9ca3af' : 'var(--primary-color)',
-                boxShadow: loading ? 'none' : '0 4px 20px rgba(212, 168, 67, 0.3)',
-              }}
+              fullWidth
+              className="py-2.5"
             >
-              {loading ? (
-                <>
-                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  Logging in...
-                </>
-              ) : (
-                'Login'
-              )}
-            </button>
+              {loading ? 'Logging in...' : 'Login'}
+            </Button>
           </form>
 
           <p className="text-xs text-center mt-4" style={{ color: 'var(--text-secondary)' }}>

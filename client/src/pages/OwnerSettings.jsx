@@ -1,63 +1,13 @@
-// src/pages/OwnerSettings.jsx - Cafe owner settings with sidebar
+// src/pages/OwnerSettings.jsx - Cafe owner settings (refactored)
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import {
-  Save,
-  X,
-  Upload,
-  AlertCircle,
-  CheckCircle,
-  KeyRound,
-  LogOut,
-  ArrowLeft,
-  Home,
-  User,
-  Lock,
-  Settings,
-} from 'lucide-react';
+import { Settings, Lock, Save, X, Upload, AlertCircle, CheckCircle } from 'lucide-react';
+import SettingsLayout from '../components/layout/SettingsLayout';
+import Input from '../components/common/Input';
+import Button from '../components/common/Button';
 
-// --- Helper Components ---
-const InputField = ({ label, name, value, onChange, type = 'text', required = false, placeholder = '', className = '' }) => (
-  <div className={className}>
-    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-    <input
-      type={type}
-      name={name}
-      value={value}
-      onChange={onChange}
-      required={required}
-      placeholder={placeholder}
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-      style={{ '--tw-ring-color': 'var(--primary-color)' }}
-    />
-  </div>
-);
-
-const PrimaryButton = ({ children, onClick, disabled, className = '', ...props }) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    className={`px-4 py-2 rounded-lg font-medium text-white transition-all duration-200 disabled:opacity-50 hover:opacity-90 active:scale-95 shadow-md ${className}`}
-    style={{ backgroundColor: 'var(--primary-color)' }}
-    {...props}
-  >
-    {children}
-  </button>
-);
-
-const SecondaryButton = ({ children, onClick, className = '', ...props }) => (
-  <button
-    onClick={onClick}
-    className={`px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition ${className}`}
-    {...props}
-  >
-    {children}
-  </button>
-);
-
-// --- Main Component ---
 const OwnerSettings = () => {
   const { user, logout, updateUserData } = useAuth();
   const navigate = useNavigate();
@@ -179,218 +129,169 @@ const OwnerSettings = () => {
     { id: 'security', label: 'Security', icon: Lock },
   ];
 
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-color)' }}>
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-20">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/admin/dashboard')} className="p-1 hover:bg-gray-100 rounded-lg transition" title="Back to Dashboard">
-              <ArrowLeft size={20} className="text-gray-600" />
-            </button>
-            <h1 className="text-xl font-bold" style={{ color: 'var(--text-color)' }}>Settings</h1>
-            <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-color)' }}>Owner</span>
-          </div>
-          <button onClick={handleLogout} className="p-2 hover:bg-gray-100 rounded-lg transition" title="Logout">
-            <LogOut size={20} className="text-gray-600" />
-          </button>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 max-w-6xl">
-        {/* Sidebar */}
-        <aside className="w-full md:w-64 flex-shrink-0">
-          <div className="bg-white rounded-xl shadow-soft overflow-hidden sticky top-24">
-            <nav className="flex flex-col">
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-3 px-4 py-3 transition-all duration-200 ${
-                    activeTab === item.id
-                      ? 'bg-primary/10 text-primary border-r-4 border-primary'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                  style={activeTab === item.id ? { borderColor: 'var(--primary-color)' } : {}}
-                >
-                  <item.icon size={18} />
-                  <span className="text-sm font-medium">{item.label}</span>
-                </button>
-              ))}
-            </nav>
-            {/* Logout at bottom */}
-            <div className="border-t border-gray-100 mt-auto">
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition"
-              >
-                <LogOut size={18} />
-                Logout
-              </button>
+  // --- Render content based on active tab ---
+  const renderContent = () => {
+    if (activeTab === 'cafe') {
+      return (
+        <div className="bg-white rounded-xl shadow-soft p-6">
+          <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-color)' }}>Cafe Settings</h2>
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
+              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
-          </div>
-        </aside>
+          )}
+          {success && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-start gap-2">
+              <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
+              <span>{success}</span>
+            </div>
+          )}
+          <form onSubmit={handleSettingsSubmit} className="space-y-5">
+            <Input
+              label="Cafe Name"
+              name="cafeName"
+              value={cafeName}
+              onChange={(e) => setCafeName(e.target.value)}
+              required
+            />
+            <Input
+              label="WhatsApp Number"
+              name="whatsappNumber"
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value)}
+              type="tel"
+              placeholder="923001234567"
+              required
+            />
 
-        {/* Main Content */}
-        <main className="flex-1">
-          {/* === Cafe Settings Tab === */}
-          {activeTab === 'cafe' && (
-            <div className="bg-white rounded-xl shadow-soft p-6">
-              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-color)' }}>Cafe Settings</h2>
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
-                  <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-                  <span>{error}</span>
-                </div>
-              )}
-              {success && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-start gap-2">
-                  <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
-                  <span>{success}</span>
-                </div>
-              )}
-              <form onSubmit={handleSettingsSubmit} className="space-y-5">
-                <InputField
-                  label="Cafe Name"
-                  name="cafeName"
-                  value={cafeName}
-                  onChange={(e) => setCafeName(e.target.value)}
-                  required
-                />
-                <InputField
-                  label="WhatsApp Number"
-                  name="whatsappNumber"
-                  value={whatsappNumber}
-                  onChange={(e) => setWhatsappNumber(e.target.value)}
-                  type="tel"
-                  placeholder="923001234567"
-                  required
-                />
-
-                {/* Tables */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tables (comma separated)</label>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {tables.map(table => (
-                      <span key={table} className="inline-flex items-center gap-1 px-3 py-1 bg-primary/20 text-primary rounded-full text-sm border border-primary/30">
-                        {table}
-                        <button type="button" onClick={() => handleRemoveTable(table)} className="hover:text-red-600">
-                          <X size={14} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newTableInput}
-                      onChange={(e) => setNewTableInput(e.target.value)}
-                      placeholder="e.g., 6, VIP, Patio"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                      style={{ '--tw-ring-color': 'var(--primary-color)' }}
-                    />
-                    <button type="button" onClick={handleAddTable} className="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition shadow-md" style={{ backgroundColor: 'var(--primary-color)' }}>
-                      Add
+            {/* Tables */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tables (comma separated)</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {tables.map(table => (
+                  <span key={table} className="inline-flex items-center gap-1 px-3 py-1 bg-primary/20 text-primary rounded-full text-sm border border-primary/30">
+                    {table}
+                    <button type="button" onClick={() => handleRemoveTable(table)} className="hover:text-red-600">
+                      <X size={14} />
                     </button>
-                  </div>
-                </div>
-
-                {/* Logo */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
-                  <div className="flex items-center gap-4">
-                    {logoUrl && <img src={logoUrl} alt="Logo" className="w-16 h-16 object-cover rounded-lg border border-gray-200" />}
-                    <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                      <Upload size={16} className="text-gray-500" />
-                      <span className="text-sm">{logoFile ? logoFile.name : 'Upload Logo'}</span>
-                      <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files[0])} className="hidden" />
-                    </label>
-                  </div>
-                </div>
-
-                {/* Favicon */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Favicon (for customer menu)</label>
-                  <div className="flex items-center gap-4">
-                    {faviconUrl && <img src={faviconUrl} alt="Favicon" className="w-10 h-10 object-cover rounded border border-gray-200" />}
-                    <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                      <Upload size={16} className="text-gray-500" />
-                      <span className="text-sm">{faviconFile ? faviconFile.name : 'Upload Favicon'}</span>
-                      <input type="file" accept="image/*" onChange={(e) => setFaviconFile(e.target.files[0])} className="hidden" />
-                    </label>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">This favicon will appear on your public menu page.</p>
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-4 py-2 bg-primary text-white rounded-lg shadow-md hover:opacity-90 transition disabled:opacity-50 flex items-center gap-2"
-                    style={{ backgroundColor: 'var(--primary-color)' }}
-                  >
-                    <Save size={18} />
-                    {loading ? 'Saving...' : 'Save Settings'}
-                  </button>
-                  <SecondaryButton onClick={() => navigate('/admin/dashboard')}>Cancel</SecondaryButton>
-                </div>
-              </form>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={newTableInput}
+                  onChange={(e) => setNewTableInput(e.target.value)}
+                  placeholder="e.g., 6, VIP, Patio"
+                  className="flex-1"
+                />
+                <Button variant="primary" onClick={handleAddTable} className="px-4 py-2">
+                  Add
+                </Button>
+              </div>
             </div>
-          )}
 
-          {/* === Security Tab (Password) === */}
-          {activeTab === 'security' && (
-            <div className="bg-white rounded-xl shadow-soft p-6">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
-                <KeyRound size={20} style={{ color: 'var(--primary-color)' }} />
-                Change Password
-              </h2>
-              {passwordError && (
-                <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{passwordError}</div>
-              )}
-              {passwordSuccess && (
-                <div className="mb-4 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">{passwordSuccess}</div>
-              )}
-              <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
-                <InputField
-                  label="Current Password"
-                  name="oldPassword"
-                  value={passwordForm.oldPassword}
-                  onChange={handlePasswordChange}
-                  type="password"
-                  required
-                />
-                <InputField
-                  label="New Password"
-                  name="newPassword"
-                  value={passwordForm.newPassword}
-                  onChange={handlePasswordChange}
-                  type="password"
-                  required
-                  minLength={6}
-                />
-                <InputField
-                  label="Confirm New Password"
-                  name="confirmPassword"
-                  value={passwordForm.confirmPassword}
-                  onChange={handlePasswordChange}
-                  type="password"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={passwordLoading}
-                  className="px-4 py-2 text-white rounded-lg shadow-md hover:opacity-90 transition disabled:opacity-50"
-                  style={{ backgroundColor: 'var(--primary-color)' }}
-                >
-                  {passwordLoading ? 'Updating...' : 'Update Password'}
-                </button>
-              </form>
+            {/* Logo */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+              <div className="flex items-center gap-4">
+                {logoUrl && <img src={logoUrl} alt="Logo" className="w-16 h-16 object-cover rounded-lg border border-gray-200" />}
+                <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                  <Upload size={16} className="text-gray-500" />
+                  <span className="text-sm">{logoFile ? logoFile.name : 'Upload Logo'}</span>
+                  <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files[0])} className="hidden" />
+                </label>
+              </div>
             </div>
+
+            {/* Favicon */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Favicon (for customer menu)</label>
+              <div className="flex items-center gap-4">
+                {faviconUrl && <img src={faviconUrl} alt="Favicon" className="w-10 h-10 object-cover rounded border border-gray-200" />}
+                <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                  <Upload size={16} className="text-gray-500" />
+                  <span className="text-sm">{faviconFile ? faviconFile.name : 'Upload Favicon'}</span>
+                  <input type="file" accept="image/*" onChange={(e) => setFaviconFile(e.target.files[0])} className="hidden" />
+                </label>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">This favicon will appear on your public menu page.</p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button type="submit" variant="primary" disabled={loading} className="flex items-center gap-2">
+                <Save size={18} />
+                {loading ? 'Saving...' : 'Save Settings'}
+              </Button>
+              <Button variant="secondary" onClick={() => navigate('/admin/dashboard')}>Cancel</Button>
+            </div>
+          </form>
+        </div>
+      );
+    }
+
+    if (activeTab === 'security') {
+      return (
+        <div className="bg-white rounded-xl shadow-soft p-6">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
+            <Lock size={20} style={{ color: 'var(--primary-color)' }} />
+            Change Password
+          </h2>
+          {passwordError && (
+            <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{passwordError}</div>
           )}
-        </main>
-      </div>
-    </div>
+          {passwordSuccess && (
+            <div className="mb-4 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">{passwordSuccess}</div>
+          )}
+          <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
+            <Input
+              label="Current Password"
+              name="oldPassword"
+              value={passwordForm.oldPassword}
+              onChange={handlePasswordChange}
+              type="password"
+              required
+            />
+            <Input
+              label="New Password"
+              name="newPassword"
+              value={passwordForm.newPassword}
+              onChange={handlePasswordChange}
+              type="password"
+              required
+              minLength={6}
+            />
+            <Input
+              label="Confirm New Password"
+              name="confirmPassword"
+              value={passwordForm.confirmPassword}
+              onChange={handlePasswordChange}
+              type="password"
+              required
+            />
+            <Button type="submit" variant="primary" disabled={passwordLoading}>
+              {passwordLoading ? 'Updating...' : 'Update Password'}
+            </Button>
+          </form>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <SettingsLayout
+      title="Settings"
+      subtitle="Owner"
+      backTo="/admin/dashboard"
+      onLogout={handleLogout}
+      navItems={navItems}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+    >
+      {renderContent()}
+    </SettingsLayout>
   );
 };
 
