@@ -1,45 +1,60 @@
-// controllers/authController.js - Authentication logic (login, get profile)
-const Admin = require('../models/Admin');
+const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 
-// @desc    Login admin
+// @desc    Login user (both superadmin and cafe owners)
 // @route   POST /api/auth/login
 // @access  Public
-const loginAdmin = async (req, res, next) => {
+const loginUser = async (req, res, next) => {
   try {
     const { username, password } = req.body;
 
-    // Validate input
     if (!username || !password) {
       res.status(400);
       throw new Error('Please provide username and password');
     }
 
-    // Find admin by username and include password field
-    const admin = await Admin.findOne({ username }).select('+password');
+    // Find user by username, explicitly include password
+    const user = await User.findOne({ username }).select('+password');
 
-    if (!admin) {
+    if (!user) {
       res.status(401);
-      throw new Error('Invalid username or password');
+      throw new Error('Invalid credentials');
     }
 
-    // Check password
-    const isMatch = await admin.matchPassword(password);
+    // Check if user is blocked
+    if (user.isBlocked) {
+      res.status(403);
+      throw new Error('Your account has been blocked. Please contact support.');
+    }
 
+    // Verify password
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       res.status(401);
-      throw new Error('Invalid username or password');
+      throw new Error('Invalid credentials');
     }
 
-    // Return admin data and token
+    // Prepare response (exclude sensitive fields)
+    const userResponse = {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      isBlocked: user.isBlocked,
+      cafeName: user.cafeName || '',
+      slug: user.slug || '',
+      whatsappNumber: user.whatsappNumber || '',
+      logoUrl: user.logoUrl || '',
+      faviconUrl: user.faviconUrl || '',
+      tables: user.tables || [],
+      theme: user.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
+    };
+
     res.status(200).json({
       success: true,
       data: {
-        id: admin._id,
-        username: admin.username,
-        cafeName: admin.cafeName,
-        whatsappNumber: admin.whatsappNumber,
-        token: generateToken(admin._id),
+        user: userResponse,
+        token: generateToken(user._id),
       },
     });
   } catch (error) {
@@ -47,90 +62,95 @@ const loginAdmin = async (req, res, next) => {
   }
 };
 
-// @desc    Get admin profile
+// @desc    Get logged-in user profile
 // @route   GET /api/auth/me
 // @access  Private
-const getAdminProfile = async (req, res, next) => {
+const getProfile = async (req, res, next) => {
   try {
-    // req.admin is set by the protect middleware
-    const admin = await Admin.findById(req.admin._id).select('-password');
-
-    if (!admin) {
+    // req.user is already attached by protect middleware
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) {
       res.status(404);
-      throw new Error('Admin not found');
+      throw new Error('User not found');
     }
 
     res.status(200).json({
       success: true,
-      data: admin,
+      data: user,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Update admin credentials (username / password)
-// @route   PUT /api/auth/update-credentials
-// @access  Private
-const updateCredentials = async (req, res, next) => {
+// @desc    Create a new cafe owner (Super-admin only)
+// @route   POST /api/auth/create-owner
+// @access  Private (Superadmin)
+const createOwner = async (req, res, next) => {
   try {
-    const { newUsername, oldPassword, newPassword } = req.body;
+    const { username, email, cafeName, temporaryPassword } = req.body;
 
-    // Validate that old password is provided
-    if (!oldPassword) {
+    // Validate required fields
+    if (!username || !email || !cafeName) {
       res.status(400);
-      throw new Error('Please provide your current password to make changes');
+      throw new Error('Username, email, and cafe name are required');
     }
 
-    // Find admin by ID, must select password explicitly since it's deselected by default in schema
-    const admin = await Admin.findById(req.admin._id).select('+password');
-    if (!admin) {
-      res.status(404);
-      throw new Error('Admin not found');
+    // Check if username or email already exists
+    const existingUser = await User.findOne({
+      $or: [{ username }, { email }],
+    });
+    if (existingUser) {
+      res.status(400);
+      throw new Error('Username or email already taken');
     }
 
-    // Verify current password
-    const isMatch = await admin.matchPassword(oldPassword);
-    if (!isMatch) {
-      res.status(401);
-      throw new Error('Incorrect current password');
-    }
+    // Generate a secure temporary password if not provided
+    const generatedPassword = temporaryPassword || Math.random().toString(36).slice(-8) + 'Aa1!';
+    // Ensure minimum length (6)
+    const finalPassword = generatedPassword.length < 6 ? generatedPassword + 'Aa1!' : generatedPassword;
 
-    // If new username is provided
-    if (newUsername && newUsername.trim() !== '') {
-      const trimmedUsername = newUsername.trim();
-      
-      if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
-        res.status(400);
-        throw new Error('Username must be between 3 and 30 characters');
+    // Generate a slug from cafeName
+    const baseSlug = cafeName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    // Check for uniqueness and append random string if needed
+    let slug = baseSlug;
+    let slugExists = await User.findOne({ slug });
+    if (slugExists) {
+      // Append a short random string (6 chars) to make it unique
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      slug = `${baseSlug}-${randomSuffix}`;
+      // In the rare case it still exists, loop (but very unlikely)
+      while (await User.findOne({ slug })) {
+        slug = `${baseSlug}-${Math.random().toString(36).substring(2, 8)}`;
       }
-
-      const usernameExists = await Admin.findOne({ username: trimmedUsername, _id: { $ne: admin._id } });
-      if (usernameExists) {
-        res.status(400);
-        throw new Error('Username is already taken');
-      }
-      admin.username = trimmedUsername;
     }
 
-    // If new password is provided
-    if (newPassword && newPassword.trim() !== '') {
-      if (newPassword.length < 6) {
-        res.status(400);
-        throw new Error('New password must be at least 6 characters long');
-      }
-      admin.password = newPassword; // This will trigger the pre-save password hashing hook on the Admin model
-    }
+    // Create the owner user
+    const newOwner = await User.create({
+      username: username.trim(),
+      email: email.trim().toLowerCase(),
+      password: finalPassword, // will be hashed by pre-save hook
+      role: 'owner',
+      isBlocked: false,
+      cafeName: cafeName.trim(),
+      slug: slug,
+      // Default theme and other fields will be set via schema defaults
+    });
 
-    await admin.save();
+    // Return the created user (without password) and the temporary password
+    const userResponse = newOwner.toObject();
+    delete userResponse.password;
 
-    res.status(200).json({
+    res.status(201).json({
       success: true,
-      message: 'Credentials updated successfully',
+      message: 'Cafe owner created successfully',
       data: {
-        id: admin._id,
-        username: admin.username,
-      }
+        user: userResponse,
+        temporaryPassword: finalPassword, // send back so superadmin can share it
+      },
     });
   } catch (error) {
     next(error);
@@ -138,7 +158,7 @@ const updateCredentials = async (req, res, next) => {
 };
 
 module.exports = {
-  loginAdmin,
-  getAdminProfile,
-  updateCredentials,
+  loginUser,
+  getProfile,
+  createOwner,
 };

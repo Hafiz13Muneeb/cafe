@@ -1,4 +1,4 @@
-// src/components/CategoryFilter.jsx - Light theme category filter
+// src/components/CategoryFilter.jsx - Category filter with dynamic theming
 import React from 'react';
 
 const CategoryFilter = ({ categories, selectedCategory, onSelectCategory }) => {
@@ -10,11 +10,31 @@ const CategoryFilter = ({ categories, selectedCategory, onSelectCategory }) => {
         <button
           key={category}
           onClick={() => onSelectCategory(category)}
-          className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-            selectedCategory === category
-              ? 'bg-primary text-white shadow-md shadow-primary/20'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-          }`}
+          className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200"
+          style={{
+            backgroundColor: selectedCategory === category 
+              ? 'var(--primary-color)' 
+              : 'var(--card-bg)',
+            color: selectedCategory === category 
+              ? '#ffffff' 
+              : 'var(--text-color)',
+            border: selectedCategory === category 
+              ? 'none' 
+              : '1px solid var(--border-color)',
+            boxShadow: selectedCategory === category 
+              ? '0 4px 15px rgba(0,0,0,0.15)' 
+              : 'none',
+          }}
+          onMouseEnter={(e) => {
+            if (selectedCategory !== category) {
+              e.target.style.backgroundColor = 'var(--primary-light)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (selectedCategory !== category) {
+              e.target.style.backgroundColor = 'var(--card-bg)';
+            }
+          }}
         >
           {formatCategory(category)}
         </button>

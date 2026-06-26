@@ -110,7 +110,8 @@ const Hero = () => {
   return (
     <section
       ref={containerRef}
-      className="relative min-h-screen flex items-center justify-center px-4 py-20 md:py-28 overflow-hidden bg-[#0a0a0f] text-white"
+      className="relative min-h-screen flex items-center justify-center px-4 py-20 md:py-28 overflow-hidden"
+      style={{ backgroundColor: '#0a0a0f', color: '#ffffff' }}
     >
       {/* Background: grid + glows */}
       <GridBackground />
@@ -159,10 +160,11 @@ const Hero = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
             <motion.a
-              href="/menu"
+              href="/menu/demo"  // Updated to use dynamic slug
               whileHover={{ scale: 1.05, boxShadow: '0 0 40px var(--primary-light)' }}
               whileTap={{ scale: 0.95 }}
               className="group inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary to-amber-500 text-white rounded-2xl font-semibold shadow-lg shadow-primary/30 transition-all duration-300"
+              style={{ '--primary-light': 'rgba(212, 168, 67, 0.3)' }}
             >
               See Live Demo
               <ArrowRight size={18} className="group-hover:translate-x-1.5 transition-transform" />

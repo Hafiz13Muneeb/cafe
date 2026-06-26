@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Menu SaaS – Documentation</title>
+  <style>
+    /* --- Reset & Base --- */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 1.5rem;
+      padding: 2.5rem 3rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+    }
+    @media (max-width: 640px) {
+      .container { padding: 1.5rem; }
+    }
+
+    /* --- Typography --- */
+    h1, h2, h3, h4 {
+      font-weight: 600;
+      line-height: 1.3;
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+    }
+    h1 { font-size: 2.4rem; margin-top: 0; color: #0f172a; }
+    h2 { font-size: 1.8rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.4rem; color: #1e293b; }
+    h3 { font-size: 1.3rem; color: #334155; }
+    h4 { font-size: 1.1rem; color: #475569; }
+    p { margin-bottom: 1rem; }
+    a { color: #d4a843; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* --- Badges --- */
+    .badge {
+      display: inline-block;
+      background: #e2e8f0;
+      color: #1e293b;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.7rem;
+      border-radius: 999px;
+      margin-right: 0.3rem;
+    }
+    .badge.green { background: #dcfce7; color: #166534; }
+    .badge.blue { background: #dbeafe; color: #1e40af; }
+    .badge.purple { background: #ede9fe; color: #5b21b6; }
+    .badge.gold { background: #fef3c7; color: #92400e; }
+
+    /* --- Code blocks --- */
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1.2rem;
+      border-radius: 0.8rem;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      margin: 1rem 0;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+    code {
+      background: #f1f5f9;
+      padding: 0.1rem 0.4rem;
+      border-radius: 0.3rem;
+      font-size: 0.9rem;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+    }
+
+    /* --- Tables --- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.95rem;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 0.6rem 1rem;
+      text-align: left;
+    }
+    th {
+      background: #f1f5f9;
+      font-weight: 600;
+    }
+
+    /* --- Lists --- */
+    ul, ol { margin: 0.8rem 0 1rem 1.8rem; }
+    li { margin-bottom: 0.3rem; }
+
+    /* --- HR --- */
+    hr {
+      border: 0;
+      border-top: 2px solid #e2e8f0;
+      margin: 2rem 0;
+    }
+
+    /* --- Header / Footer --- */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .header .version {
+      font-size: 0.9rem;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 0.3rem 1rem;
+      border-radius: 999px;
+    }
+    .footer {
+      margin-top: 3rem;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 1.5rem;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 600px) {
+      table { font-size: 0.8rem; }
+      th, td { padding: 0.4rem 0.6rem; }
+      .container { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>📱 QR Menu SaaS</h1>
+    <span class="version">v2.0 – Multi‑Tenant Lite</span>
+  </div>
+
+  <p>
+    A closed B2B SaaS platform for cafés and restaurants. Each café gets its own
+    <strong>isolated menu, theme, and QR code</strong> – all powered by a super‑admin
+    control panel. Customers order via WhatsApp with zero commission.
+  </p>
+
+  <hr>
+
+  <h2>✨ Key Features</h2>
+  <ul>
+    <li><strong>Multi‑Tenancy</strong> – every café owner has isolated data (menu items, settings, orders).</li>
+    <li><strong>Super‑Admin Dashboard</strong> – create, block, edit, and delete café owners.</li>
+    <li><strong>Dynamic Customer Routing</strong> – each café gets a unique slug (<code>/menu/:slug</code>).</li>
+    <li><strong>QR Code Generation</strong> – QR codes encode the café’s specific slug URL.</li>
+    <li><strong>Database‑Driven Theming</strong> – owners choose primary/secondary colors and dark/light mode; CSS variables update instantly.</li>
+    <li><strong>WhatsApp Ordering</strong> – customers select a table and the order is sent directly to the café’s WhatsApp.</li>
+    <li><strong>Zero Commission</strong> – no per‑transaction fees; pure WhatsApp routing.</li>
+  </ul>
+
+  <hr>
+
+  <h2>🏗️ Tech Stack</h2>
+  <table>
+    <tr><th>Layer</th><th>Technology</th></tr>
+    <tr><td>Frontend</td><td>React 18, Vite, Tailwind CSS, Framer Motion, Lucide Icons</td></tr>
+    <tr><td>Backend</td><td>Node.js, Express, MongoDB, Mongoose, JWT</td></tr>
+    <tr><td>Storage</td><td>Cloudinary (image hosting for menu items, logos, favicons)</td></tr>
+    <tr><td>Deployment</td><td>Any Node.js hosting (Vercel, Railway, AWS, etc.)</td></tr>
+  </table>
+
+  <hr>
+
+  <h2>🧩 Architecture Overview</h2>
+  <p>
+    The system is built around a single <strong>User</strong> model that supports two roles:
+    <code>superadmin</code> and <code>owner</code>. Owners have café‑specific fields such as
+    <code>cafeName</code>, <code>slug</code>, <code>whatsappNumber</code>, <code>tables</code>,
+    and a <code>theme</code> object. All menu items are linked to an <code>ownerId</code> to ensure
+    strict data isolation.
+  </p>
+  <p>
+    The frontend uses <strong>React Context</strong> for auth, cart, and theme state.
+    The <code>ThemeContext</code> applies CSS variables to the root element, so the customer
+    menu dynamically adapts to each café’s theme.
+  </p>
+
+  <hr>
+
+  <h2>🔐 Authentication & Roles</h2>
+  <ul>
+    <li><strong>Login</strong> – <code>/api/auth/login</code> (username + password).</li>
+    <li><strong>JWT</strong> – stored in <code>localStorage</code> as <code>adminToken</code>.</li>
+    <li><strong>Middleware</strong> – <code>protect</code> verifies token and attaches user; <code>restrictTo</code> limits access by role.</li>
+    <li><strong>Blocking</strong> – if <code>isBlocked: true</code>, the <code>protect</code> middleware returns 403 and the customer menu shows a “cafe unavailable” message.</li>
+  </ul>
+
+  <hr>
+
+  <h2>🗄️ Database Models (Mongoose)</h2>
+
+  <h3>User (covers both superadmin and owners)</h3>
+  <pre><code>{
+  username: String, unique
+  email: String, unique
+  password: String (hashed)
+  role: 'superadmin' | 'owner'
+  isBlocked: Boolean
+  // Owner-specific
+  cafeName: String
+  slug: String (unique, used for public URL)
+  whatsappNumber: String
+  logoUrl: String
+  faviconUrl: String
+  tables: [String]
+  theme: {
+    primaryColor: String (hex)
+    secondaryColor: String (hex)
+    mode: 'light' | 'dark'
+  }
+}</code></pre>
+
+  <h3>MenuItem</h3>
+  <pre><code>{
+  ownerId: ObjectId (ref: User)
+  title: String
+  description: String
+  price: Number
+  category: String
+  imageUrl: String (Cloudinary URL)
+  isAvailable: Boolean
+}</code></pre>
+
+  <hr>
+
+  <h2>📡 API Endpoints</h2>
+
+  <h4>Authentication</h4>
+  <table>
+    <tr><th>Method</th><th>Path</th><th>Access</th><th>Description</th></tr>
+    <tr><td>POST</td><td>/api/auth/login</td><td>Public</td><td>Login (returns token & user)</td></tr>
+    <tr><td>GET</td><td>/api/auth/me</td><td>Private</td><td>Get current user profile</td></tr>
+    <tr><td>POST</td><td>/api/auth/create-owner</td><td>Superadmin</td><td>Create a new café owner</td></tr>
+  </table>
+
+  <h4>Super‑Admin: User Management</h4>
+  <table>
+    <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+    <tr><td>GET</td><td>/api/users/owners</td><td>List all café owners</td></tr>
+    <tr><td>GET</td><td>/api/users/owners/:id</td><td>Get owner by ID</td></tr>
+    <tr><td>PUT</td><td>/api/users/owners/:id/toggle-block</td><td>Block/unblock owner</td></tr>
+    <tr><td>PUT</td><td>/api/users/owners/:id</td><td>Update owner details</td></tr>
+    <tr><td>DELETE</td><td>/api/users/owners/:id</td><td>Delete owner</td></tr>
+  </table>
+
+  <h4>Menu (Owner)</h4>
+  <table>
+    <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+    <tr><td>GET</td><td>/api/menu</td><td>Get owner’s menu (with filters)</td></tr>
+    <tr><td>GET</td><td>/api/menu/:slug</td><td>Public: get café menu by slug</td></tr>
+    <tr><td>POST</td><td>/api/menu</td><td>Create item (image upload)</td></tr>
+    <tr><td>PUT</td><td>/api/menu/:id</td><td>Update item (optional image)</td></tr>
+    <tr><td>DELETE</td><td>/api/menu/:id</td><td>Delete item</td></tr>
+  </table>
+
+  <h4>Settings (Owner)</h4>
+  <table>
+    <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+    <tr><td>GET</td><td>/api/settings</td><td>Get café settings</td></tr>
+    <tr><td>PUT</td><td>/api/settings</td><td>Update settings (theme, WhatsApp, tables, logo, favicon)</td></tr>
+  </table>
+
+  <hr>
+
+  <h2>🚀 Installation & Setup</h2>
+
+  <h3>Prerequisites</h3>
+  <ul>
+    <li>Node.js ≥ 18</li>
+    <li>MongoDB (local or Atlas)</li>
+    <li>Cloudinary account (for image uploads)</li>
+  </ul>
+
+  <h3>1. Clone & Install</h3>
+  <pre><code>git clone &lt;your-repo&gt;
+cd cafe-menu
+npm install --prefix backend
+npm install --prefix frontend</code></pre>
+
+  <h3>2. Environment Variables</h3>
+  <p>Create <code>backend/.env</code>:</p>
+  <pre><code>PORT=5000
+MONGO_URI=mongodb://localhost:27017/cafe-saas
+JWT_SECRET=your-super-secret-key
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+CLIENT_URL=http://localhost:5173</code></pre>
+
+  <h3>3. Seed Superadmin</h3>
+  <p>On first start, the server auto‑creates a superadmin with:</p>
+  <pre><code>Username: superadmin
+Password: SuperAdmin@2026!</code></pre>
+  <p><strong>⚠️ Change this password immediately after first login.</strong></p>
+
+  <h3>4. Run Development</h3>
+  <pre><code># Backend (port 5000)
+cd backend
+npm run dev
+
+# Frontend (port 5173)
+cd frontend
+npm run dev</code></pre>
+
+  <p>Access the app at <a href="http://localhost:5173">http://localhost:5173</a>.</p>
+
+  <hr>
+
+  <h2>🧭 Frontend Routing</h2>
+  <table>
+    <tr><th>Path</th><th>Component</th><th>Access</th></tr>
+    <tr><td>/</td><td>Home (marketing landing)</td><td>Public</td></tr>
+    <tr><td>/menu/:slug</td><td>CustomerMenu</td><td>Public</td></tr>
+    <tr><td>/admin</td><td>AdminLogin</td><td>Public</td></tr>
+    <tr><td>/admin/dashboard</td><td>AdminDashboard</td><td>Owner only</td></tr>
+    <tr><td>/admin/super</td><td>SuperAdminDashboard</td><td>Superadmin only</td></tr>
+  </table>
+
+  <hr>
+
+  <h2>🎨 Dynamic Theming</h2>
+  <p>
+    The customer menu fetches the café’s theme from the backend and injects CSS variables:
+  </p>
+  <pre><code>--primary-color: #d4a843;
+--secondary-color: #b8860b;
+--bg-color: #f8fafc;
+--text-color: #0f172a;
+--card-bg: #ffffff;
+--border-color: #e2e8f0;</code></pre>
+  <p>
+    All components use these variables, so changing the database values instantly updates
+    the entire customer experience.
+  </p>
+
+  <hr>
+
+  <h2>🔧 Customization & Extending</h2>
+  <ul>
+    <li><strong>Add new theme properties</strong> – extend the <code>theme</code> object in <code>User</code> schema and update <code>ThemeContext</code>.</li>
+    <li><strong>Add additional roles</strong> – modify the <code>role</code> enum and update the <code>restrictTo</code> middleware.</li>
+    <li><strong>Integrate payment gateway</strong> – extend the cart/order flow to support online payments.</li>
+    <li><strong>Multi‑language support</strong> – use i18n libraries and store language preference in settings.</li>
+  </ul>
+
+  <hr>
+
+  <h2>📦 Deployment</h2>
+  <p>
+    Build the frontend and serve it via the backend:
+  </p>
+  <pre><code>cd frontend
+npm run build
+# The backend server.js will serve the built files in production</code></pre>
+  <p>Set <code>NODE_ENV=production</code> and deploy the backend to your hosting provider.</p>
+
+  <hr>
+
+  <h2>📝 License</h2>
+  <p>This project is proprietary and intended for internal use only. All rights reserved.</p>
+
+  <div class="footer">
+    &copy; 2026 – Built with ❤️ for cafés everywhere.
+  </div>
+
+</div>
+</body>
+</html>

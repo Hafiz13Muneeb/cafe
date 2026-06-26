@@ -1,4 +1,4 @@
-// src/pages/Home.jsx - Premium light-theme landing page
+// src/pages/Home.jsx - Premium light-theme landing page (SaaS marketing)
 import React from 'react';
 import { useTheme } from '../context/ThemeContext';
 import Hero from '../components/Hero';
@@ -14,36 +14,29 @@ const HomeSkeleton = () => (
     <section className="relative min-h-screen flex items-center justify-center px-4 py-20 md:py-28 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,168,67,0.15),transparent_70%)] opacity-30" />
       <div className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-        {/* Left content */}
         <div className="space-y-6 text-center lg:text-left">
-          {/* Badge skeleton */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-light border border-primary/30 rounded-full">
             <div className="w-4 h-4 bg-slate-200 rounded-full animate-pulse" />
             <div className="w-24 h-4 bg-slate-200 rounded animate-pulse" />
           </div>
-          {/* Title skeleton */}
           <div className="space-y-2">
             <div className="h-12 bg-slate-200 rounded w-3/4 mx-auto lg:mx-0 animate-pulse" />
             <div className="h-12 bg-slate-200 rounded w-2/3 mx-auto lg:mx-0 animate-pulse" />
           </div>
-          {/* Description skeleton */}
           <div className="space-y-2 max-w-lg mx-auto lg:mx-0">
             <div className="h-4 bg-slate-200 rounded w-full animate-pulse" />
             <div className="h-4 bg-slate-200 rounded w-5/6 animate-pulse" />
           </div>
-          {/* Buttons skeleton */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
             <div className="h-12 w-40 bg-slate-200 rounded-xl animate-pulse" />
             <div className="h-12 w-32 bg-slate-200 rounded-xl animate-pulse" />
           </div>
-          {/* Trust badge skeleton */}
           <div className="flex items-center gap-6 justify-center lg:justify-start pt-4">
             <div className="h-4 w-24 bg-slate-200 rounded animate-pulse" />
             <div className="h-4 w-4 bg-slate-200 rounded-full animate-pulse" />
             <div className="h-4 w-20 bg-slate-200 rounded animate-pulse" />
           </div>
         </div>
-        {/* Phone mockup skeleton */}
         <div className="flex justify-center items-center">
           <div className="relative w-64 h-[420px] md:w-80 md:h-[500px] mx-auto">
             <div className="absolute inset-0 rounded-[3rem] bg-gradient-to-br from-slate-200 to-slate-300 p-1 shadow-2xl shadow-primary/20">
@@ -82,7 +75,7 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
       <CursorGlow />
       <Hero />
       <BentoShowcase />

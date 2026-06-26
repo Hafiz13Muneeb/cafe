@@ -1,4 +1,3 @@
-// server.js - Main Express application with auto-seed
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -6,7 +5,8 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const { errorHandler } = require('./utils/errorHandler');
-const Admin = require('./models/Admin');
+const User = require('./models/User');
+const mongoose = require('mongoose');
 
 // Load environment variables
 dotenv.config();
@@ -15,33 +15,41 @@ dotenv.config();
 connectDB();
 
 // ------------------------------------------------------------
-// AUTO-SEED ADMIN (if none exists)
+// AUTO-SEED SUPERADMIN (if none exists)
 // ------------------------------------------------------------
-const seedAdminIfNeeded = async () => {
+const seedSuperAdminIfNeeded = async () => {
   try {
-    const adminCount = await Admin.countDocuments();
-    if (adminCount === 0) {
-      console.log('🔄 No admin found. Seeding default admin...');
-      await Admin.create({
-        username: 'admin',
-        password: 'admin123', // will be hashed by pre-save hook
-        whatsappNumber: '923001234567',
-        cafeName: 'My Cafe',
+    const superAdminExists = await User.findOne({ role: 'superadmin' });
+    if (!superAdminExists) {
+      console.log('🔄 No superadmin found. Seeding default superadmin...');
+      
+      const generatedPassword = 'SuperAdmin@2026!'; // You can change this or generate a random one
+      // For production, it's better to generate a random password and log it
+      // const generatedPassword = Math.random().toString(36).slice(-8) + 'Aa1!';
+      
+      await User.create({
+        username: 'superadmin',
+        email: 'superadmin@cafemenu.com',
+        password: generatedPassword,
+        role: 'superadmin',
+        isBlocked: false,
+        // No cafe-specific fields needed
       });
-      console.log('✅ Default admin created:');
-      console.log('   Username: admin');
-      console.log('   Password: admin123');
-      console.log('   ⚠️ Please change these after first login.');
+      
+      console.log('✅ Superadmin created successfully:');
+      console.log(`   Username: superadmin`);
+      console.log(`   Password: ${generatedPassword}`);
+      console.log('   ⚠️ Please change these credentials after first login.');
     } else {
-      console.log('✅ Admin already exists. Skipping seed.');
+      console.log('✅ Superadmin already exists. Skipping seed.');
     }
   } catch (error) {
-    console.error('❌ Error seeding admin:', error.message);
+    console.error('❌ Error seeding superadmin:', error.message);
   }
 };
 
 // Call the seed function (waits for connection to be ready)
-seedAdminIfNeeded();
+seedSuperAdminIfNeeded();
 // ------------------------------------------------------------
 
 const app = express();
@@ -49,29 +57,27 @@ const app = express();
 // =============================================
 // Logging
 // =============================================
-app.use(morgan('dev')); // 'dev' gives concise colored output
+app.use(morgan('dev'));
 
 // =============================================
 // Rate Limiting (prevent brute-force)
 // =============================================
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.RATE_LIMIT_MAX || 100, // limit each IP to 100 requests per windowMs
+  max: process.env.RATE_LIMIT_MAX || 100,
   message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
 });
-// Apply rate limiting to all API routes
 app.use('/api', limiter);
 
 // =============================================
 // Caching Middleware for Public GET endpoints
 // =============================================
-// Cache GET /api/menu responses for 5 minutes (300 seconds) - helps with performance
 const cacheControl = (req, res, next) => {
-  // Only apply to GET /api/menu without authentication (public)
-  if (req.method === 'GET' && req.path === '/api/menu' && !req.query.all) {
-    res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutes
+  // Cache public menu responses for 5 minutes
+  if (req.method === 'GET' && req.path.startsWith('/api/menu/') && !req.path.includes('?all')) {
+    res.setHeader('Cache-Control', 'public, max-age=300');
   }
   next();
 };
@@ -95,10 +101,11 @@ app.use(
 // Routes
 // =============================================
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/menu', require('./routes/menuRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 
-// Health check endpoint (also responds with DB status if needed)
+// Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
     const dbState = mongoose.connection.readyState;

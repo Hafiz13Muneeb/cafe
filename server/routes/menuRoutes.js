@@ -1,8 +1,8 @@
-// routes/menuRoutes.js - Menu item routes
 const express = require('express');
 const router = express.Router();
 const {
   getMenuItems,
+  getPublicMenu,
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
@@ -10,12 +10,22 @@ const {
 const { protect } = require('../middleware/auth');
 const { uploadSingle } = require('../middleware/upload');
 
-// Public route - Get all menu items (with optional category filter)
+// Public route – get menu by cafe slug
+router.get('/:slug', getPublicMenu);
+
+// All routes below are protected (owner only)
+router.use(protect);
+
+// Get owner's menu items (with filters)
 router.get('/', getMenuItems);
 
-// Protected routes - Admin only
-router.post('/', protect, uploadSingle, createMenuItem);
-router.put('/:id', protect, uploadSingle, updateMenuItem);
-router.delete('/:id', protect, deleteMenuItem);
+// Create a new menu item (with image upload)
+router.post('/', uploadSingle, createMenuItem);
+
+// Update a menu item (with optional image upload)
+router.put('/:id', uploadSingle, updateMenuItem);
+
+// Delete a menu item
+router.delete('/:id', deleteMenuItem);
 
 module.exports = router;

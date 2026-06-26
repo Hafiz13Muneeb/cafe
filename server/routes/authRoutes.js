@@ -1,16 +1,15 @@
-// routes/authRoutes.js - Authentication routes
 const express = require('express');
 const router = express.Router();
-const { loginAdmin, getAdminProfile, updateCredentials } = require('../controllers/authController');
-const { protect } = require('../middleware/auth');
+const { loginUser, getProfile, createOwner } = require('../controllers/authController');
+const { protect, restrictTo } = require('../middleware/auth');
 
-// Public route - Login
-router.post('/login', loginAdmin);
+// Public routes
+router.post('/login', loginUser);
 
-// Protected route - Get admin profile
-router.get('/me', protect, getAdminProfile);
+// Protected routes (any logged-in user)
+router.get('/me', protect, getProfile);
 
-// Protected route - Update username/password
-router.put('/update-credentials', protect, updateCredentials);
+// Super-admin only route – create a new cafe owner
+router.post('/create-owner', protect, restrictTo('superadmin'), createOwner);
 
 module.exports = router;

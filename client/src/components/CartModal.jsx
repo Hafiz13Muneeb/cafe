@@ -1,4 +1,4 @@
-// src/components/CartModal.jsx - Light theme cart modal
+// src/components/CartModal.jsx - Cart modal with dynamic theming
 import React, { useState } from 'react';
 import { X, Minus, Plus, Trash2, Send } from 'lucide-react';
 import { useCart } from '../context/CartContext';
@@ -9,7 +9,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [] }) =
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const tableOptions = tables.length > 0 ? tables : ['1','2','3','4','5'];
+  const tableOptions = tables.length > 0 ? tables : ['1', '2', '3', '4', '5'];
 
   const handlePlaceOrder = () => {
     if (!selectedTable) {
@@ -45,49 +45,79 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [] }) =
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center bg-black/30 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white w-full max-w-lg rounded-t-2xl md:rounded-2xl max-h-[90vh] flex flex-col animate-slide-up">
-        <div className="flex items-center justify-between p-4 border-b border-slate-100">
-          <h2 className="text-lg font-semibold text-slate-900">Your Order ({getTotalItems()} items)</h2>
-          <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-full transition">
-            <X size={22} className="text-slate-500" />
+      <div 
+        className="w-full max-w-lg rounded-t-2xl md:rounded-2xl max-h-[90vh] flex flex-col animate-slide-up"
+        style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)' }}
+      >
+        <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--text-color)' }}>
+            Your Order ({getTotalItems()} items)
+          </h2>
+          <button onClick={onClose} className="p-1 rounded-full transition hover:opacity-70" style={{ backgroundColor: 'var(--bg-color)' }}>
+            <X size={22} style={{ color: 'var(--text-color)' }} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {cart.map(item => (
-            <div key={item._id} className="flex items-center gap-3 bg-slate-50 rounded-lg p-3">
+            <div 
+              key={item._id} 
+              className="flex items-center gap-3 rounded-lg p-3"
+              style={{ backgroundColor: 'var(--bg-color)' }}
+            >
               <img src={item.imageUrl} alt={item.title} className="w-14 h-14 rounded-lg object-cover" />
               <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-slate-800 text-sm truncate">{item.title}</h4>
-                <p className="text-sm font-semibold text-primary">{formatPrice(item.price)}</p>
+                <h4 className="font-medium text-sm truncate" style={{ color: 'var(--text-color)' }}>
+                  {item.title}
+                </h4>
+                <p className="text-sm font-semibold" style={{ color: 'var(--primary-color)' }}>
+                  {formatPrice(item.price)}
+                </p>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => removeFromCart(item._id)} className="p-1 bg-slate-200 hover:bg-slate-300 rounded-full transition">
-                  {item.quantity === 1 ? <Trash2 size={14} className="text-red-500" /> : <Minus size={14} className="text-slate-600" />}
+                <button 
+                  onClick={() => removeFromCart(item._id)} 
+                  className="p-1 rounded-full transition hover:opacity-70"
+                  style={{ backgroundColor: 'var(--border-color)' }}
+                >
+                  {item.quantity === 1 ? <Trash2 size={14} className="text-red-500" /> : <Minus size={14} style={{ color: 'var(--text-color)' }} />}
                 </button>
-                <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
+                <span className="w-6 text-center text-sm font-medium" style={{ color: 'var(--text-color)' }}>
+                  {item.quantity}
+                </span>
                 <button 
                   onClick={() => addToCart(item)} 
-                  className="p-1 bg-slate-200 hover:bg-slate-300 rounded-full transition"
-                  disabled={!item.isAvailable} // Disable if unavailable (defensive)
+                  className="p-1 rounded-full transition hover:opacity-70"
+                  style={{ backgroundColor: 'var(--border-color)' }}
+                  disabled={!item.isAvailable}
                 >
-                  <Plus size={14} className={item.isAvailable ? 'text-slate-600' : 'text-slate-400'} />
+                  <Plus size={14} style={{ color: item.isAvailable ? 'var(--text-color)' : 'var(--text-secondary)' }} />
                 </button>
               </div>
             </div>
           ))}
           {cart.length > 0 && (
-            <button onClick={clearCart} className="text-sm text-red-500 hover:text-red-600 font-medium">Clear Cart</button>
+            <button onClick={clearCart} className="text-sm font-medium hover:underline" style={{ color: '#ef4444' }}>
+              Clear Cart
+            </button>
           )}
         </div>
 
-        <div className="border-t border-slate-100 p-4 space-y-3">
+        <div className="border-t p-4 space-y-3" style={{ borderColor: 'var(--border-color)' }}>
           <div>
-            <label className="text-sm font-medium text-slate-700">Select Table <span className="text-red-500">*</span></label>
+            <label className="text-sm font-medium" style={{ color: 'var(--text-color)' }}>
+              Select Table <span className="text-red-500">*</span>
+            </label>
             <select
               value={selectedTable}
               onChange={(e) => { setSelectedTable(e.target.value); setError(''); }}
-              className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="mt-1 w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--bg-color)',
+                color: 'var(--text-color)',
+                borderColor: 'var(--border-color)',
+                focusRing: 'var(--primary-color)',
+              }}
             >
               <option value="">-- Choose your table --</option>
               {tableOptions.map(table => <option key={table} value={table}>{table}</option>)}
@@ -95,17 +125,22 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [] }) =
             {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-            <span className="text-slate-600">Total:</span>
-            <span className="text-lg font-bold text-primary">{formatPrice(getTotalPrice())}</span>
+          <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
+            <span style={{ color: 'var(--text-secondary, #64748b)' }}>Total:</span>
+            <span className="text-lg font-bold" style={{ color: 'var(--primary-color)' }}>
+              {formatPrice(getTotalPrice())}
+            </span>
           </div>
 
           <button
             onClick={handlePlaceOrder}
             disabled={isSubmitting}
-            className={`w-full py-3 rounded-lg font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200 ${
-              isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-primary hover:opacity-90 active:scale-95 shadow-md shadow-primary/20'
-            }`}
+            className="w-full py-3 rounded-lg font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200"
+            style={{
+              backgroundColor: isSubmitting ? 'var(--border-color)' : 'var(--primary-color)',
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              boxShadow: isSubmitting ? 'none' : '0 4px 15px rgba(0,0,0,0.15)',
+            }}
           >
             {isSubmitting ? (
               <>

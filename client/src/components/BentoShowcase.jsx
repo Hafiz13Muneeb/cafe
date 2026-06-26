@@ -1,4 +1,4 @@
-// src/components/BentoShowcase.jsx - Dark, 3D-tilt, asymmetrical feature grid
+// src/components/BentoShowcase.jsx - Dark, 3D-tilt, asymmetrical feature grid with dynamic theming
 import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { Smartphone, Share2, Zap, RefreshCw, QrCode, DollarSign, Sparkles } from 'lucide-react';
@@ -8,12 +8,12 @@ const BentoCard = ({ icon: Icon, title, description, className, delay = 0, glowC
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
 
-  // Map glow color to gradient
+  // Map glow color to CSS variable (use primary by default)
   const glowMap = {
-    primary: 'from-primary/30 via-primary/10 to-transparent',
-    blue: 'from-blue-500/30 via-blue-500/10 to-transparent',
-    purple: 'from-purple-500/30 via-purple-500/10 to-transparent',
-    emerald: 'from-emerald-500/30 via-emerald-500/10 to-transparent',
+    primary: 'var(--primary-color)',
+    blue: '#3b82f6',
+    purple: '#8b5cf6',
+    emerald: '#10b981',
   };
 
   return (
@@ -28,19 +28,33 @@ const BentoCard = ({ icon: Icon, title, description, className, delay = 0, glowC
         scale: 1.02,
         transition: { duration: 0.4, ease: 'easeOut' },
       }}
-      className={`relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-6 shadow-lg shadow-black/20 hover:shadow-primary/20 transition-shadow duration-500 group ${className}`}
+      className={`relative overflow-hidden rounded-2xl backdrop-blur-md border p-6 shadow-lg shadow-black/20 transition-shadow duration-500 group ${className}`}
       style={{
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderColor: 'rgba(255,255,255,0.1)',
+        boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
         perspective: '800px',
         transformStyle: 'preserve-3d',
       }}
     >
       {/* Glow on hover */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${glowMap[glowColor] || glowMap.primary} opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-2xl`} />
+      <div 
+        className={`absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-2xl`}
+        style={{ '--primary-opacity': '0.3' }}
+      />
 
       {/* Icon with neon glow ring */}
-      <div className="relative w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-5 group-hover:scale-110 transition-all duration-500 shadow-[0_0_30px_rgba(212,168,67,0)] group-hover:shadow-[0_0_40px_rgba(212,168,67,0.3)]">
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
-        <Icon size={26} className="text-primary relative z-10" />
+      <div 
+        className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-all duration-500"
+        style={{ 
+          backgroundColor: 'rgba(255,255,255,0.05)',
+          boxShadow: '0 0 30px rgba(212,168,67,0)',
+        }}
+      >
+        <div 
+          className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500"
+        />
+        <Icon size={26} className="relative z-10" style={{ color: 'var(--primary-color)' }} />
       </div>
 
       <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-primary transition-colors duration-300">
@@ -51,10 +65,15 @@ const BentoCard = ({ icon: Icon, title, description, className, delay = 0, glowC
       </p>
 
       {/* Corner glow */}
-      <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-primary/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+      <div 
+        className="absolute -bottom-20 -right-20 w-48 h-48 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+        style={{ backgroundColor: 'rgba(var(--primary-color), 0.1)' }}
+      />
       
       {/* Subtle border glow on hover */}
-      <div className="absolute inset-0 rounded-2xl border border-transparent group-hover:border-primary/30 transition-all duration-700 pointer-events-none" />
+      <div 
+        className="absolute inset-0 rounded-2xl border border-transparent group-hover:border-primary/30 transition-all duration-700 pointer-events-none"
+      />
     </motion.div>
   );
 };
@@ -104,25 +123,28 @@ const BentoShowcase = () => {
   ];
 
   return (
-    <section className="relative py-20 md:py-32 px-4 overflow-hidden bg-[#0a0a0f]">
+    <section className="relative py-20 md:py-32 px-4 overflow-hidden" style={{ backgroundColor: '#0a0a0f' }}>
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{ x: [0, 80, 0], y: [0, -60, 0] }}
           transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute w-96 h-96 rounded-full bg-primary/10 blur-3xl top-10 right-20"
+          className="absolute w-96 h-96 rounded-full blur-3xl top-10 right-20"
+          style={{ backgroundColor: 'rgba(var(--primary-color), 0.1)' }}
         />
         <motion.div
           animate={{ x: [0, -70, 0], y: [0, 50, 0] }}
           transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl bottom-10 left-20"
+          className="absolute w-80 h-80 rounded-full blur-3xl bottom-10 left-20"
+          style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
         />
         <motion.div
           animate={{ x: [0, 50, 0], y: [0, 30, 0] }}
           transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute w-64 h-64 rounded-full bg-amber-500/5 blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          className="absolute w-64 h-64 rounded-full blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          style={{ backgroundColor: 'rgba(245, 158, 11, 0.05)' }}
         />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,168,67,0.08),transparent_70%)]" />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(212,168,67,0.08), transparent 70%)' }} />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
@@ -134,7 +156,10 @@ const BentoShowcase = () => {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/20 border border-primary/30 rounded-full text-primary text-sm font-medium mb-4 backdrop-blur-sm shadow-[0_0_30px_rgba(212,168,67,0.15)]">
+          <div 
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-primary text-sm font-medium mb-4 backdrop-blur-sm shadow-[0_0_30px_rgba(212,168,67,0.15)]"
+            style={{ backgroundColor: 'rgba(var(--primary-color), 0.2)', border: '1px solid rgba(var(--primary-color), 0.3)' }}
+          >
             <Sparkles size={14} />
             <span>Features</span>
           </div>

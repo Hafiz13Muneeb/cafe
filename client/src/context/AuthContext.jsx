@@ -1,11 +1,9 @@
-// src/context/AuthContext.jsx - Admin authentication state
+// src/context/AuthContext.jsx - Authentication state for multi-tenant (superadmin / owner)
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from '../api/axios';
+import api from '../api/axios';
 
-// Create context
 const AuthContext = createContext();
 
-// Custom hook to use auth
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -14,43 +12,54 @@ export const useAuth = () => {
   return context;
 };
 
-// Auth provider component
 export const AuthProvider = ({ children }) => {
-  const [admin, setAdmin] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Load token and admin from localStorage on mount
+  // Load user from localStorage on mount
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
-    const storedAdmin = localStorage.getItem('adminData');
-    if (token && storedAdmin) {
-      setAdmin(JSON.parse(storedAdmin));
-      // Set token in axios defaults
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    const storedUser = localStorage.getItem('adminData');
+    if (token && storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        // Set token in axios headers
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      } catch (err) {
+        // Invalid stored data, clear it
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminData');
+      }
     }
     setLoading(false);
   }, []);
 
-  // Login function
+  // Login function – supports both superadmin and owner
   const login = async (username, password) => {
     try {
       setError('');
-      const response = await axios.post('/auth/login', { username, password });
+      const response = await api.post('/auth/login', { username, password });
       
       if (response.data.success) {
-        const adminData = response.data.data;
-        const token = adminData.token;
+        const { user: userData, token } = response.data.data;
         
-        // Store token and admin data in localStorage
+        // Check if user is blocked (server already returns 403, but double-check)
+        if (userData.isBlocked) {
+          setError('Your account has been blocked. Please contact support.');
+          return { success: false, error: 'Account blocked' };
+        }
+
+        // Store token and user data
         localStorage.setItem('adminToken', token);
-        localStorage.setItem('adminData', JSON.stringify(adminData));
+        localStorage.setItem('adminData', JSON.stringify(userData));
         
         // Set token in axios defaults
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
-        setAdmin(adminData);
-        return { success: true };
+        setUser(userData);
+        return { success: true, user: userData };
       }
     } catch (err) {
       const message = err.response?.data?.message || 'Login failed. Please try again.';
@@ -61,32 +70,38 @@ export const AuthProvider = ({ children }) => {
 
   // Logout function
   const logout = () => {
-    // Clear localStorage
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminData');
-    // Remove token from axios defaults
-    delete axios.defaults.headers.common['Authorization'];
-    setAdmin(null);
+    delete api.defaults.headers.common['Authorization'];
+    setUser(null);
   };
 
-  // Update admin settings locally after updating
-  const updateAdminData = (updatedData) => {
-    if (admin) {
-      const newAdmin = { ...admin, ...updatedData };
-      setAdmin(newAdmin);
-      localStorage.setItem('adminData', JSON.stringify(newAdmin));
+  // Update user data locally (e.g., after settings update)
+  const updateUserData = (updatedData) => {
+    if (user) {
+      const newUser = { ...user, ...updatedData };
+      setUser(newUser);
+      localStorage.setItem('adminData', JSON.stringify(newUser));
     }
   };
 
+  // Check if user is a superadmin
+  const isSuperAdmin = user?.role === 'superadmin';
+
   const value = {
-    admin,
+    user,
     loading,
     error,
     login,
     logout,
-    updateAdminData,
-    isAuthenticated: !!admin,
+    updateUserData,
+    isAuthenticated: !!user,
+    isSuperAdmin,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

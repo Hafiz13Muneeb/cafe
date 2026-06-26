@@ -1,5 +1,5 @@
-// src/pages/AdminLogin.jsx - Admin login page
-import React, { useState } from 'react';
+// src/pages/AdminLogin.jsx - Admin login page (works for both superadmin and owners)
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock, User, AlertCircle } from 'lucide-react';
@@ -8,33 +8,35 @@ const AdminLogin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, error, isAuthenticated } = useAuth();
+  const { login, error, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
-  // If already authenticated, redirect to dashboard
-  React.useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/admin/dashboard');
+  // If already authenticated, redirect based on role
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'superadmin') {
+        navigate('/admin/super');
+      } else {
+        navigate('/admin/dashboard');
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) {
-      return; // Error will be shown by the login function
+      return;
     }
     setLoading(true);
     const result = await login(username, password);
     setLoading(false);
-    if (result.success) {
-      navigate('/admin/dashboard');
-    }
+    // If login fails, error is already set in context
+    // If successful, the useEffect will redirect
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-gray-100 px-4">
       <div className="w-full max-w-md">
-        {/* Logo / Brand */}
         <div className="text-center mb-8">
           <div className="inline-block p-4 bg-green-500 rounded-full shadow-lg shadow-green-200 mb-4">
             <Lock size={32} className="text-white" />
@@ -43,10 +45,8 @@ const AdminLogin = () => {
           <p className="text-gray-500 text-sm mt-1">Sign in to manage your menu</p>
         </div>
 
-        {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-soft p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Error message */}
             {error && (
               <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
                 <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
@@ -54,7 +54,6 @@ const AdminLogin = () => {
               </div>
             )}
 
-            {/* Username field */}
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
                 Username
@@ -75,7 +74,6 @@ const AdminLogin = () => {
               </div>
             </div>
 
-            {/* Password field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
@@ -96,20 +94,12 @@ const AdminLogin = () => {
               </div>
             </div>
 
-            {/* Submit button */}
             <button
               type="submit"
               disabled={loading}
-              className={`
-                w-full py-2.5 rounded-lg font-semibold text-white
-                flex items-center justify-center gap-2
-                transition-all duration-200
-                ${
-                  loading
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-500 hover:bg-green-600 active:scale-95 shadow-md shadow-green-200'
-                }
-              `}
+              className={`w-full py-2.5 rounded-lg font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200 ${
+                loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 active:scale-95 shadow-md shadow-green-200'
+              }`}
             >
               {loading ? (
                 <>
@@ -122,7 +112,6 @@ const AdminLogin = () => {
             </button>
           </form>
 
-          {/* Footer note */}
           <p className="text-xs text-gray-400 text-center mt-4">
             Protected area • Authorized access only
           </p>

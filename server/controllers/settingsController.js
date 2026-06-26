@@ -1,8 +1,7 @@
-// controllers/settingsController.js - Get and update cafe settings (with theme)
-const Admin = require('../models/Admin');
+const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
 
-// Helper: extract Cloudinary public_id from URL (copied from menuController for consistency)
+// Helper: extract Cloudinary public_id from URL
 const extractPublicId = (imageUrl) => {
   if (!imageUrl) return null;
   const uploadIndex = imageUrl.indexOf('/upload/');
@@ -16,32 +15,28 @@ const extractPublicId = (imageUrl) => {
   return publicIdWithExt.replace(/\.[^/.]+$/, '');
 };
 
-// Helper: validate hex color
-const isValidHexColor = (color) => {
-  return /^#[0-9A-F]{6}$/i.test(color);
-};
-
-// @desc    Get cafe settings (public)
+// @desc    Get the logged-in owner's settings
 // @route   GET /api/settings
-// @access  Public
+// @access  Private (Owner)
 const getSettings = async (req, res, next) => {
   try {
-    const admin = await Admin.findOne().select('whatsappNumber cafeName logoUrl faviconUrl tables theme');
-
-    if (!admin) {
+    const user = await User.findById(req.user.id).select(
+      'cafeName whatsappNumber logoUrl faviconUrl tables theme'
+    );
+    if (!user) {
       res.status(404);
-      throw new Error('Settings not found');
+      throw new Error('User not found');
     }
 
     res.status(200).json({
       success: true,
       data: {
-        whatsappNumber: admin.whatsappNumber,
-        cafeName: admin.cafeName,
-        logoUrl: admin.logoUrl || '',
-        faviconUrl: admin.faviconUrl || '',
-        tables: admin.tables || [],
-        theme: admin.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
+        cafeName: user.cafeName || '',
+        whatsappNumber: user.whatsappNumber || '',
+        logoUrl: user.logoUrl || '',
+        faviconUrl: user.faviconUrl || '',
+        tables: user.tables || [],
+        theme: user.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
       },
     });
   } catch (error) {
@@ -49,29 +44,20 @@ const getSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Update cafe settings (protected) – accepts JSON + optional files
+// @desc    Update the logged-in owner's settings (text & theme)
 // @route   PUT /api/settings
-// @access  Private
+// @access  Private (Owner)
 const updateSettings = async (req, res, next) => {
   try {
-    const { whatsappNumber, cafeName, tables, primaryColor, secondaryColor, mode } = req.body;
+    const { cafeName, whatsappNumber, tables, primaryColor, secondaryColor, mode } = req.body;
 
-    const admin = await Admin.findById(req.admin._id);
-    if (!admin) {
+    const user = await User.findById(req.user.id);
+    if (!user) {
       res.status(404);
-      throw new Error('Admin not found');
+      throw new Error('User not found');
     }
 
-    // --- Update text fields with validation ---
-    if (whatsappNumber !== undefined) {
-      const trimmed = whatsappNumber.trim();
-      if (!/^[0-9]{10,15}$/.test(trimmed)) {
-        res.status(400);
-        throw new Error('WhatsApp number must be 10-15 digits, no special chars');
-      }
-      admin.whatsappNumber = trimmed;
-    }
-
+    // --- Update cafeName (also regenerates slug) ---
     if (cafeName !== undefined) {
       const trimmed = cafeName.trim();
       if (!trimmed || trimmed.length === 0) {
@@ -82,88 +68,126 @@ const updateSettings = async (req, res, next) => {
         res.status(400);
         throw new Error('Cafe name must be 100 characters or less');
       }
-      admin.cafeName = trimmed;
+      user.cafeName = trimmed;
+
+      // Regenerate slug
+      const baseSlug = trimmed
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      let newSlug = baseSlug;
+      const existing = await User.findOne({ slug: newSlug, _id: { $ne: user._id } });
+      if (existing) {
+        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        newSlug = `${baseSlug}-${randomSuffix}`;
+        while (await User.findOne({ slug: newSlug, _id: { $ne: user._id } })) {
+          newSlug = `${baseSlug}-${Math.random().toString(36).substring(2, 8)}`;
+        }
+      }
+      user.slug = newSlug;
     }
 
-    // --- Tables: parse from comma-separated string to array ---
+    // --- Update WhatsApp number ---
+    if (whatsappNumber !== undefined) {
+      const trimmed = whatsappNumber.trim();
+      if (!/^[0-9]{10,15}$/.test(trimmed)) {
+        res.status(400);
+        throw new Error('WhatsApp number must be 10-15 digits, no special chars');
+      }
+      user.whatsappNumber = trimmed;
+    }
+
+    // --- Update tables ---
     if (tables !== undefined) {
-      const tableArray = tables.split(',').map(t => t.trim()).filter(t => t.length > 0);
+      let tableArray;
+      if (Array.isArray(tables)) {
+        tableArray = tables;
+      } else if (typeof tables === 'string') {
+        // If sent as a comma-separated string (e.g., from form data)
+        tableArray = tables.split(',').map(t => t.trim()).filter(t => t.length > 0);
+      } else {
+        res.status(400);
+        throw new Error('Tables must be an array or comma-separated string');
+      }
       if (tableArray.length === 0) {
         res.status(400);
         throw new Error('Please provide at least one table number/name');
       }
-      admin.tables = tableArray;
+      user.tables = tableArray;
     }
 
-    // --- Theme validation ---
+    // --- Update theme ---
     if (primaryColor !== undefined) {
-      if (!isValidHexColor(primaryColor)) {
+      if (!/^#[0-9A-F]{6}$/i.test(primaryColor)) {
         res.status(400);
-        throw new Error('Primary color must be a valid hex color (e.g., #d4a843)');
+        throw new Error('Primary color must be a valid hex color');
       }
-      admin.theme.primaryColor = primaryColor;
+      user.theme.primaryColor = primaryColor;
     }
     if (secondaryColor !== undefined) {
-      if (!isValidHexColor(secondaryColor)) {
+      if (!/^#[0-9A-F]{6}$/i.test(secondaryColor)) {
         res.status(400);
-        throw new Error('Secondary color must be a valid hex color (e.g., #b8860b)');
+        throw new Error('Secondary color must be a valid hex color');
       }
-      admin.theme.secondaryColor = secondaryColor;
+      user.theme.secondaryColor = secondaryColor;
     }
     if (mode !== undefined) {
       if (!['light', 'dark'].includes(mode)) {
         res.status(400);
         throw new Error('Mode must be either "light" or "dark"');
       }
-      admin.theme.mode = mode;
+      user.theme.mode = mode;
     }
 
-    // --- Handle logo upload ---
-    if (req.files && req.files.logo) {
-      const logoFile = req.files.logo[0];
-      if (admin.logoUrl) {
-        const publicId = extractPublicId(admin.logoUrl);
-        if (publicId) {
-          try {
-            await cloudinary.uploader.destroy(publicId);
-          } catch (cloudinaryError) {
-            console.error('Failed to delete old logo from Cloudinary:', cloudinaryError);
-            // Continue with upload
+    // --- Handle logo upload (if files are uploaded) ---
+    // Note: We're using req.files because multer fields are used
+    if (req.files) {
+      if (req.files.logo && req.files.logo[0]) {
+        const logoFile = req.files.logo[0];
+        // Delete old logo
+        if (user.logoUrl) {
+          const publicId = extractPublicId(user.logoUrl);
+          if (publicId) {
+            try {
+              await cloudinary.uploader.destroy(publicId);
+            } catch (cloudinaryError) {
+              console.error('Failed to delete old logo from Cloudinary:', cloudinaryError);
+            }
           }
         }
+        user.logoUrl = logoFile.path;
       }
-      admin.logoUrl = logoFile.path;
-    }
 
-    // --- Handle favicon upload ---
-    if (req.files && req.files.favicon) {
-      const faviconFile = req.files.favicon[0];
-      if (admin.faviconUrl) {
-        const publicId = extractPublicId(admin.faviconUrl);
-        if (publicId) {
-          try {
-            await cloudinary.uploader.destroy(publicId);
-          } catch (cloudinaryError) {
-            console.error('Failed to delete old favicon from Cloudinary:', cloudinaryError);
-            // Continue with upload
+      if (req.files.favicon && req.files.favicon[0]) {
+        const faviconFile = req.files.favicon[0];
+        // Delete old favicon
+        if (user.faviconUrl) {
+          const publicId = extractPublicId(user.faviconUrl);
+          if (publicId) {
+            try {
+              await cloudinary.uploader.destroy(publicId);
+            } catch (cloudinaryError) {
+              console.error('Failed to delete old favicon from Cloudinary:', cloudinaryError);
+            }
           }
         }
+        user.faviconUrl = faviconFile.path;
       }
-      admin.faviconUrl = faviconFile.path;
     }
 
-    await admin.save();
+    await user.save();
 
-    // Return updated settings
+    // Return updated settings (without sensitive fields)
     res.status(200).json({
       success: true,
       data: {
-        whatsappNumber: admin.whatsappNumber,
-        cafeName: admin.cafeName,
-        logoUrl: admin.logoUrl || '',
-        faviconUrl: admin.faviconUrl || '',
-        tables: admin.tables || [],
-        theme: admin.theme,
+        cafeName: user.cafeName,
+        slug: user.slug,
+        whatsappNumber: user.whatsappNumber,
+        logoUrl: user.logoUrl || '',
+        faviconUrl: user.faviconUrl || '',
+        tables: user.tables || [],
+        theme: user.theme,
       },
     });
   } catch (error) {

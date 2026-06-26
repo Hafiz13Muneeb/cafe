@@ -1,10 +1,8 @@
 // src/context/CartContext.jsx - Cart state management
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-// Create context
 const CartContext = createContext();
 
-// Custom hook to use cart
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
@@ -13,7 +11,6 @@ export const useCart = () => {
   return context;
 };
 
-// Cart provider component
 export const CartProvider = ({ children }) => {
   // Load cart from localStorage if available
   const [cart, setCart] = useState(() => {
@@ -31,12 +28,10 @@ export const CartProvider = ({ children }) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((i) => i._id === item._id);
       if (existingItem) {
-        // If item already exists, increase quantity
         return prevCart.map((i) =>
           i._id === item._id ? { ...i, quantity: i.quantity + 1 } : i
         );
       }
-      // Otherwise add new item with quantity 1
       return [...prevCart, { ...item, quantity: 1 }];
     });
   };
@@ -47,10 +42,8 @@ export const CartProvider = ({ children }) => {
       const existingItem = prevCart.find((i) => i._id === itemId);
       if (!existingItem) return prevCart;
       if (existingItem.quantity === 1) {
-        // Remove item if quantity is 1
         return prevCart.filter((i) => i._id !== itemId);
       }
-      // Otherwise decrease quantity
       return prevCart.map((i) =>
         i._id === itemId ? { ...i, quantity: i.quantity - 1 } : i
       );
@@ -77,7 +70,7 @@ export const CartProvider = ({ children }) => {
     return `Rs. ${price}`;
   };
 
-  // Generate order text for WhatsApp
+  // Generate order text for WhatsApp – supports dynamic cafe name
   const getOrderText = (tableNumber, cafeName) => {
     if (cart.length === 0) return '';
     

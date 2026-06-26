@@ -1,4 +1,4 @@
-// src/components/InteractiveDocs.jsx - Dark, 3D-timeline, immersive walkthrough
+// src/components/InteractiveDocs.jsx - Dark, 3D-timeline, immersive walkthrough with dynamic theming
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Check, Settings, QrCode, MessageCircle, Sparkles, ArrowRight, Zap, Clock } from 'lucide-react';
@@ -100,23 +100,30 @@ const StepButton = ({ step, index, isActive, isCompleted, onClick }) => {
       onClick={onClick}
       whileHover={{ scale: 1.02, rotateX: 2, rotateY: 4 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      className={`relative w-full text-left p-4 rounded-2xl transition-all duration-500 group ${
-        isActive
-          ? 'bg-white/10 backdrop-blur-md border border-primary/30 shadow-lg shadow-primary/10'
-          : 'hover:bg-white/5 border border-transparent hover:border-white/20'
-      }`}
-      style={{ perspective: '800px', transformStyle: 'preserve-3d' }}
+      className={`relative w-full text-left p-4 rounded-2xl transition-all duration-500 group`}
+      style={{
+        backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+        border: isActive ? '1px solid var(--primary-color)' : '1px solid transparent',
+        boxShadow: isActive ? '0 8px 30px rgba(0,0,0,0.3)' : 'none',
+        backdropFilter: isActive ? 'blur(12px)' : 'none',
+        perspective: '800px',
+        transformStyle: 'preserve-3d',
+      }}
     >
       <div className="flex items-center gap-4">
-        {/* Step number with pulse */}
         <div className="relative flex-shrink-0">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 ${
-            isActive
-              ? 'bg-gradient-to-r from-primary to-amber-500 text-white shadow-md shadow-primary/30'
-              : isCompleted
-              ? 'bg-primary/30 text-primary border border-primary/30'
-              : 'bg-white/10 text-white/30 border border-white/10'
-          }`}>
+          <div 
+            className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500`}
+            style={{
+              background: isActive 
+                ? 'linear-gradient(to right, var(--primary-color), var(--secondary-color))' 
+                : isCompleted 
+                ? 'rgba(var(--primary-color), 0.3)' 
+                : 'rgba(255,255,255,0.1)',
+              color: isActive ? '#ffffff' : isCompleted ? 'var(--primary-color)' : 'rgba(255,255,255,0.3)',
+              border: isCompleted ? '1px solid var(--primary-color)' : '1px solid rgba(255,255,255,0.1)',
+            }}
+          >
             {isCompleted ? <Check size={18} /> : index + 1}
           </div>
           {isActive && (
@@ -124,22 +131,25 @@ const StepButton = ({ step, index, isActive, isCompleted, onClick }) => {
               initial={{ scale: 1, opacity: 0.6 }}
               animate={{ scale: 1.8, opacity: 0 }}
               transition={{ duration: 1.5, repeat: Infinity }}
-              className="absolute inset-0 rounded-full border-2 border-primary"
+              className="absolute inset-0 rounded-full border-2"
+              style={{ borderColor: 'var(--primary-color)' }}
             />
           )}
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className={`text-sm font-medium transition-colors duration-300 ${
-            isActive ? 'text-white' : 'text-white/50 group-hover:text-white/80'
-          }`}>
+          <div 
+            className={`text-sm font-medium transition-colors duration-300`}
+            style={{ color: isActive ? '#ffffff' : 'rgba(255,255,255,0.5)' }}
+          >
             {step.title}
           </div>
           {isActive && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="text-xs text-white/40 mt-1 leading-relaxed"
+              className="text-xs mt-1 leading-relaxed"
+              style={{ color: 'rgba(255,255,255,0.4)' }}
             >
               {step.description.substring(0, 60)}...
             </motion.div>
@@ -150,18 +160,19 @@ const StepButton = ({ step, index, isActive, isCompleted, onClick }) => {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30"
+            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(var(--primary-color), 0.2)', border: '1px solid var(--primary-color)' }}
           >
-            <ArrowRight size={16} className="text-primary" />
+            <ArrowRight size={16} style={{ color: 'var(--primary-color)' }} />
           </motion.div>
         )}
       </div>
 
-      {/* Active indicator bar */}
       {isActive && (
         <motion.div
           layoutId="activeStepBar"
-          className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-amber-500 rounded-b-2xl"
+          className="absolute bottom-0 left-0 right-0 h-0.5 rounded-b-2xl"
+          style={{ background: 'linear-gradient(to right, var(--primary-color), var(--secondary-color))' }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         />
       )}
@@ -179,27 +190,29 @@ const InteractiveDocs = () => {
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0.3]);
 
   return (
-    <section ref={containerRef} className="relative py-20 md:py-32 px-4 overflow-hidden bg-[#0a0a0f]">
+    <section ref={containerRef} className="relative py-20 md:py-32 px-4 overflow-hidden" style={{ backgroundColor: '#0a0a0f' }}>
       {/* Background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{ x: [0, 60, 0], y: [0, -40, 0] }}
           transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute w-96 h-96 rounded-full bg-primary/10 blur-3xl top-20 right-20"
+          className="absolute w-96 h-96 rounded-full blur-3xl top-20 right-20"
+          style={{ backgroundColor: 'rgba(var(--primary-color), 0.1)' }}
         />
         <motion.div
           animate={{ x: [0, -50, 0], y: [0, 40, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl bottom-20 left-20"
+          className="absolute w-80 h-80 rounded-full blur-3xl bottom-20 left-20"
+          style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
         />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,168,67,0.06),transparent_70%)]" />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(212,168,67,0.06), transparent 70%)' }} />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Left: Timeline Sidebar */}
         <div className="lg:col-span-1 lg:sticky lg:top-24 self-start">
           <div className="mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/20 border border-primary/30 rounded-full text-primary text-sm font-medium mb-3 backdrop-blur-sm shadow-[0_0_30px_rgba(212,168,67,0.15)]">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-primary text-sm font-medium mb-3 backdrop-blur-sm shadow-[0_0_30px_rgba(212,168,67,0.15)]" style={{ backgroundColor: 'rgba(var(--primary-color), 0.2)', border: '1px solid rgba(var(--primary-color), 0.3)' }}>
               <Sparkles size={14} />
               <span>Process</span>
             </div>
@@ -210,9 +223,7 @@ const InteractiveDocs = () => {
             <p className="text-white/40 text-sm mt-2">Three simple steps to go digital. No coding, no hassle.</p>
           </div>
 
-          {/* Vertical timeline with connector */}
           <div className="relative space-y-4">
-            {/* Timeline line */}
             <div className="absolute left-5 top-6 bottom-6 w-0.5 bg-gradient-to-b from-primary/30 via-primary/10 to-transparent" />
 
             {steps.map((step, index) => (
@@ -227,7 +238,6 @@ const InteractiveDocs = () => {
             ))}
           </div>
 
-          {/* Bottom hint */}
           <div className="mt-6 flex items-center gap-2 text-xs text-white/30">
             <Clock size={14} />
             <span>Average setup: 10 minutes</span>
@@ -247,8 +257,11 @@ const InteractiveDocs = () => {
               style={{ perspective: '1000px' }}
             >
               <div className="flex items-start gap-4 mb-6">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/5 flex items-center justify-center flex-shrink-0 shadow-[0_0_40px_rgba(212,168,67,0.15)] border border-primary/20">
-                  {React.createElement(steps[activeStep].icon, { size: 32, className: 'text-primary' })}
+                <div 
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-[0_0_40px_rgba(212,168,67,0.15)] border border-primary/20"
+                  style={{ background: 'linear-gradient(to bottom right, rgba(var(--primary-color), 0.3), rgba(var(--primary-color), 0.05))' }}
+                >
+                  {React.createElement(steps[activeStep].icon, { size: 32, style: { color: 'var(--primary-color)' } })}
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-white">{steps[activeStep].title}</h3>
@@ -256,7 +269,6 @@ const InteractiveDocs = () => {
                 </div>
               </div>
 
-              {/* Benefits with neon icons */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 {steps[activeStep].benefits.map((benefit, i) => (
                   <motion.div
@@ -266,13 +278,12 @@ const InteractiveDocs = () => {
                     transition={{ delay: i * 0.1 }}
                     className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm group hover:border-primary/30 transition-colors"
                   >
-                    <Check size={14} className="text-primary flex-shrink-0 group-hover:scale-110 transition-transform" />
+                    <Check size={14} className="flex-shrink-0 group-hover:scale-110 transition-transform" style={{ color: 'var(--primary-color)' }} />
                     <span className="text-sm text-white/70 group-hover:text-white/90 transition-colors">{benefit}</span>
                   </motion.div>
                 ))}
               </div>
 
-              {/* Mockup with 3D perspective on hover */}
               <motion.div
                 whileHover={{ rotateX: 2, rotateY: 4, scale: 1.01 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
@@ -281,9 +292,8 @@ const InteractiveDocs = () => {
                 {steps[activeStep].mockup}
               </motion.div>
 
-              {/* Action hint */}
               <div className="mt-6 flex items-center gap-2 text-xs text-white/30">
-                <Zap size={14} className="text-primary" />
+                <Zap size={14} style={{ color: 'var(--primary-color)' }} />
                 <span>Click a step above to explore</span>
               </div>
             </motion.div>

@@ -1,15 +1,40 @@
-/* src/index.css - Tailwind base styles with light theme */
+/* src/index.css - Tailwind base styles with dynamic CSS variables */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* CSS Variables for dynamic theming */
 :root {
+  /* Default fallback (gold) */
   --primary-color: #d4a843;
   --secondary-color: #b8860b;
   --primary-light: #d4a84320;
   --primary-dark: #d4a84380;
-  --theme-mode: light;
+  --primary-color-rgb: 212, 168, 67;
+  --secondary-color-rgb: 184, 134, 11;
+  --bg-color: #f8fafc;
+  --text-color: #0f172a;
+  --text-secondary: #64748b;
+  --card-bg: #ffffff;
+  --border-color: #e2e8f0;
+}
+
+/* Light theme (default) */
+.light-mode {
+  --bg-color: #f8fafc;
+  --text-color: #0f172a;
+  --text-secondary: #64748b;
+  --card-bg: #ffffff;
+  --border-color: #e2e8f0;
+}
+
+/* Dark theme */
+.dark-mode {
+  --bg-color: #0a0a0f;
+  --text-color: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --card-bg: #1e293b;
+  --border-color: #334155;
 }
 
 /* Base styles */
@@ -19,21 +44,16 @@
   }
   
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply antialiased;
     font-family: 'Inter', system-ui, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
   }
 
-  /* Light theme defaults */
-  .light-theme {
-    --bg-color: #f8fafc;
-    --text-color: #0f172a;
-    --card-bg: #ffffff;
-    --border-color: #e2e8f0;
+  /* Smooth transitions for theme changes */
+  * {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   }
-
-  /* Dark theme would override variables here, but we're using light only */
 }
 
 /* Custom utility classes */
@@ -55,6 +75,7 @@
     display: none;
   }
 
+  /* Theme-aware utility classes (using CSS variables) */
   .bg-primary {
     background-color: var(--primary-color);
   }
@@ -79,4 +100,12 @@
 }
 .animate-pulse-dot {
   animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-slower {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+.animate-pulse-slower {
+  animation: pulse-slower 4s ease-in-out infinite;
 }

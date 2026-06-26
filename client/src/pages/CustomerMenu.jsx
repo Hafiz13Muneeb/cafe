@@ -1,14 +1,15 @@
-// src/pages/CustomerMenu.jsx - Light theme customer menu
+// src/pages/CustomerMenu.jsx - Dynamic customer menu with theme from backend
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
-import api from '../api/axios';
+import api, { fetchPublicMenu } from '../api/axios';
 import MenuItemCard from '../components/MenuItemCard';
 import CategoryFilter from '../components/CategoryFilter';
 import CartFloatingButton from '../components/CartFloatingButton';
 import CartModal from '../components/CartModal';
 
-// Skeleton loader component (inline for simplicity)
+// Skeleton loader (inline)
 const MenuSkeleton = () => (
   <div className="grid grid-cols-2 gap-4">
     {[...Array(6)].map((_, i) => (
@@ -28,57 +29,72 @@ const MenuSkeleton = () => (
 );
 
 const CustomerMenu = () => {
-  const { theme } = useTheme();
+  const { slug } = useParams(); // Get cafe slug from URL
+  const { loadThemeFromSlug, theme, cafeSettings } = useTheme();
+  const { cart, getTotalItems, getTotalPrice } = useCart();
+
   const [menuItems, setMenuItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-  const [categories, setCategories] = useState(['all']); // Default to ['all']
+  const [categories, setCategories] = useState(['all']);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCartModal, setShowCartModal] = useState(false);
+
+  // Cafe details (from API)
   const [cafeName, setCafeName] = useState('Cafe');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [faviconUrl, setFaviconUrl] = useState('');
-  const [tables, setTables] = useState([]);
-  const { cart, getTotalItems, getTotalPrice } = useCart();
+  const [tables, setTables] = useState(['1', '2', '3', '4', '5']);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const loadMenu = async () => {
       try {
         setLoading(true);
-        const [menuRes, settingsRes] = await Promise.all([
-          api.get('/menu'),
-          api.get('/settings'),
-        ]);
-        if (menuRes.data.success) {
-          const items = menuRes.data.data || [];
-          setMenuItems(items);
-          setFilteredItems(items);
-          // Safely extract categories – handle empty array
-          const categoryList = items.length 
-            ? ['all', ...new Set(items.map(item => item.category))]
-            : ['all'];
-          setCategories(categoryList);
+        setError('');
+
+        // Fetch public menu data using the slug
+        const response = await fetchPublicMenu(slug);
+        const { cafe, menu, categories: catList } = response.data;
+
+        // Set cafe details
+        setCafeName(cafe.name || 'Cafe');
+        setWhatsappNumber(cafe.whatsappNumber || '');
+        setLogoUrl(cafe.logoUrl || '');
+        setFaviconUrl(cafe.faviconUrl || '');
+        setTables(cafe.tables || ['1', '2', '3', '4', '5']);
+
+        // Apply theme from cafe settings
+        if (cafe.theme) {
+          await loadThemeFromSlug(slug); // This updates the theme context
         }
-        if (settingsRes.data.success) {
-          const data = settingsRes.data.data;
-          setCafeName(data.cafeName || 'Cafe');
-          setWhatsappNumber(data.whatsappNumber || '');
-          setLogoUrl(data.logoUrl || '');
-          setFaviconUrl(data.faviconUrl || '');
-          setTables(data.tables || ['1','2','3','4','5']);
+
+        // Set menu items and categories
+        setMenuItems(menu || []);
+        setFilteredItems(menu || []);
+        if (catList && catList.length > 0) {
+          setCategories(['all', ...catList]);
+        } else {
+          setCategories(['all']);
         }
       } catch (err) {
-        setError('Failed to load menu. Please refresh.');
+        console.error('Error loading menu:', err);
+        setError(err.response?.data?.message || 'Failed to load menu. Please try again.');
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
 
-  // Update favicon
+    if (slug) {
+      loadMenu();
+    } else {
+      setError('Invalid cafe slug');
+      setLoading(false);
+    }
+  }, [slug, loadThemeFromSlug]);
+
+  // Update favicon when it changes
   useEffect(() => {
     if (faviconUrl) {
       const link = document.querySelector("link[rel*='icon']");
@@ -90,7 +106,7 @@ const CustomerMenu = () => {
     }
   }, [faviconUrl]);
 
-  // Filter items
+  // Filter items when category changes
   useEffect(() => {
     setFilteredItems(
       selectedCategory === 'all'
@@ -99,11 +115,11 @@ const CustomerMenu = () => {
     );
   }, [selectedCategory, menuItems]);
 
-  // Show skeleton while loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 pb-24">
-        <header className="bg-white shadow-sm sticky top-0 z-10 border-b border-slate-100">
+      <div className="min-h-screen pb-24" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
+        {/* Header skeleton */}
+        <header className="shadow-sm sticky top-0 z-10 border-b" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
           <div className="container mx-auto px-4 py-4 flex items-center gap-3">
             <div className="h-10 w-32 bg-slate-200 rounded animate-pulse" />
             <div className="h-4 w-20 bg-slate-200 rounded ml-auto animate-pulse" />
@@ -125,22 +141,43 @@ const CustomerMenu = () => {
     );
   }
 
-  if (error) return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-red-500">{error}</div>;
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-500 mb-2">Oops!</h2>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
-      <header className="bg-white shadow-sm sticky top-0 z-10 border-b border-slate-100">
+    <div className="min-h-screen pb-24" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
+      {/* Header with dynamic styles */}
+      <header
+        className="shadow-sm sticky top-0 z-10 border-b"
+        style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}
+      >
         <div className="container mx-auto px-4 py-4 flex items-center gap-3">
           {logoUrl ? (
             <img src={logoUrl} alt={cafeName} className="h-10 w-auto object-contain" />
           ) : (
-            <h1 className="text-2xl font-bold text-slate-900">{cafeName}</h1>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--primary-color)' }}>
+              {cafeName}
+            </h1>
           )}
-          <p className="text-sm text-slate-500 ml-auto">Scan & Order</p>
+          <p className="text-sm ml-auto opacity-70" style={{ color: 'var(--text-color)' }}>
+            Scan & Order
+          </p>
         </div>
       </header>
 
-      <div className="sticky top-[72px] z-10 bg-white border-b border-slate-100">
+      {/* Category Filter */}
+      <div
+        className="sticky top-[72px] z-10 border-b"
+        style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}
+      >
         <div className="container mx-auto px-4 py-3 overflow-x-auto scrollbar-hide">
           <CategoryFilter
             categories={categories}
@@ -150,9 +187,12 @@ const CustomerMenu = () => {
         </div>
       </div>
 
+      {/* Menu Grid */}
       <div className="container mx-auto px-4 py-4">
         {filteredItems.length === 0 ? (
-          <div className="text-center py-12 text-slate-500">No items available</div>
+          <div className="text-center py-12 opacity-70" style={{ color: 'var(--text-color)' }}>
+            No items available
+          </div>
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {filteredItems.map(item => (
@@ -162,6 +202,7 @@ const CustomerMenu = () => {
         )}
       </div>
 
+      {/* Floating Cart Button */}
       {cart.length > 0 && (
         <CartFloatingButton
           totalItems={getTotalItems()}
@@ -170,6 +211,7 @@ const CustomerMenu = () => {
         />
       )}
 
+      {/* Cart Modal */}
       <CartModal
         isOpen={showCartModal}
         onClose={() => setShowCartModal(false)}

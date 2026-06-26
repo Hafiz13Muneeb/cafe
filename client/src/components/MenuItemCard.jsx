@@ -1,4 +1,4 @@
-// src/components/MenuItemCard.jsx - Light theme item card
+// src/components/MenuItemCard.jsx - Menu item card with dynamic theming
 import React from 'react';
 import { useCart } from '../context/CartContext';
 
@@ -6,8 +6,14 @@ const MenuItemCard = ({ item }) => {
   const { addToCart } = useCart();
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
-      <div className="relative aspect-square overflow-hidden bg-slate-100">
+    <div 
+      className="rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow duration-300"
+      style={{
+        backgroundColor: 'var(--card-bg)',
+        borderColor: 'var(--border-color)',
+      }}
+    >
+      <div className="relative aspect-square overflow-hidden" style={{ backgroundColor: 'var(--bg-color)' }}>
         <img
           src={item.imageUrl}
           alt={item.title}
@@ -21,20 +27,38 @@ const MenuItemCard = ({ item }) => {
         )}
       </div>
       <div className="p-3">
-        <h3 className="font-semibold text-slate-900 text-sm truncate">{item.title}</h3>
+        <h3 className="font-semibold text-sm truncate" style={{ color: 'var(--text-color)' }}>
+          {item.title}
+        </h3>
         {item.description && (
-          <p className="text-xs text-slate-500 mt-1 line-clamp-2">{item.description}</p>
+          <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--text-secondary, #64748b)' }}>
+            {item.description}
+          </p>
         )}
         <div className="flex items-center justify-between mt-2">
-          <span className="text-sm font-bold text-primary">Rs. {item.price}</span>
+          <span className="text-sm font-bold" style={{ color: 'var(--primary-color)' }}>
+            Rs. {item.price}
+          </span>
           <button
             onClick={() => addToCart(item)}
             disabled={!item.isAvailable}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-              item.isAvailable
-                ? 'bg-primary text-white hover:opacity-90 active:scale-95 shadow-md shadow-primary/20'
-                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-            }`}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200"
+            style={{
+              backgroundColor: item.isAvailable ? 'var(--primary-color)' : 'var(--border-color)',
+              color: item.isAvailable ? '#ffffff' : 'var(--text-secondary, #94a3b8)',
+              cursor: item.isAvailable ? 'pointer' : 'not-allowed',
+              boxShadow: item.isAvailable ? '0 4px 15px rgba(0,0,0,0.1)' : 'none',
+            }}
+            onMouseEnter={(e) => {
+              if (item.isAvailable) {
+                e.target.style.opacity = '0.85';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (item.isAvailable) {
+                e.target.style.opacity = '1';
+              }
+            }}
           >
             {item.isAvailable ? 'Add +' : 'Sold'}
           </button>

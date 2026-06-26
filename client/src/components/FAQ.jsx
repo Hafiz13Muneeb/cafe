@@ -1,4 +1,4 @@
-// src/components/FAQ.jsx - Dark, minimal, elegant accordion with neon glow
+// src/components/FAQ.jsx - Dark, minimal, elegant accordion with neon glow and dynamic theming
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, HelpCircle, Zap } from 'lucide-react';
@@ -27,46 +27,55 @@ const FAQItem = ({ question, answer, isOpen, onClick, index }) => (
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: index * 0.08 }}
-    className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ${
-      isOpen
-        ? 'bg-white/10 backdrop-blur-md border-primary/40 shadow-lg shadow-primary/10'
-        : 'bg-white/5 backdrop-blur-sm border-white/10 hover:border-white/20 hover:bg-white/8'
-    }`}
+    className={`relative overflow-hidden rounded-2xl border transition-all duration-500`}
+    style={{
+      backgroundColor: isOpen ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+      borderColor: isOpen ? 'rgba(var(--primary-color), 0.4)' : 'rgba(255,255,255,0.1)',
+      boxShadow: isOpen ? '0 8px 30px rgba(0,0,0,0.3)' : 'none',
+    }}
   >
     <button
       onClick={onClick}
       className="w-full px-6 py-5 flex items-center justify-between text-left group"
     >
       <div className="flex items-center gap-4">
-        <div className={`relative w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
-          isOpen
-            ? 'bg-gradient-to-r from-primary to-amber-500 text-white shadow-[0_0_30px_rgba(212,168,67,0.3)]'
-            : 'bg-white/10 text-white/40 group-hover:bg-primary/20 group-hover:text-primary'
-        }`}>
+        <div 
+          className={`relative w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300`}
+          style={{
+            background: isOpen 
+              ? 'linear-gradient(to right, var(--primary-color), var(--secondary-color))' 
+              : 'rgba(255,255,255,0.1)',
+            color: isOpen ? '#ffffff' : 'rgba(255,255,255,0.4)',
+            boxShadow: isOpen ? '0 0 30px rgba(var(--primary-color), 0.3)' : 'none',
+          }}
+        >
           <HelpCircle size={16} />
           {isOpen && (
             <motion.div
               initial={{ scale: 1, opacity: 0.5 }}
               animate={{ scale: 2, opacity: 0 }}
               transition={{ duration: 1.2, repeat: Infinity }}
-              className="absolute inset-0 rounded-full border-2 border-primary"
+              className="absolute inset-0 rounded-full border-2"
+              style={{ borderColor: 'var(--primary-color)' }}
             />
           )}
         </div>
-        <span className={`font-semibold text-sm md:text-base transition-colors duration-300 ${
-          isOpen ? 'text-white' : 'text-white/60 group-hover:text-white/80'
-        }`}>
+        <span 
+          className={`font-semibold text-sm md:text-base transition-colors duration-300`}
+          style={{ color: isOpen ? '#ffffff' : 'rgba(255,255,255,0.6)' }}
+        >
           {question}
         </span>
       </div>
       <motion.div
         animate={{ rotate: isOpen ? 180 : 0 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
-        className={`flex-shrink-0 ml-4 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
-          isOpen
-            ? 'bg-primary/20 text-primary border border-primary/30'
-            : 'bg-white/10 text-white/30 group-hover:bg-primary/10 group-hover:text-primary'
-        }`}
+        className={`flex-shrink-0 ml-4 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300`}
+        style={{
+          backgroundColor: isOpen ? 'rgba(var(--primary-color), 0.2)' : 'rgba(255,255,255,0.1)',
+          color: isOpen ? 'var(--primary-color)' : 'rgba(255,255,255,0.3)',
+          border: isOpen ? '1px solid rgba(var(--primary-color), 0.3)' : 'none',
+        }}
       >
         <ChevronDown size={18} />
       </motion.div>
@@ -87,9 +96,11 @@ const FAQItem = ({ question, answer, isOpen, onClick, index }) => (
       )}
     </AnimatePresence>
 
-    {/* Decorative corner glow for active item */}
     {isOpen && (
-      <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+      <div 
+        className="absolute -bottom-16 -right-16 w-48 h-48 rounded-full blur-3xl pointer-events-none"
+        style={{ backgroundColor: 'rgba(var(--primary-color), 0.2)' }}
+      />
     )}
   </motion.div>
 );
@@ -98,26 +109,31 @@ const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(null);
 
   return (
-    <section className="relative py-20 md:py-32 px-4 overflow-hidden bg-[#0a0a0f]">
+    <section className="relative py-20 md:py-32 px-4 overflow-hidden" style={{ backgroundColor: '#0a0a0f' }}>
       {/* Background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
           transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute w-80 h-80 rounded-full bg-primary/10 blur-3xl top-10 right-10"
+          className="absolute w-80 h-80 rounded-full blur-3xl top-10 right-10"
+          style={{ backgroundColor: 'rgba(var(--primary-color), 0.1)' }}
         />
         <motion.div
           animate={{ x: [0, -20, 0], y: [0, 30, 0] }}
           transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute w-72 h-72 rounded-full bg-indigo-500/10 blur-3xl bottom-10 left-10"
+          className="absolute w-72 h-72 rounded-full blur-3xl bottom-10 left-10"
+          style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
         />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,168,67,0.05),transparent_70%)]" />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(212,168,67,0.05), transparent 70%)' }} />
       </div>
 
       <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/20 border border-primary/30 rounded-full text-primary text-sm font-medium mb-4 backdrop-blur-sm shadow-[0_0_30px_rgba(212,168,67,0.15)]">
+          <div 
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-primary text-sm font-medium mb-4 backdrop-blur-sm shadow-[0_0_30px_rgba(212,168,67,0.15)]"
+            style={{ backgroundColor: 'rgba(var(--primary-color), 0.2)', border: '1px solid rgba(var(--primary-color), 0.3)' }}
+          >
             <Zap size={14} />
             <span>Support</span>
           </div>
@@ -147,7 +163,7 @@ const FAQ = () => {
 
         {/* Footer */}
         <div className="mt-8 text-center text-xs text-white/30">
-          Can't find your answer? <a href="/admin" className="text-primary hover:text-primary/80 hover:underline transition-colors">Contact support</a>
+          Can't find your answer? <a href="/admin" className="hover:underline transition-colors" style={{ color: 'var(--primary-color)' }}>Contact support</a>
         </div>
       </div>
     </section>
