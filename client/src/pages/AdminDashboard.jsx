@@ -1,4 +1,4 @@
-// src/pages/AdminDashboard.jsx - Cafe owner dashboard (multi-tenant)
+// src/pages/AdminDashboard.jsx - Cafe owner dashboard (menu management & QR)
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -18,12 +18,10 @@ import {
   Image as ImageIcon,
   AlertCircle,
   CheckCircle,
-  KeyRound
 } from 'lucide-react';
 import QRCode from 'qrcode.react';
 
-// --- Helper Components (kept inside the same file for modularity) ---
-
+// --- Helper Components (kept inside for modularity) ---
 const PrimaryButton = ({ children, onClick, disabled, className = '', ...props }) => (
   <button
     onClick={onClick}
@@ -77,10 +75,8 @@ const TextAreaField = ({ label, name, value, onChange, rows = 2, className = '' 
 );
 
 // --- Main Component ---
-
 const AdminDashboard = () => {
-  const { user, logout, updateUserData } = useAuth();
-  const { theme, updateTheme } = useTheme();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -100,34 +96,14 @@ const AdminDashboard = () => {
   const [imagePreview, setImagePreview] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [settingsData, setSettingsData] = useState({
-    cafeName: user?.cafeName || '',
-    whatsappNumber: user?.whatsappNumber || '',
-    logoUrl: user?.logoUrl || '',
-    faviconUrl: user?.faviconUrl || '',
-    tables: user?.tables || [],
-  });
-  const [settingsLoading, setSettingsLoading] = useState(false);
-  const [logoFile, setLogoFile] = useState(null);
-  const [faviconFile, setFaviconFile] = useState(null);
-  const [newTableInput, setNewTableInput] = useState('');
-
   // QR code state
   const [qrValue, setQrValue] = useState('');
   const [cafeSlug, setCafeSlug] = useState(user?.slug || '');
 
-  // Password change state
-  const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
-
   // --- Effects ---
   useEffect(() => {
     if (success) setTimeout(() => setSuccess(''), 3000);
-    if (passwordSuccess) setTimeout(() => setPasswordSuccess(''), 3000);
-  }, [success, passwordSuccess]);
+  }, [success]);
 
   useEffect(() => {
     if (user?.slug) {
@@ -139,17 +115,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (user) {
       fetchMenuItems();
-      setSettingsData({
-        cafeName: user.cafeName || '',
-        whatsappNumber: user.whatsappNumber || '',
-        logoUrl: user.logoUrl || '',
-        faviconUrl: user.faviconUrl || '',
-        tables: user.tables || [],
-      });
-      // Apply the user's theme – but owner cannot change it, only view
-      if (user.theme) {
-        updateTheme(user.theme);
-      }
     }
   }, [user]);
 
@@ -262,90 +227,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // --- Settings handlers ---
-  const handleAddTable = () => {
-    const val = newTableInput.trim();
-    if (val && !settingsData.tables.includes(val)) {
-      setSettingsData(prev => ({ ...prev, tables: [...prev.tables, val] }));
-      setNewTableInput('');
-    }
-  };
-
-  const handleRemoveTable = (table) => {
-    setSettingsData(prev => ({ ...prev, tables: prev.tables.filter(t => t !== table) }));
-  };
-
-  const handleSettingsSubmit = async (e) => {
-    e.preventDefault();
-    setSettingsLoading(true);
-    setError('');
-    setSuccess('');
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('cafeName', settingsData.cafeName);
-      formDataToSend.append('whatsappNumber', settingsData.whatsappNumber);
-      formDataToSend.append('tables', settingsData.tables.join(','));
-      if (logoFile) formDataToSend.append('logo', logoFile);
-      if (faviconFile) formDataToSend.append('favicon', faviconFile);
-
-      const response = await api.put('/settings', formDataToSend, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      if (response.data.success) {
-        const data = response.data.data;
-        updateUserData({
-          cafeName: data.cafeName,
-          whatsappNumber: data.whatsappNumber,
-          logoUrl: data.logoUrl || '',
-          faviconUrl: data.faviconUrl || '',
-          tables: data.tables || [],
-        });
-        setSettingsData({
-          cafeName: data.cafeName,
-          whatsappNumber: data.whatsappNumber,
-          logoUrl: data.logoUrl || '',
-          faviconUrl: data.faviconUrl || '',
-          tables: data.tables || [],
-        });
-        setLogoFile(null);
-        setFaviconFile(null);
-        setIsSettingsOpen(false);
-        setSuccess('Settings updated!');
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update settings');
-    } finally {
-      setSettingsLoading(false);
-    }
-  };
-
-  // --- Password handlers ---
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordForm(prev => ({ ...prev, [name]: value }));
-    setPasswordError('');
-    setPasswordSuccess('');
-  };
-
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    setPasswordLoading(true);
-    setPasswordError('');
-    setPasswordSuccess('');
-    try {
-      const response = await api.put('/auth/change-password', passwordForm);
-      if (response.data.success) {
-        setPasswordSuccess('Password changed successfully!');
-        setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
-      }
-    } catch (err) {
-      setPasswordError(err.response?.data?.message || 'Failed to change password');
-    } finally {
-      setPasswordLoading(false);
-    }
-  };
-
   // --- Download QR ---
   const downloadQR = () => {
     const canvas = document.getElementById('qr-code-canvas');
@@ -359,7 +240,7 @@ const AdminDashboard = () => {
 
   if (!user) return null;
 
-  // ---- Render helpers for better readability ----
+  // ---- Render helpers ----
   const renderMessages = () => (
     <>
       {error && (
@@ -375,92 +256,6 @@ const AdminDashboard = () => {
         </div>
       )}
     </>
-  );
-
-  const renderSettingsPanel = () => (
-    <div className="mb-6 bg-white rounded-xl shadow-soft p-6 animate-fade-in">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Settings</h2>
-      <form onSubmit={handleSettingsSubmit} className="space-y-5">
-        <InputField label="Cafe Name" name="cafeName" value={settingsData.cafeName} onChange={(e) => setSettingsData(prev => ({ ...prev, cafeName: e.target.value }))} required />
-        <InputField label="WhatsApp Number" name="whatsappNumber" value={settingsData.whatsappNumber} onChange={(e) => setSettingsData(prev => ({ ...prev, whatsappNumber: e.target.value }))} type="tel" placeholder="923001234567" required />
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tables (comma separated)</label>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {settingsData.tables.map(table => (
-              <span key={table} className="inline-flex items-center gap-1 px-3 py-1 bg-primary/20 text-primary rounded-full text-sm border border-primary/30">
-                {table}
-                <button type="button" onClick={() => handleRemoveTable(table)} className="hover:text-red-600">
-                  <X size={14} />
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newTableInput}
-              onChange={(e) => setNewTableInput(e.target.value)}
-              placeholder="e.g., 6, VIP, Patio"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-              style={{ '--tw-ring-color': 'var(--primary-color)' }}
-            />
-            <button type="button" onClick={handleAddTable} className="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition shadow-md" style={{ backgroundColor: 'var(--primary-color)' }}>
-              Add
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
-          <div className="flex items-center gap-4">
-            {settingsData.logoUrl && <img src={settingsData.logoUrl} alt="Logo" className="w-16 h-16 object-cover rounded-lg border border-gray-200" />}
-            <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-              <Upload size={16} className="text-gray-500" />
-              <span className="text-sm">{logoFile ? logoFile.name : 'Upload Logo'}</span>
-              <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files[0])} className="hidden" />
-            </label>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Favicon</label>
-          <div className="flex items-center gap-4">
-            {settingsData.faviconUrl && <img src={settingsData.faviconUrl} alt="Favicon" className="w-10 h-10 object-cover rounded border border-gray-200" />}
-            <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-              <Upload size={16} className="text-gray-500" />
-              <span className="text-sm">{faviconFile ? faviconFile.name : 'Upload Favicon'}</span>
-              <input type="file" accept="image/*" onChange={(e) => setFaviconFile(e.target.files[0])} className="hidden" />
-            </label>
-          </div>
-        </div>
-
-        <div className="flex gap-2 pt-2">
-          <button type="submit" disabled={settingsLoading} className="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 shadow-md" style={{ backgroundColor: 'var(--primary-color)' }}>
-            {settingsLoading ? 'Saving...' : 'Save Settings'}
-          </button>
-          <SecondaryButton onClick={() => setIsSettingsOpen(false)}>Cancel</SecondaryButton>
-        </div>
-      </form>
-
-      {/* Change Password Section */}
-      <div className="border-t border-gray-200 mt-6 pt-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <KeyRound size={20} className="text-gray-600" />
-          Change Password
-        </h3>
-        <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
-          {passwordError && <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{passwordError}</div>}
-          {passwordSuccess && <div className="p-2 bg-primary/10 border border-primary/30 rounded-lg text-primary text-sm">{passwordSuccess}</div>}
-          <InputField label="Current Password" name="oldPassword" value={passwordForm.oldPassword} onChange={handlePasswordChange} type="password" required />
-          <InputField label="New Password" name="newPassword" value={passwordForm.newPassword} onChange={handlePasswordChange} type="password" required />
-          <InputField label="Confirm New Password" name="confirmPassword" value={passwordForm.confirmPassword} onChange={handlePasswordChange} type="password" required />
-          <button type="submit" disabled={passwordLoading} className="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 shadow-md" style={{ backgroundColor: 'var(--primary-color)' }}>
-            {passwordLoading ? 'Updating...' : 'Update Password'}
-          </button>
-        </form>
-      </div>
-    </div>
   );
 
   const renderQRCode = () => (
@@ -582,7 +377,11 @@ const AdminDashboard = () => {
             <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">{user.cafeName}</span>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setIsSettingsOpen(!isSettingsOpen)} className="p-2 hover:bg-gray-100 rounded-lg transition" title="Settings">
+            <button
+              onClick={() => navigate('/admin/dashboard/settings')}
+              className="p-2 hover:bg-gray-100 rounded-lg transition"
+              title="Settings"
+            >
               <Settings size={20} className="text-gray-600" />
             </button>
             <button onClick={handleLogout} className="p-2 hover:bg-gray-100 rounded-lg transition" title="Logout">
@@ -594,7 +393,6 @@ const AdminDashboard = () => {
 
       <div className="container mx-auto px-4 py-6">
         {renderMessages()}
-        {isSettingsOpen && renderSettingsPanel()}
         {renderQRCode()}
 
         <div className="bg-white rounded-xl shadow-soft overflow-hidden">
