@@ -1,5 +1,5 @@
 // src/pages/AdminDashboard.jsx - Cafe owner dashboard (menu management & QR)
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -99,6 +99,7 @@ const AdminDashboard = () => {
   // QR code state
   const [qrValue, setQrValue] = useState('');
   const [cafeSlug, setCafeSlug] = useState(user?.slug || '');
+  const qrRef = useRef(null); // ref to the QR wrapper div
 
   // --- Effects ---
   useEffect(() => {
@@ -227,15 +228,104 @@ const AdminDashboard = () => {
     }
   };
 
-  // --- Download QR ---
+  // --- Enhanced QR code download ---
   const downloadQR = () => {
-    const canvas = document.getElementById('qr-code-canvas');
-    if (canvas) {
-      const link = document.createElement('a');
-      link.download = `cafe-${cafeSlug}-qr.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    }
+    // Get the QR canvas element (the one rendered by qrcode.react)
+    const qrCanvas = document.getElementById('qr-code-canvas');
+    if (!qrCanvas) return;
+
+    // Create a new canvas for the combined image
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'fixed';
+    wrapper.style.left = '-9999px';
+    wrapper.style.top = '0';
+    wrapper.style.width = '400px';
+    wrapper.style.background = '#ffffff';
+    wrapper.style.padding = '30px';
+    wrapper.style.borderRadius = '20px';
+    wrapper.style.boxShadow = '0 10px 40px rgba(0,0,0,0.1)';
+    wrapper.style.textAlign = 'center';
+    wrapper.style.fontFamily = "'Inter', system-ui, sans-serif";
+    document.body.appendChild(wrapper);
+
+    // Cafe name
+    const title = document.createElement('h2');
+    title.textContent = user?.cafeName || 'Cafe Menu';
+    title.style.fontSize = '24px';
+    title.style.fontWeight = '700';
+    title.style.margin = '0 0 8px 0';
+    title.style.color = '#0f172a';
+    wrapper.appendChild(title);
+
+    // Subtitle
+    const subtitle = document.createElement('p');
+    subtitle.textContent = 'Scan to view menu';
+    subtitle.style.fontSize = '14px';
+    subtitle.style.color = '#64748b';
+    subtitle.style.margin = '0 0 20px 0';
+    wrapper.appendChild(subtitle);
+
+    // QR code image (clone the canvas)
+    const qrClone = qrCanvas.cloneNode(true);
+    qrClone.style.width = '200px';
+    qrClone.style.height = '200px';
+    qrClone.style.display = 'block';
+    qrClone.style.margin = '0 auto';
+    wrapper.appendChild(qrClone);
+
+    // Footer text
+    const footer = document.createElement('p');
+    footer.textContent = `/${user?.slug || 'menu'}`;
+    footer.style.fontSize = '12px';
+    footer.style.color = '#94a3b8';
+    footer.style.marginTop = '16px';
+    wrapper.appendChild(footer);
+
+    // Render the wrapper to canvas
+    // Use html2canvas if available, but since we don't have it, we'll build a manual canvas.
+    // Instead, we'll draw everything manually on a canvas (safer, no external libs).
+
+    // Remove the temporary wrapper and use direct canvas drawing
+    document.body.removeChild(wrapper);
+
+    // Now draw everything on a canvas programmatically
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const width = 400;
+    const height = 500;
+    canvas.width = width;
+    canvas.height = height;
+
+    // Background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    // Border radius simulation (not needed for download)
+    // Draw cafe name
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 28px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(user?.cafeName || 'Cafe Menu', width/2, 30);
+
+    // Subtitle
+    ctx.fillStyle = '#64748b';
+    ctx.font = '16px Inter, system-ui, sans-serif';
+    ctx.fillText('Scan to view menu', width/2, 70);
+
+    // QR code (draw the qr canvas onto our canvas)
+    ctx.drawImage(qrCanvas, (width - 200) / 2, 110, 200, 200);
+
+    // Footer
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '14px Inter, system-ui, sans-serif';
+    ctx.fillText(`/${user?.slug || 'menu'}`, width/2, 340);
+
+    // Convert to PNG and download
+    const link = document.createElement('a');
+    link.download = `cafe-${cafeSlug}-qr.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
   };
 
   if (!user) return null;
@@ -260,7 +350,7 @@ const AdminDashboard = () => {
 
   const renderQRCode = () => (
     <div className="mb-6 bg-white rounded-xl shadow-soft p-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-3">
           <QrCode size={24} className="text-gray-600" />
           <div>
@@ -268,11 +358,23 @@ const AdminDashboard = () => {
             <p className="text-sm text-gray-500">Scan to view your menu: /menu/{cafeSlug}</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="bg-white p-2 rounded-lg border border-gray-200">
-            <QRCode id="qr-code-canvas" value={qrValue} size={80} level="H" includeMargin />
+        <div className="flex flex-col items-center gap-3">
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <QRCode
+              id="qr-code-canvas"
+              value={qrValue}
+              size={200}
+              level="H"
+              includeMargin={false}
+              bgColor="#ffffff"
+              fgColor="#000000"
+            />
           </div>
-          <button onClick={downloadQR} className="px-4 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition shadow-md text-sm" style={{ backgroundColor: 'var(--primary-color)' }}>
+          <button
+            onClick={downloadQR}
+            className="px-6 py-2 bg-primary text-white rounded-lg hover:opacity-90 transition shadow-md text-sm"
+            style={{ backgroundColor: 'var(--primary-color)' }}
+          >
             Download QR
           </button>
         </div>
