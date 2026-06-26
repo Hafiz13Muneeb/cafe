@@ -45,9 +45,7 @@ const ThemeCustomizationPanel = ({ onThemeChange }) => {
       });
       if (response.data.success) {
         setMessage('Theme saved successfully!');
-        // Update context or admin data if needed
         if (onThemeChange) onThemeChange({ primaryColor, secondaryColor, mode });
-        // Update the admin's theme in auth context (optional)
       }
     } catch (err) {
       setMessage('Failed to save theme: ' + (err.response?.data?.message || err.message));
@@ -93,7 +91,8 @@ const ThemeCustomizationPanel = ({ onThemeChange }) => {
               type="text"
               value={primaryColor}
               onChange={(e) => setPrimaryColor(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+              style={{ '--tw-ring-color': 'var(--primary-color)' }}
             />
           </div>
         </div>
@@ -110,7 +109,8 @@ const ThemeCustomizationPanel = ({ onThemeChange }) => {
               type="text"
               value={secondaryColor}
               onChange={(e) => setSecondaryColor(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+              style={{ '--tw-ring-color': 'var(--primary-color)' }}
             />
           </div>
         </div>
@@ -124,7 +124,7 @@ const ThemeCustomizationPanel = ({ onThemeChange }) => {
             <button
               key={preset.name}
               onClick={() => handlePresetClick(preset)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-indigo-300 transition"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-primary transition"
             >
               <span className="flex gap-1">
                 <span
@@ -181,11 +181,12 @@ const ThemeCustomizationPanel = ({ onThemeChange }) => {
         <button
           onClick={handleSaveTheme}
           disabled={loading}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+          className="px-4 py-2 text-white rounded-lg shadow-md hover:opacity-90 transition disabled:opacity-50"
+          style={{ backgroundColor: 'var(--primary-color)' }}
         >
           {loading ? 'Saving...' : 'Save Theme'}
         </button>
-        {message && <span className="text-sm text-green-600">{message}</span>}
+        {message && <span className="text-sm" style={{ color: 'var(--primary-color)' }}>{message}</span>}
       </div>
     </div>
   );

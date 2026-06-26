@@ -3,18 +3,10 @@ import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { Smartphone, Share2, Zap, RefreshCw, QrCode, DollarSign, Sparkles } from 'lucide-react';
 
-// 3D tilt card component
-const BentoCard = ({ icon: Icon, title, description, className, delay = 0, glowColor = 'primary' }) => {
+// 3D tilt card component – unified primary glow
+const BentoCard = ({ icon: Icon, title, description, className, delay = 0 }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
-
-  // Map glow color to CSS variable (use primary by default)
-  const glowMap = {
-    primary: 'var(--primary-color)',
-    blue: '#3b82f6',
-    purple: '#8b5cf6',
-    emerald: '#10b981',
-  };
 
   return (
     <motion.div
@@ -37,13 +29,13 @@ const BentoCard = ({ icon: Icon, title, description, className, delay = 0, glowC
         transformStyle: 'preserve-3d',
       }}
     >
-      {/* Glow on hover */}
+      {/* Glow on hover – unified primary */}
       <div 
-        className={`absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-2xl`}
+        className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-2xl"
         style={{ '--primary-opacity': '0.3' }}
       />
 
-      {/* Icon with neon glow ring */}
+      {/* Icon with neon glow ring – unified primary */}
       <div 
         className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-all duration-500"
         style={{ 
@@ -64,13 +56,13 @@ const BentoCard = ({ icon: Icon, title, description, className, delay = 0, glowC
         {description}
       </p>
 
-      {/* Corner glow */}
+      {/* Corner glow – unified primary */}
       <div 
         className="absolute -bottom-20 -right-20 w-48 h-48 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
         style={{ backgroundColor: 'rgba(var(--primary-color), 0.1)' }}
       />
       
-      {/* Subtle border glow on hover */}
+      {/* Subtle border glow on hover – unified primary */}
       <div 
         className="absolute inset-0 rounded-2xl border border-transparent group-hover:border-primary/30 transition-all duration-700 pointer-events-none"
       />
@@ -86,7 +78,6 @@ const BentoShowcase = () => {
       description: "Update prices, stock, and item descriptions instantly. Changes reflect immediately on all customer devices—no app update required.",
       className: "col-span-1 md:col-span-2 row-span-1",
       delay: 0,
-      glowColor: 'primary',
     },
     {
       icon: DollarSign,
@@ -94,7 +85,6 @@ const BentoShowcase = () => {
       description: "Every rupee goes directly to you. No hidden fees, no percentage cuts—just pure WhatsApp-based ordering.",
       className: "col-span-1 row-span-1",
       delay: 0.1,
-      glowColor: 'emerald',
     },
     {
       icon: QrCode,
@@ -102,7 +92,6 @@ const BentoShowcase = () => {
       description: "Generate and download premium QR codes in seconds. Optimized scanning works even in low light.",
       className: "col-span-1 row-span-1",
       delay: 0.15,
-      glowColor: 'blue',
     },
     {
       icon: Smartphone,
@@ -110,7 +99,6 @@ const BentoShowcase = () => {
       description: "Designed for the palm of your hand. Every tap, swipe, and scroll is buttery smooth and instantly responsive.",
       className: "col-span-1 row-span-1",
       delay: 0.2,
-      glowColor: 'purple',
     },
     {
       icon: Share2,
@@ -118,13 +106,12 @@ const BentoShowcase = () => {
       description: "Customers can share your menu via WhatsApp, Instagram, or SMS—turning every order into free marketing.",
       className: "col-span-1 md:col-span-2 row-span-1",
       delay: 0.25,
-      glowColor: 'primary',
     },
   ];
 
   return (
     <section className="relative py-20 md:py-32 px-4 overflow-hidden" style={{ backgroundColor: '#0a0a0f' }}>
-      {/* Animated background orbs */}
+      {/* Animated background orbs – unified primary */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{ x: [0, 80, 0], y: [0, -60, 0] }}
@@ -136,15 +123,15 @@ const BentoShowcase = () => {
           animate={{ x: [0, -70, 0], y: [0, 50, 0] }}
           transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute w-80 h-80 rounded-full blur-3xl bottom-10 left-20"
-          style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
+          style={{ backgroundColor: 'rgba(var(--primary-color), 0.06)' }}
         />
         <motion.div
           animate={{ x: [0, 50, 0], y: [0, 30, 0] }}
           transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute w-64 h-64 rounded-full blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-          style={{ backgroundColor: 'rgba(245, 158, 11, 0.05)' }}
+          style={{ backgroundColor: 'rgba(var(--primary-color), 0.05)' }}
         />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(212,168,67,0.08), transparent 70%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(var(--primary-color), 0.08), transparent 70%)' }} />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
@@ -174,7 +161,7 @@ const BentoShowcase = () => {
           </p>
         </motion.div>
 
-        {/* Bento Grid with asymmetry */}
+        {/* Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 auto-rows-[220px]">
           {cards.map((card, index) => (
             <BentoCard key={index} {...card} />

@@ -191,7 +191,7 @@ const InteractiveDocs = () => {
 
   return (
     <section ref={containerRef} className="relative py-20 md:py-32 px-4 overflow-hidden" style={{ backgroundColor: '#0a0a0f' }}>
-      {/* Background orbs */}
+      {/* Background orbs – unified primary */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{ x: [0, 60, 0], y: [0, -40, 0] }}
@@ -203,9 +203,9 @@ const InteractiveDocs = () => {
           animate={{ x: [0, -50, 0], y: [0, 40, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute w-80 h-80 rounded-full blur-3xl bottom-20 left-20"
-          style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
+          style={{ backgroundColor: 'rgba(var(--primary-color), 0.06)' }}
         />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(212,168,67,0.06), transparent 70%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(var(--primary-color), 0.06), transparent 70%)' }} />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12">

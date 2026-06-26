@@ -13,7 +13,6 @@ const loginUser = async (req, res, next) => {
       throw new Error('Please provide username and password');
     }
 
-    // Find user by username, explicitly include password
     const user = await User.findOne({ username }).select('+password');
 
     if (!user) {
@@ -21,20 +20,17 @@ const loginUser = async (req, res, next) => {
       throw new Error('Invalid credentials');
     }
 
-    // Check if user is blocked
     if (user.isBlocked) {
       res.status(403);
       throw new Error('Your account has been blocked. Please contact support.');
     }
 
-    // Verify password
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       res.status(401);
       throw new Error('Invalid credentials');
     }
 
-    // Prepare response (exclude sensitive fields)
     const userResponse = {
       id: user._id,
       username: user.username,
@@ -67,7 +63,6 @@ const loginUser = async (req, res, next) => {
 // @access  Private
 const getProfile = async (req, res, next) => {
   try {
-    // req.user is already attached by protect middleware
     const user = await User.findById(req.user._id).select('-password');
     if (!user) {
       res.status(404);
@@ -90,13 +85,17 @@ const createOwner = async (req, res, next) => {
   try {
     const { username, email, cafeName, temporaryPassword } = req.body;
 
-    // Validate required fields
     if (!username || !email || !cafeName) {
       res.status(400);
       throw new Error('Username, email, and cafe name are required');
     }
 
-    // Check if username or email already exists
+    // ❗ Password is now REQUIRED (no auto-generation)
+    if (!temporaryPassword || temporaryPassword.length < 6) {
+      res.status(400);
+      throw new Error('Password is required and must be at least 6 characters');
+    }
+
     const existingUser = await User.findOne({
       $or: [{ username }, { email }],
     });
@@ -105,42 +104,32 @@ const createOwner = async (req, res, next) => {
       throw new Error('Username or email already taken');
     }
 
-    // Generate a secure temporary password if not provided
-    const generatedPassword = temporaryPassword || Math.random().toString(36).slice(-8) + 'Aa1!';
-    // Ensure minimum length (6)
-    const finalPassword = generatedPassword.length < 6 ? generatedPassword + 'Aa1!' : generatedPassword;
-
-    // Generate a slug from cafeName
+    // Generate slug from cafeName
     const baseSlug = cafeName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
-    // Check for uniqueness and append random string if needed
     let slug = baseSlug;
     let slugExists = await User.findOne({ slug });
     if (slugExists) {
-      // Append a short random string (6 chars) to make it unique
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      let randomSuffix = Math.random().toString(36).substring(2, 8);
       slug = `${baseSlug}-${randomSuffix}`;
-      // In the rare case it still exists, loop (but very unlikely)
       while (await User.findOne({ slug })) {
-        slug = `${baseSlug}-${Math.random().toString(36).substring(2, 8)}`;
+        randomSuffix = Math.random().toString(36).substring(2, 8);
+        slug = `${baseSlug}-${randomSuffix}`;
       }
     }
 
-    // Create the owner user
     const newOwner = await User.create({
       username: username.trim(),
       email: email.trim().toLowerCase(),
-      password: finalPassword, // will be hashed by pre-save hook
+      password: temporaryPassword.trim(), // will be hashed by pre-save
       role: 'owner',
       isBlocked: false,
       cafeName: cafeName.trim(),
       slug: slug,
-      // Default theme and other fields will be set via schema defaults
     });
 
-    // Return the created user (without password) and the temporary password
     const userResponse = newOwner.toObject();
     delete userResponse.password;
 
@@ -149,8 +138,54 @@ const createOwner = async (req, res, next) => {
       message: 'Cafe owner created successfully',
       data: {
         user: userResponse,
-        temporaryPassword: finalPassword, // send back so superadmin can share it
+        // We don't return the password anymore – superadmin provided it.
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Change password (for logged-in user)
+// @route   PUT /api/auth/change-password
+// @access  Private
+const changePassword = async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      res.status(400);
+      throw new Error('Please provide old password, new password, and confirmation');
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400);
+      throw new Error('New password must be at least 6 characters');
+    }
+
+    if (newPassword !== confirmPassword) {
+      res.status(400);
+      throw new Error('New password and confirmation do not match');
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+    if (!user) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+
+    const isMatch = await user.matchPassword(oldPassword);
+    if (!isMatch) {
+      res.status(401);
+      throw new Error('Incorrect current password');
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password changed successfully',
     });
   } catch (error) {
     next(error);
@@ -161,4 +196,5 @@ module.exports = {
   loginUser,
   getProfile,
   createOwner,
+  changePassword,
 };

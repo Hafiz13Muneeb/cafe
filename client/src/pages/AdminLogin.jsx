@@ -35,14 +35,17 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(135deg, var(--bg-color), #f1f5f9)' }}>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-block p-4 bg-green-500 rounded-full shadow-lg shadow-green-200 mb-4">
+          <div
+            className="inline-block p-4 rounded-full shadow-lg mb-4"
+            style={{ backgroundColor: 'var(--primary-color)', boxShadow: '0 8px 30px rgba(212, 168, 67, 0.25)' }}
+          >
             <Lock size={32} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800">Admin Login</h1>
-          <p className="text-gray-500 text-sm mt-1">Sign in to manage your menu</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-color)' }}>Admin Login</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Sign in to manage your menu</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-soft p-6 md:p-8">
@@ -67,7 +70,8 @@ const AdminLogin = () => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
                   placeholder="Enter your username"
                   required
                 />
@@ -87,7 +91,8 @@ const AdminLogin = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
                   placeholder="Enter your password"
                   required
                 />
@@ -98,8 +103,14 @@ const AdminLogin = () => {
               type="submit"
               disabled={loading}
               className={`w-full py-2.5 rounded-lg font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200 ${
-                loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 active:scale-95 shadow-md shadow-green-200'
+                loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'hover:opacity-90 active:scale-95 shadow-md'
               }`}
+              style={{
+                backgroundColor: loading ? '#9ca3af' : 'var(--primary-color)',
+                boxShadow: loading ? 'none' : '0 4px 20px rgba(212, 168, 67, 0.3)',
+              }}
             >
               {loading ? (
                 <>
@@ -112,7 +123,7 @@ const AdminLogin = () => {
             </button>
           </form>
 
-          <p className="text-xs text-gray-400 text-center mt-4">
+          <p className="text-xs text-center mt-4" style={{ color: 'var(--text-secondary)' }}>
             Protected area • Authorized access only
           </p>
         </div>

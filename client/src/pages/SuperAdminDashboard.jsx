@@ -3,13 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  X, 
-  LogOut, 
-  Users, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  X,
+  LogOut,
+  Users,
   Shield,
   Eye,
   EyeOff,
@@ -123,7 +123,7 @@ const SuperAdminDashboard = () => {
       setError('');
       const response = await api.put(`/users/owners/${ownerId}/toggle-block`);
       if (response.data.success) {
-        setOwners(prev => prev.map(o => 
+        setOwners(prev => prev.map(o =>
           o._id === ownerId ? { ...o, isBlocked: !o.isBlocked } : o
         ));
         setSuccess(`Owner ${currentStatus ? 'unblocked' : 'blocked'} successfully`);
@@ -181,7 +181,7 @@ const SuperAdminDashboard = () => {
       };
       const response = await api.put(`/users/owners/${selectedOwner._id}`, payload);
       if (response.data.success) {
-        setOwners(prev => prev.map(o => 
+        setOwners(prev => prev.map(o =>
           o._id === selectedOwner._id ? response.data.data : o
         ));
         setIsEditModalOpen(false);
@@ -211,14 +211,14 @@ const SuperAdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-color)' }}>
       {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-20">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Shield className="text-indigo-600" size={24} />
-            <h1 className="text-xl font-bold text-gray-800">Super Admin</h1>
-            <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded">Control Panel</span>
+            <Shield size={24} style={{ color: 'var(--primary-color)' }} />
+            <h1 className="text-xl font-bold" style={{ color: 'var(--text-color)' }}>Super Admin</h1>
+            <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-color)' }}>Control Panel</span>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -248,7 +248,7 @@ const SuperAdminDashboard = () => {
           </div>
         )}
         {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-start gap-2">
+          <div className="mb-4 p-3 rounded-lg text-sm flex items-start gap-2" style={{ backgroundColor: 'var(--primary-light)', border: '1px solid var(--primary-color)', color: 'var(--primary-color)' }}>
             <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
             <span>{success}</span>
           </div>
@@ -257,12 +257,13 @@ const SuperAdminDashboard = () => {
         {/* Header with Add button */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Cafe Owners</h2>
-            <p className="text-sm text-gray-500">Manage all registered cafe owners</p>
+            <h2 className="text-2xl font-bold" style={{ color: 'var(--text-color)' }}>Cafe Owners</h2>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Manage all registered cafe owners</p>
           </div>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-md"
+            className="flex items-center gap-2 px-4 py-2 text-white rounded-lg shadow-md transition hover:opacity-90 active:scale-95"
+            style={{ backgroundColor: 'var(--primary-color)' }}
           >
             <Plus size={18} />
             Add Owner
@@ -273,12 +274,12 @@ const SuperAdminDashboard = () => {
         <div className="bg-white rounded-xl shadow-soft overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
-              <div className="inline-block animate-spin rounded-full h-6 w-6 border-4 border-indigo-500 border-t-transparent"></div>
-              <p className="mt-2 text-gray-500">Loading owners...</p>
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-4 border-t-transparent" style={{ borderColor: 'var(--primary-color) transparent transparent transparent' }}></div>
+              <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>Loading owners...</p>
             </div>
           ) : owners.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              <Users size={40} className="mx-auto text-gray-300 mb-2" />
+            <div className="p-8 text-center" style={{ color: 'var(--text-secondary)' }}>
+              <Users size={40} className="mx-auto mb-2" style={{ color: 'var(--border-color)' }} />
               <p>No cafe owners registered yet.</p>
             </div>
           ) : (
@@ -298,14 +299,16 @@ const SuperAdminDashboard = () => {
                 <tbody className="divide-y divide-gray-100">
                   {owners.map((owner) => (
                     <tr key={owner._id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 text-sm font-medium text-gray-800">{owner.cafeName || '—'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{owner.username}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{owner.email}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 font-mono">{owner.slug || '—'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{owner.whatsappNumber || '—'}</td>
+                      <td className="px-4 py-3 text-sm font-medium" style={{ color: 'var(--text-color)' }}>{owner.cafeName || '—'}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{owner.username}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{owner.email}</td>
+                      <td className="px-4 py-3 text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>{owner.slug || '—'}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{owner.whatsappNumber || '—'}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          owner.isBlocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                          owner.isBlocked
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-primary/20 text-primary border border-primary/30'
                         }`}>
                           {owner.isBlocked ? 'Blocked' : 'Active'}
                         </span>
@@ -315,7 +318,7 @@ const SuperAdminDashboard = () => {
                           <button
                             onClick={() => handleToggleBlock(owner._id, owner.isBlocked)}
                             className={`p-1.5 rounded-lg transition ${
-                              owner.isBlocked ? 'hover:bg-green-50 text-green-600' : 'hover:bg-red-50 text-red-600'
+                              owner.isBlocked ? 'hover:bg-primary/20 text-primary' : 'hover:bg-red-50 text-red-600'
                             }`}
                             title={owner.isBlocked ? 'Unblock' : 'Block'}
                           >
@@ -323,7 +326,7 @@ const SuperAdminDashboard = () => {
                           </button>
                           <button
                             onClick={() => openEditModal(owner)}
-                            className="p-1.5 hover:bg-blue-50 text-blue-600 rounded-lg transition"
+                            className="p-1.5 hover:bg-primary/20 text-primary rounded-lg transition"
                             title="Edit"
                           >
                             <Edit size={16} />
@@ -351,7 +354,7 @@ const SuperAdminDashboard = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fade-in">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-float p-6 animate-slide-up">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Add New Cafe Owner</h3>
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--text-color)' }}>Add New Cafe Owner</h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
                 className="p-1 hover:bg-gray-100 rounded-full transition"
@@ -361,57 +364,62 @@ const SuperAdminDashboard = () => {
             </div>
             <form onSubmit={handleAddOwner} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Username *</label>
+                <label className="block text-sm font-medium" style={{ color: 'var(--text-color)' }}>Username *</label>
                 <input
                   type="text"
                   name="username"
                   value={formData.username}
                   onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
                   required
                   minLength={3}
                   maxLength={30}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Email *</label>
+                <label className="block text-sm font-medium" style={{ color: 'var(--text-color)' }}>Email *</label>
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Cafe Name *</label>
+                <label className="block text-sm font-medium" style={{ color: 'var(--text-color)' }}>Cafe Name *</label>
                 <input
                   type="text"
                   name="cafeName"
                   value={formData.cafeName}
                   onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Temporary Password (optional)</label>
+                <label className="block text-sm font-medium" style={{ color: 'var(--text-color)' }}>Temporary Password (optional)</label>
                 <input
                   type="text"
                   name="temporaryPassword"
                   value={formData.temporaryPassword}
                   onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
                   placeholder="Leave blank to auto-generate"
                 />
-                <p className="text-xs text-gray-400 mt-1">Min 6 characters. If left blank, a secure password will be generated.</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Min 6 characters. If left blank, a secure password will be generated.</p>
               </div>
               <div className="flex gap-2 pt-2">
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                  className="flex-1 px-4 py-2 text-white rounded-lg shadow-md transition disabled:opacity-50 hover:opacity-90"
+                  style={{ backgroundColor: 'var(--primary-color)' }}
                 >
                   {formLoading ? 'Creating...' : 'Create Owner'}
                 </button>
@@ -433,7 +441,7 @@ const SuperAdminDashboard = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fade-in">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-float p-6 animate-slide-up max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Edit Owner: {selectedOwner.cafeName}</h3>
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--text-color)' }}>Edit Owner: {selectedOwner.cafeName}</h3>
               <button
                 onClick={() => { setIsEditModalOpen(false); setSelectedOwner(null); }}
                 className="p-1 hover:bg-gray-100 rounded-full transition"
@@ -443,41 +451,44 @@ const SuperAdminDashboard = () => {
             </div>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Cafe Name *</label>
+                <label className="block text-sm font-medium" style={{ color: 'var(--text-color)' }}>Cafe Name *</label>
                 <input
                   type="text"
                   name="cafeName"
                   value={editFormData.cafeName}
                   onChange={handleEditChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">WhatsApp Number</label>
+                <label className="block text-sm font-medium" style={{ color: 'var(--text-color)' }}>WhatsApp Number</label>
                 <input
                   type="text"
                   name="whatsappNumber"
                   value={editFormData.whatsappNumber}
                   onChange={handleEditChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
                   placeholder="e.g., 923001234567"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Tables (comma-separated)</label>
+                <label className="block text-sm font-medium" style={{ color: 'var(--text-color)' }}>Tables (comma-separated)</label>
                 <input
                   type="text"
                   name="tables"
                   value={editFormData.tables}
                   onChange={handleEditChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
                   placeholder="e.g., 1, 2, 3, VIP, Patio"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Primary Color</label>
+                  <label className="block text-sm font-medium" style={{ color: 'var(--text-color)' }}>Primary Color</label>
                   <input
                     type="color"
                     name="primaryColor"
@@ -487,7 +498,7 @@ const SuperAdminDashboard = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Secondary Color</label>
+                  <label className="block text-sm font-medium" style={{ color: 'var(--text-color)' }}>Secondary Color</label>
                   <input
                     type="color"
                     name="secondaryColor"
@@ -498,12 +509,13 @@ const SuperAdminDashboard = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Theme Mode</label>
+                <label className="block text-sm font-medium" style={{ color: 'var(--text-color)' }}>Theme Mode</label>
                 <select
                   name="mode"
                   value={editFormData.mode}
                   onChange={handleEditChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ '--tw-ring-color': 'var(--primary-color)' }}
                 >
                   <option value="light">Light</option>
                   <option value="dark">Dark</option>
@@ -513,7 +525,8 @@ const SuperAdminDashboard = () => {
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                  className="flex-1 px-4 py-2 text-white rounded-lg shadow-md transition disabled:opacity-50 hover:opacity-90"
+                  style={{ backgroundColor: 'var(--primary-color)' }}
                 >
                   {formLoading ? 'Saving...' : 'Save Changes'}
                 </button>

@@ -113,18 +113,18 @@ const Hero = () => {
       className="relative min-h-screen flex items-center justify-center px-4 py-20 md:py-28 overflow-hidden"
       style={{ backgroundColor: '#0a0a0f', color: '#ffffff' }}
     >
-      {/* Background: grid + glows */}
+      {/* Background: grid + glows – unified primary */}
       <GridBackground />
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-indigo-900/20" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5" />
       <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-primary/15 rounded-full blur-3xl animate-pulse-slow" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl animate-pulse-slower" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-slower" />
 
       {/* Particles */}
       <Particles count={100} />
 
-      {/* Floating 3D shapes */}
+      {/* Floating 3D shapes – unified primary */}
       <FloatingShape delay={0} duration={8} size="100px" className="top-20 left-[10%] rounded-full bg-gradient-to-br from-primary/30 to-transparent blur-2xl" rotation />
-      <FloatingShape delay={2} duration={10} size="120px" className="bottom-20 right-[10%] rounded-full bg-indigo-500/20 blur-3xl" rotation />
+      <FloatingShape delay={2} duration={10} size="120px" className="bottom-20 right-[10%] rounded-full bg-primary/20 blur-3xl" rotation />
       <FloatingShape delay={4} duration={12} size="60px" className="top-1/2 left-[5%] bg-primary/20 rounded-lg rotate-45" rotation />
 
       {/* Content */}
@@ -160,7 +160,7 @@ const Hero = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
             <motion.a
-              href="/menu/demo"  // Updated to use dynamic slug
+              href="/menu/demo"
               whileHover={{ scale: 1.05, boxShadow: '0 0 40px var(--primary-light)' }}
               whileTap={{ scale: 0.95 }}
               className="group inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary to-amber-500 text-white rounded-2xl font-semibold shadow-lg shadow-primary/30 transition-all duration-300"
@@ -200,7 +200,7 @@ const Hero = () => {
           className="flex justify-center items-center perspective-1000"
         >
           <div className="relative w-64 h-[420px] md:w-80 md:h-[500px] mx-auto">
-            {/* Glow behind phone */}
+            {/* Glow behind phone – unified primary */}
             <motion.div
               animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
