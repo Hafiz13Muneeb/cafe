@@ -1,6 +1,7 @@
 // src/components/superadmin/OwnerTable.jsx - Table of cafe owners with actions
 import React from 'react';
-import { Eye, EyeOff, Edit, Trash2, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Eye, EyeOff, Edit, Trash2, Users, Bell } from 'lucide-react';
 
 const OwnerTable = ({ owners, loading, onToggleBlock, onEdit, onDelete }) => {
   if (loading) {
@@ -38,7 +39,25 @@ const OwnerTable = ({ owners, loading, onToggleBlock, onEdit, onDelete }) => {
         <tbody className="divide-y divide-gray-100">
           {owners.map((owner) => (
             <tr key={owner._id} className="hover:bg-gray-50 transition">
-              <td className="px-4 py-3 text-sm font-medium" style={{ color: 'var(--text-color)' }}>{owner.cafeName || '—'}</td>
+              <td className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                  {owner.activeReminders > 0 && (
+                    <Bell size={14} className="text-red-500 animate-pulse" />
+                  )}
+                  <Link
+                    to={`/admin/super/${owner.slug}`}
+                    className="text-sm font-medium hover:underline transition"
+                    style={{ color: 'var(--primary-color)' }}
+                  >
+                    {owner.cafeName || '—'}
+                  </Link>
+                  {owner.activeReminders > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full font-medium">
+                      {owner.activeReminders}
+                    </span>
+                  )}
+                </div>
+              </td>
               <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{owner.username}</td>
               <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{owner.email}</td>
               <td className="px-4 py-3 text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>{owner.slug || '—'}</td>

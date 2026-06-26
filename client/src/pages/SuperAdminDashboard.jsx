@@ -68,7 +68,27 @@ const SuperAdminDashboard = () => {
       setError('');
       const response = await api.get('/users/owners');
       if (response.data.success) {
-        setOwners(response.data.data);
+        const ownersData = response.data.data || [];
+        
+        // Fetch notes for each owner to check for active reminders
+        const ownersWithNotes = await Promise.all(
+          ownersData.map(async (owner) => {
+            try {
+              const notesRes = await api.get(`/analytics/notes/${owner._id}`);
+              const notes = notesRes.data.data || [];
+              const activeReminders = notes.filter(n => 
+                n.isReminderActive && n.reminderDate && new Date(n.reminderDate) <= new Date()
+              );
+              return { ...owner, activeReminders: activeReminders.length };
+            } catch {
+              return { ...owner, activeReminders: 0 };
+            }
+          })
+        );
+        
+        // Sort: owners with active reminders first
+        ownersWithNotes.sort((a, b) => b.activeReminders - a.activeReminders);
+        setOwners(ownersWithNotes);
       }
     } catch (err) {
       console.error('Error fetching owners:', err);

@@ -10,6 +10,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import SuperAdminSettings from './pages/SuperAdminSettings';
 import OwnerSettings from './pages/OwnerSettings';
+import SuperAdminCafeDetails from './pages/SuperAdminCafeDetails';
 
 // Protected route wrapper – redirects to login if not authenticated
 const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
@@ -99,6 +100,16 @@ function App() {
             element={
               <ProtectedRoute requireSuperAdmin>
                 <SuperAdminSettings />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* SuperAdmin Cafe Details – protected (superadmin only) */}
+          <Route
+            path="/admin/super/:cafeSlug"
+            element={
+              <ProtectedRoute requireSuperAdmin>
+                <SuperAdminCafeDetails />
               </ProtectedRoute>
             }
           />
