@@ -80,11 +80,15 @@ const CustomerMenu = () => {
         }
       } catch (err) {
         console.error('Error loading menu:', err);
-        // Check if it's a 403 Forbidden (cafe blocked)
-        if (err.response?.status === 403) {
+        // Handle different error statuses
+        if (err.response?.status === 404) {
+          setError('Cafe not found. Please check the URL.');
+        } else if (err.response?.status === 403) {
           setError('This cafe is currently unavailable. It has been blocked by the administrator.');
         } else {
-          setError(err.response?.data?.message || 'Failed to load menu. Please try again.');
+          // Use server message if available, otherwise fallback
+          const serverMsg = err.response?.data?.message;
+          setError(serverMsg || 'Failed to load menu. Please try again.');
         }
       } finally {
         setLoading(false);
@@ -146,8 +150,8 @@ const CustomerMenu = () => {
   }
 
   if (error) {
-    // Show a dedicated blocked message for 403
     const isBlocked = error.includes('blocked');
+    const isNotFound = error.includes('not found');
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
         <div className="text-center max-w-md mx-auto p-6">
@@ -160,8 +164,20 @@ const CustomerMenu = () => {
               <p className="text-gray-600">{error}</p>
               <p className="text-sm text-gray-400 mt-4">Please contact the cafe owner for more information.</p>
             </>
+          ) : isNotFound ? (
+            <>
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-yellow-100 flex items-center justify-center">
+                <span className="text-4xl">🔍</span>
+              </div>
+              <h2 className="text-2xl font-bold text-yellow-600 mb-2">Cafe Not Found</h2>
+              <p className="text-gray-600">{error}</p>
+              <p className="text-sm text-gray-400 mt-4">The cafe you are looking for does not exist or may have been removed.</p>
+            </>
           ) : (
             <>
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                <span className="text-4xl">⚠️</span>
+              </div>
               <h2 className="text-2xl font-bold text-red-500 mb-2">Oops!</h2>
               <p className="text-gray-600">{error}</p>
             </>

@@ -90,9 +90,8 @@ const UserSchema = new mongoose.Schema(
 // ------------------------------------------------
 // Indexes for performance
 // ------------------------------------------------
-UserSchema.index({ slug: 1 });
-UserSchema.index({ email: 1 });
-UserSchema.index({ username: 1 });
+// Only keep the compound index for role + isBlocked.
+// The unique fields (username, email, slug) are already indexed automatically.
 UserSchema.index({ role: 1, isBlocked: 1 });
 
 // ------------------------------------------------
@@ -115,17 +114,12 @@ UserSchema.pre('save', async function (next) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
-    // Ensure uniqueness by appending a short random string if conflict occurs
-    // We'll handle uniqueness in a separate step, but we set a base.
+    // This will be set as base; uniqueness will be handled in the controller
     this.slug = baseSlug;
   }
 
   next();
 });
-
-// Ensure slug uniqueness with a retry mechanism (optional, but we can handle in controller)
-// Alternatively, we can add a post-save hook to handle duplicates, but we'll rely on the unique index
-// and catch the error in the service layer.
 
 // ------------------------------------------------
 // Method to compare entered password with hashed

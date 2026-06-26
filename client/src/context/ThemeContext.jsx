@@ -1,56 +1,39 @@
-// src/context/ThemeContext.jsx - Global theme management with dynamic loading from API
+// src/context/ThemeContext.jsx - with useCallback
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import api, { fetchCafeSettings } from '../api/axios';
+import { fetchCafeSettings } from '../api/axios';
 
 const ThemeContext = createContext();
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
+  if (!context) throw new Error('useTheme must be used within a ThemeProvider');
   return context;
 };
 
 export const ThemeProvider = ({ children }) => {
-  // Load theme from localStorage (for admin panel) or default
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('theme');
     if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        // Invalid JSON, fallback
-      }
+      try { return JSON.parse(saved); } catch (e) {}
     }
-    // Default: premium light theme with gold accents
-    return {
-      mode: 'light',
-      primaryColor: '#d4a843',
-      secondaryColor: '#b8860b',
-    };
+    return { mode: 'light', primaryColor: '#d4a843', secondaryColor: '#b8860b' };
   });
 
   const [loading, setLoading] = useState(false);
-  const [cafeSettings, setCafeSettings] = useState(null); // For customer menu
+  const [cafeSettings, setCafeSettings] = useState(null);
 
-  // Save theme to localStorage whenever it changes (for admin)
   useEffect(() => {
     localStorage.setItem('theme', JSON.stringify(theme));
   }, [theme]);
 
-  // Apply theme CSS variables to root element
   const applyTheme = useCallback((themeObj) => {
     const root = document.documentElement;
-    // Set CSS variables for accent colors
     root.style.setProperty('--primary-color', themeObj.primaryColor);
     root.style.setProperty('--secondary-color', themeObj.secondaryColor);
     root.style.setProperty('--primary-light', themeObj.primaryColor + '20');
     root.style.setProperty('--primary-dark', themeObj.primaryColor + '80');
-    // For mode, we can set a data attribute or class
     root.classList.remove('light-mode', 'dark-mode');
     root.classList.add(`${themeObj.mode}-mode`);
-    // Also set background/foreground via CSS variables if needed
     if (themeObj.mode === 'dark') {
       root.style.setProperty('--bg-color', '#0a0a0f');
       root.style.setProperty('--text-color', '#ffffff');
@@ -60,24 +43,18 @@ export const ThemeProvider = ({ children }) => {
     }
   }, []);
 
-  // Apply theme whenever it changes
   useEffect(() => {
     applyTheme(theme);
   }, [theme, applyTheme]);
 
-  // --- Admin theme management ---
   const toggleTheme = useCallback(() => {
-    setTheme(prev => ({
-      ...prev,
-      mode: prev.mode === 'dark' ? 'light' : 'dark',
-    }));
+    setTheme(prev => ({ ...prev, mode: prev.mode === 'dark' ? 'light' : 'dark' }));
   }, []);
 
   const updateTheme = useCallback((newTheme) => {
     setTheme(prev => ({ ...prev, ...newTheme }));
   }, []);
 
-  // --- Customer menu: load theme from backend by slug ---
   const loadThemeFromSlug = useCallback(async (slug) => {
     setLoading(true);
     try {
@@ -89,34 +66,22 @@ export const ThemeProvider = ({ children }) => {
           mode: settings.theme.mode || 'light',
         };
         setCafeSettings(settings);
-        // Set theme state (temporarily overrides admin theme for the customer view)
         setTheme(themeData);
         return themeData;
       }
-      // Fallback to default theme if no settings
-      setTheme({
-        primaryColor: '#d4a843',
-        secondaryColor: '#b8860b',
-        mode: 'light',
-      });
+      setTheme({ primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' });
       return null;
     } catch (error) {
-      console.error('Failed to load theme from slug:', error);
-      // Fallback to default theme
-      setTheme({
-        primaryColor: '#d4a843',
-        secondaryColor: '#b8860b',
-        mode: 'light',
-      });
+      console.error('Failed to load theme:', error);
+      setTheme({ primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' });
       return null;
     } finally {
       setLoading(false);
     }
-  }, []); // No dependencies – it's a stable function
+  }, []);
 
-  // --- Load theme from logged-in user's settings (for admin dashboard) ---
   const loadThemeFromUser = useCallback((user) => {
-    if (user && user.theme) {
+    if (user?.theme) {
       const themeData = {
         primaryColor: user.theme.primaryColor || '#d4a843',
         secondaryColor: user.theme.secondaryColor || '#b8860b',
@@ -138,9 +103,5 @@ export const ThemeProvider = ({ children }) => {
     loadThemeFromUser,
   };
 
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };

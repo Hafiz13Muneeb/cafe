@@ -8,34 +8,48 @@ const { errorHandler } = require('./utils/errorHandler');
 const User = require('./models/User');
 const mongoose = require('mongoose');
 
-// Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
-connectDB();
+const app = express();
+const PORT = process.env.PORT || 5000;
 
-// ------------------------------------------------------------
-// AUTO-SEED SUPERADMIN (if none exists)
-// ------------------------------------------------------------
+// ----------------------------
+// Connect to MongoDB & start server
+// ----------------------------
+const startServer = async () => {
+  try {
+    // Connect to DB (with retry logic inside connectDB)
+    await connectDB();
+
+    // Seed superadmin if needed (after connection)
+    await seedSuperAdminIfNeeded();
+
+    // Start listening
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error('❌ Failed to start server:', err);
+    process.exit(1);
+  }
+};
+
+// ----------------------------
+// Auto‑seed superadmin
+// ----------------------------
 const seedSuperAdminIfNeeded = async () => {
   try {
     const superAdminExists = await User.findOne({ role: 'superadmin' });
     if (!superAdminExists) {
       console.log('🔄 No superadmin found. Seeding default superadmin...');
-      
-      const generatedPassword = 'SuperAdmin@2026!'; // You can change this or generate a random one
-      // For production, it's better to generate a random password and log it
-      // const generatedPassword = Math.random().toString(36).slice(-8) + 'Aa1!';
-      
+      const generatedPassword = 'SuperAdmin@2026!';
       await User.create({
         username: 'superadmin',
         email: 'superadmin@cafemenu.com',
         password: generatedPassword,
         role: 'superadmin',
         isBlocked: false,
-        // No cafe-specific fields needed
       });
-      
       console.log('✅ Superadmin created successfully:');
       console.log(`   Username: superadmin`);
       console.log(`   Password: ${generatedPassword}`);
@@ -48,22 +62,13 @@ const seedSuperAdminIfNeeded = async () => {
   }
 };
 
-// Call the seed function (waits for connection to be ready)
-seedSuperAdminIfNeeded();
-// ------------------------------------------------------------
-
-const app = express();
-
 // =============================================
-// Logging
+// Middleware
 // =============================================
 app.use(morgan('dev'));
 
-// =============================================
-// Rate Limiting (prevent brute-force)
-// =============================================
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: process.env.RATE_LIMIT_MAX || 100,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
@@ -71,11 +76,7 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-// =============================================
-// Caching Middleware for Public GET endpoints
-// =============================================
 const cacheControl = (req, res, next) => {
-  // Cache public menu responses for 5 minutes
   if (req.method === 'GET' && req.path.startsWith('/api/menu/') && !req.path.includes('?all')) {
     res.setHeader('Cache-Control', 'public, max-age=300');
   }
@@ -83,13 +84,9 @@ const cacheControl = (req, res, next) => {
 };
 app.use(cacheControl);
 
-// =============================================
-// Core Middleware
-// =============================================
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// CORS
 app.use(
   cors({
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -105,13 +102,11 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/menu', require('./routes/menuRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 
-// Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
     const dbState = mongoose.connection.readyState;
-    const status = dbState === 1 ? 'OK' : 'Degraded';
     res.status(200).json({
-      status: status,
+      status: dbState === 1 ? 'OK' : 'Degraded',
       message: 'Server is running',
       db: dbState === 1 ? 'connected' : 'disconnected',
     });
@@ -132,12 +127,11 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // =============================================
-// Error handling middleware (must be last)
+// Error Handler (must be last)
 // =============================================
 app.use(errorHandler);
 
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+// =============================================
+// Start the server
+// =============================================
+startServer();
