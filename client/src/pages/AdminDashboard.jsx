@@ -18,9 +18,6 @@ import {
   Image as ImageIcon,
   AlertCircle,
   CheckCircle,
-  Sun,
-  Moon,
-  RefreshCw,
   KeyRound
 } from 'lucide-react';
 import QRCode from 'qrcode.react';
@@ -116,13 +113,11 @@ const AdminDashboard = () => {
   const [faviconFile, setFaviconFile] = useState(null);
   const [newTableInput, setNewTableInput] = useState('');
 
-  const [primaryColor, setPrimaryColor] = useState(user?.theme?.primaryColor || '#d4a843');
-  const [secondaryColor, setSecondaryColor] = useState(user?.theme?.secondaryColor || '#b8860b');
-  const [themeMode, setThemeMode] = useState(user?.theme?.mode || 'light');
-
+  // QR code state
   const [qrValue, setQrValue] = useState('');
   const [cafeSlug, setCafeSlug] = useState(user?.slug || '');
 
+  // Password change state
   const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
@@ -151,10 +146,8 @@ const AdminDashboard = () => {
         faviconUrl: user.faviconUrl || '',
         tables: user.tables || [],
       });
+      // Apply the user's theme – but owner cannot change it, only view
       if (user.theme) {
-        setPrimaryColor(user.theme.primaryColor || '#d4a843');
-        setSecondaryColor(user.theme.secondaryColor || '#b8860b');
-        setThemeMode(user.theme.mode || 'light');
         updateTheme(user.theme);
       }
     }
@@ -292,9 +285,6 @@ const AdminDashboard = () => {
       formDataToSend.append('cafeName', settingsData.cafeName);
       formDataToSend.append('whatsappNumber', settingsData.whatsappNumber);
       formDataToSend.append('tables', settingsData.tables.join(','));
-      formDataToSend.append('primaryColor', primaryColor);
-      formDataToSend.append('secondaryColor', secondaryColor);
-      formDataToSend.append('mode', themeMode);
       if (logoFile) formDataToSend.append('logo', logoFile);
       if (faviconFile) formDataToSend.append('favicon', faviconFile);
 
@@ -310,7 +300,6 @@ const AdminDashboard = () => {
           logoUrl: data.logoUrl || '',
           faviconUrl: data.faviconUrl || '',
           tables: data.tables || [],
-          theme: data.theme,
         });
         setSettingsData({
           cafeName: data.cafeName,
@@ -319,10 +308,6 @@ const AdminDashboard = () => {
           faviconUrl: data.faviconUrl || '',
           tables: data.tables || [],
         });
-        setPrimaryColor(data.theme?.primaryColor || '#d4a843');
-        setSecondaryColor(data.theme?.secondaryColor || '#b8860b');
-        setThemeMode(data.theme?.mode || 'light');
-        updateTheme(data.theme);
         setLogoFile(null);
         setFaviconFile(null);
         setIsSettingsOpen(false);
@@ -447,38 +432,6 @@ const AdminDashboard = () => {
               <span className="text-sm">{faviconFile ? faviconFile.name : 'Upload Favicon'}</span>
               <input type="file" accept="image/*" onChange={(e) => setFaviconFile(e.target.files[0])} className="hidden" />
             </label>
-          </div>
-        </div>
-
-        {/* Theme section */}
-        <div className="border-t border-gray-200 pt-5">
-          <h3 className="text-md font-semibold text-gray-800 mb-3">Theme Customization</h3>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-gray-700">Mode</span>
-            <button
-              type="button"
-              onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-            >
-              {themeMode === 'light' ? <Sun size={16} className="text-yellow-500" /> : <Moon size={16} className="text-indigo-500" />}
-              <span>{themeMode === 'light' ? 'Light' : 'Dark'}</span>
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Primary Color</label>
-              <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-full h-10 p-1 border border-gray-300 rounded-lg cursor-pointer" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Secondary Color</label>
-              <input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="w-full h-10 p-1 border border-gray-300 rounded-lg cursor-pointer" />
-            </div>
-          </div>
-          <div className="mt-3 p-3 border border-gray-200 rounded-xl bg-gray-50">
-            <div className="flex items-center justify-center gap-3">
-              <span className="px-3 py-1 rounded-full text-xs font-medium text-white" style={{ backgroundColor: primaryColor }}>Primary</span>
-              <span className="px-3 py-1 rounded-full text-xs font-medium text-white" style={{ backgroundColor: secondaryColor }}>Secondary</span>
-            </div>
           </div>
         </div>
 
