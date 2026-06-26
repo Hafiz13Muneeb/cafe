@@ -1,5 +1,5 @@
 // src/context/ThemeContext.jsx - Global theme management with dynamic loading from API
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api, { fetchCafeSettings } from '../api/axios';
 
 const ThemeContext = createContext();
@@ -40,7 +40,7 @@ export const ThemeProvider = ({ children }) => {
   }, [theme]);
 
   // Apply theme CSS variables to root element
-  const applyTheme = (themeObj) => {
+  const applyTheme = useCallback((themeObj) => {
     const root = document.documentElement;
     // Set CSS variables for accent colors
     root.style.setProperty('--primary-color', themeObj.primaryColor);
@@ -58,27 +58,27 @@ export const ThemeProvider = ({ children }) => {
       root.style.setProperty('--bg-color', '#f8fafc');
       root.style.setProperty('--text-color', '#0f172a');
     }
-  };
+  }, []);
 
   // Apply theme whenever it changes
   useEffect(() => {
     applyTheme(theme);
-  }, [theme]);
+  }, [theme, applyTheme]);
 
   // --- Admin theme management ---
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setTheme(prev => ({
       ...prev,
       mode: prev.mode === 'dark' ? 'light' : 'dark',
     }));
-  };
+  }, []);
 
-  const updateTheme = (newTheme) => {
+  const updateTheme = useCallback((newTheme) => {
     setTheme(prev => ({ ...prev, ...newTheme }));
-  };
+  }, []);
 
   // --- Customer menu: load theme from backend by slug ---
-  const loadThemeFromSlug = async (slug) => {
+  const loadThemeFromSlug = useCallback(async (slug) => {
     setLoading(true);
     try {
       const settings = await fetchCafeSettings(slug);
@@ -112,10 +112,10 @@ export const ThemeProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // No dependencies – it's a stable function
 
   // --- Load theme from logged-in user's settings (for admin dashboard) ---
-  const loadThemeFromUser = (user) => {
+  const loadThemeFromUser = useCallback((user) => {
     if (user && user.theme) {
       const themeData = {
         primaryColor: user.theme.primaryColor || '#d4a843',
@@ -126,7 +126,7 @@ export const ThemeProvider = ({ children }) => {
       return themeData;
     }
     return null;
-  };
+  }, []);
 
   const value = {
     theme,
