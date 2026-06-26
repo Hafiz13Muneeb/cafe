@@ -80,7 +80,12 @@ const CustomerMenu = () => {
         }
       } catch (err) {
         console.error('Error loading menu:', err);
-        setError(err.response?.data?.message || 'Failed to load menu. Please try again.');
+        // Check if it's a 403 Forbidden (cafe blocked)
+        if (err.response?.status === 403) {
+          setError('This cafe is currently unavailable. It has been blocked by the administrator.');
+        } else {
+          setError(err.response?.data?.message || 'Failed to load menu. Please try again.');
+        }
       } finally {
         setLoading(false);
       }
@@ -118,7 +123,6 @@ const CustomerMenu = () => {
   if (loading) {
     return (
       <div className="min-h-screen pb-24" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
-        {/* Header skeleton */}
         <header className="shadow-sm sticky top-0 z-10 border-b" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
           <div className="container mx-auto px-4 py-4 flex items-center gap-3">
             <div className="h-10 w-32 bg-slate-200 rounded animate-pulse" />
@@ -142,11 +146,26 @@ const CustomerMenu = () => {
   }
 
   if (error) {
+    // Show a dedicated blocked message for 403
+    const isBlocked = error.includes('blocked');
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-500 mb-2">Oops!</h2>
-          <p className="text-gray-600">{error}</p>
+        <div className="text-center max-w-md mx-auto p-6">
+          {isBlocked ? (
+            <>
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                <span className="text-4xl">🚫</span>
+              </div>
+              <h2 className="text-2xl font-bold text-red-600 mb-2">Cafe Unavailable</h2>
+              <p className="text-gray-600">{error}</p>
+              <p className="text-sm text-gray-400 mt-4">Please contact the cafe owner for more information.</p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold text-red-500 mb-2">Oops!</h2>
+              <p className="text-gray-600">{error}</p>
+            </>
+          )}
         </div>
       </div>
     );
@@ -154,7 +173,6 @@ const CustomerMenu = () => {
 
   return (
     <div className="min-h-screen pb-24" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
-      {/* Header with dynamic styles */}
       <header
         className="shadow-sm sticky top-0 z-10 border-b"
         style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}
@@ -173,7 +191,6 @@ const CustomerMenu = () => {
         </div>
       </header>
 
-      {/* Category Filter */}
       <div
         className="sticky top-[72px] z-10 border-b"
         style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}
@@ -187,7 +204,6 @@ const CustomerMenu = () => {
         </div>
       </div>
 
-      {/* Menu Grid */}
       <div className="container mx-auto px-4 py-4">
         {filteredItems.length === 0 ? (
           <div className="text-center py-12 opacity-70" style={{ color: 'var(--text-color)' }}>
@@ -202,7 +218,6 @@ const CustomerMenu = () => {
         )}
       </div>
 
-      {/* Floating Cart Button */}
       {cart.length > 0 && (
         <CartFloatingButton
           totalItems={getTotalItems()}
@@ -211,7 +226,6 @@ const CustomerMenu = () => {
         />
       )}
 
-      {/* Cart Modal */}
       <CartModal
         isOpen={showCartModal}
         onClose={() => setShowCartModal(false)}

@@ -46,13 +46,17 @@ api.interceptors.response.use(
 
     // Handle 403 Forbidden (account blocked)
     if (error.response?.status === 403) {
+      // Check if this is a public menu request (no auth required)
+      const isPublicMenu = error.config?.url?.startsWith('/menu/') && !error.config?.url?.includes('?');
+      if (isPublicMenu) {
+        // Do NOT redirect – let the component handle it
+        return Promise.reject(error);
+      }
+      // For all other 403 errors, treat as account blocked (admin panel)
       const message = error.response?.data?.message || 'Your account has been blocked. Please contact support.';
-      // Show a user-friendly alert or redirect to a blocked page
       if (typeof window !== 'undefined') {
-        // Clear session to force re-login
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminData');
-        // Redirect to login with error message
         sessionStorage.setItem('authError', message);
         window.location.href = '/admin';
       }
