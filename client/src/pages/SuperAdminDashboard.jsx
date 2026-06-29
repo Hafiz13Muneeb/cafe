@@ -1,35 +1,31 @@
-// src/pages/SuperAdminDashboard.jsx - Superadmin panel (refactored)
+// src/pages/SuperAdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { Plus, LogOut, RefreshCw, Settings, Shield, AlertCircle, CheckCircle } from 'lucide-react';
+import { Plus, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import Button from '../components/common/Button';
 import OwnerTable from '../components/superadmin/OwnerTable';
 import OwnerFormModal from '../components/superadmin/OwnerFormModal';
+import DashboardLayout from '../components/layout/DashboardLayout';
 
 const SuperAdminDashboard = () => {
-  const { user, logout, isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isSuperAdmin) {
-      navigate('/admin/dashboard');
-    }
+    if (!isSuperAdmin) navigate('/admin/dashboard');
   }, [isSuperAdmin, navigate]);
 
-  // State
   const [owners, setOwners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState(null);
 
-  // Add form state
   const [addFormData, setAddFormData] = useState({
     username: '',
     email: '',
@@ -38,7 +34,6 @@ const SuperAdminDashboard = () => {
   });
   const [addLoading, setAddLoading] = useState(false);
 
-  // Edit form state
   const [editFormData, setEditFormData] = useState({
     cafeName: '',
     whatsappNumber: '',
@@ -49,15 +44,13 @@ const SuperAdminDashboard = () => {
   });
   const [editLoading, setEditLoading] = useState(false);
 
-  // Fetch owners on mount
   useEffect(() => {
     fetchOwners();
   }, []);
 
-  // Auto-clear success after 3s
   useEffect(() => {
     if (success) {
-      const timer = setTimeout(() => setSuccess(''), 3000);
+      const timer = setTimeout(() => setSuccess(''), 5000);
       return () => clearTimeout(timer);
     }
   }, [success]);
@@ -69,8 +62,6 @@ const SuperAdminDashboard = () => {
       const response = await api.get('/users/owners');
       if (response.data.success) {
         const ownersData = response.data.data || [];
-        
-        // Fetch notes for each owner to check for active reminders
         const ownersWithNotes = await Promise.all(
           ownersData.map(async (owner) => {
             try {
@@ -85,39 +76,35 @@ const SuperAdminDashboard = () => {
             }
           })
         );
-        
-        // Sort: owners with active reminders first
         ownersWithNotes.sort((a, b) => b.activeReminders - a.activeReminders);
         setOwners(ownersWithNotes);
       }
     } catch (err) {
-      console.error('Error fetching owners:', err);
       setError(err.response?.data?.message || 'Failed to load owners');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/admin');
-  };
-
-  // --- Add Owner ---
   const handleAddOwner = async (e) => {
     e.preventDefault();
     setAddLoading(true);
     setError('');
     setSuccess('');
     try {
-      const response = await api.post('/auth/create-owner', addFormData);
+      const payload = {
+        username: addFormData.username.trim(),
+        email: addFormData.email.trim().toLowerCase(),
+        cafeName: addFormData.cafeName.trim(),
+        temporaryPassword: addFormData.temporaryPassword,
+      };
+      const response = await api.post('/auth/create-owner', payload);
       if (response.data.success) {
         const newOwner = response.data.data.user;
-        const tempPassword = response.data.data.temporaryPassword;
         setOwners(prev => [newOwner, ...prev]);
         setIsAddModalOpen(false);
         setAddFormData({ username: '', email: '', cafeName: '', temporaryPassword: '' });
-        setSuccess(`Owner created! Temporary password: ${tempPassword} (copy it now)`);
+        setSuccess(`✅ Owner created successfully!\nUsername: ${newOwner.username}\nCafe: ${newOwner.cafeName}`);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create owner');
@@ -126,7 +113,6 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // --- Toggle Block ---
   const handleToggleBlock = async (ownerId, currentStatus) => {
     if (!window.confirm(`Are you sure you want to ${currentStatus ? 'unblock' : 'block'} this owner?`)) return;
     try {
@@ -143,7 +129,6 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // --- Delete Owner ---
   const handleDelete = async (ownerId) => {
     if (!window.confirm('Are you sure you want to permanently delete this owner? This cannot be undone.')) return;
     try {
@@ -158,7 +143,6 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  // --- Open Edit Modal ---
   const openEditModal = (owner) => {
     setSelectedOwner(owner);
     setEditFormData({
@@ -172,7 +156,6 @@ const SuperAdminDashboard = () => {
     setIsEditModalOpen(true);
   };
 
-  // --- Update Owner ---
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     setEditLoading(true);
@@ -205,74 +188,49 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  if (!isSuperAdmin) {
-    return null;
-  }
+  if (!isSuperAdmin) return null;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-color)' }}>
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-20">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Shield size={24} style={{ color: 'var(--primary-color)' }} />
-            <h1 className="text-xl font-bold" style={{ color: 'var(--text-color)' }}>Super Admin</h1>
-            <span className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary-color)' }}>Control Panel</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={fetchOwners} className="p-2">
-              <RefreshCw size={20} />
-            </Button>
-            <Button variant="secondary" onClick={() => navigate('/admin/settings')} className="p-2">
-              <Settings size={20} />
-            </Button>
-            <Button variant="secondary" onClick={handleLogout} className="p-2">
-              <LogOut size={20} />
-            </Button>
-          </div>
+    <DashboardLayout title="Super Admin" subtitle="Control Panel">
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
+          <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <span>{error}</span>
         </div>
-      </header>
+      )}
+      {success && (
+        <div className="mb-4 p-4 rounded-lg text-sm flex items-start gap-2 whitespace-pre-line" style={{ backgroundColor: 'var(--primary-light)', border: '1px solid var(--primary-color)', color: 'var(--primary-color)' }}>
+          <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <span>{success}</span>
+        </div>
+      )}
 
-      <div className="container mx-auto px-4 py-6">
-        {/* Error / Success messages */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
-            <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
-        {success && (
-          <div className="mb-4 p-3 rounded-lg text-sm flex items-start gap-2" style={{ backgroundColor: 'var(--primary-light)', border: '1px solid var(--primary-color)', color: 'var(--primary-color)' }}>
-            <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
-            <span>{success}</span>
-          </div>
-        )}
-
-        {/* Header with Add button */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold" style={{ color: 'var(--text-color)' }}>Cafe Owners</h2>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Manage all registered cafe owners</p>
-          </div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--text-color)' }}>Cafe Owners</h2>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Manage all registered cafe owners</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={fetchOwners} className="p-2">
+            <RefreshCw size={18} />
+          </Button>
           <Button variant="primary" onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
             <Plus size={18} />
             Add Owner
           </Button>
         </div>
-
-        {/* Owners Table */}
-        <div className="bg-white rounded-xl shadow-soft overflow-hidden">
-          <OwnerTable
-            owners={owners}
-            loading={loading}
-            onToggleBlock={handleToggleBlock}
-            onEdit={openEditModal}
-            onDelete={handleDelete}
-          />
-        </div>
       </div>
 
-      {/* --- Add Owner Modal --- */}
+      <div className="bg-white rounded-xl shadow-soft overflow-hidden">
+        <OwnerTable
+          owners={owners}
+          loading={loading}
+          onToggleBlock={handleToggleBlock}
+          onEdit={openEditModal}
+          onDelete={handleDelete}
+        />
+      </div>
+
       <OwnerFormModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
@@ -285,7 +243,6 @@ const SuperAdminDashboard = () => {
         submitLabel="Create Owner"
       />
 
-      {/* --- Edit Owner Modal --- */}
       <OwnerFormModal
         isOpen={isEditModalOpen}
         onClose={() => { setIsEditModalOpen(false); setSelectedOwner(null); }}
@@ -297,7 +254,7 @@ const SuperAdminDashboard = () => {
         isEdit={true}
         submitLabel="Save Changes"
       />
-    </div>
+    </DashboardLayout>
   );
 };
 

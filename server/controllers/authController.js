@@ -1,3 +1,4 @@
+// controllers/authController.js
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 
@@ -136,6 +137,7 @@ const createOwner = async (req, res, next) => {
       message: 'Cafe owner created successfully',
       data: {
         user: userResponse,
+        // Do NOT return the password
       },
     });
   } catch (error) {

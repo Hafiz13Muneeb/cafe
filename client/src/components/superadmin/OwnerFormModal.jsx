@@ -1,6 +1,5 @@
-// src/components/superadmin/OwnerFormModal.jsx - Add/Edit owner modal
+// src/components/superadmin/OwnerFormModal.jsx
 import React from 'react';
-import { X } from 'lucide-react';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
@@ -25,25 +24,35 @@ const OwnerFormModal = ({
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
       <form onSubmit={onSubmit} className="space-y-4">
         {!isEdit && (
-          <Input
-            label="Username"
-            name="username"
-            value={formData.username || ''}
-            onChange={handleChange}
-            required
-            minLength={3}
-            maxLength={30}
-          />
-        )}
-        {!isEdit && (
-          <Input
-            label="Email"
-            name="email"
-            value={formData.email || ''}
-            onChange={handleChange}
-            type="email"
-            required
-          />
+          <>
+            <Input
+              label="Username"
+              name="username"
+              value={formData.username || ''}
+              onChange={handleChange}
+              required
+              minLength={3}
+              maxLength={30}
+            />
+            <Input
+              label="Email"
+              name="email"
+              value={formData.email || ''}
+              onChange={handleChange}
+              type="email"
+              required
+            />
+            <Input
+              label="Temporary Password"
+              name="temporaryPassword"
+              value={formData.temporaryPassword || ''}
+              onChange={handleChange}
+              type="password"
+              required
+              minLength={6}
+              placeholder="Enter a secure password"
+            />
+          </>
         )}
         <Input
           label="Cafe Name"
@@ -52,19 +61,6 @@ const OwnerFormModal = ({
           onChange={handleChange}
           required
         />
-        {!isEdit && (
-          <div>
-            <Input
-              label="Temporary Password"
-              name="temporaryPassword"
-              value={formData.temporaryPassword || ''}
-              onChange={handleChange}
-              type="text"
-              placeholder="Leave blank to auto-generate"
-            />
-            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Min 6 characters. If left blank, a secure password will be generated.</p>
-          </div>
-        )}
         {isEdit && (
           <>
             <Input

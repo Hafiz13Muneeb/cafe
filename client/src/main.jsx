@@ -8,7 +8,6 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
     <AuthProvider>
       <CartProvider>
         <ThemeProvider>
@@ -16,5 +15,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </ThemeProvider>
       </CartProvider>
     </AuthProvider>
-  </React.StrictMode>
 );

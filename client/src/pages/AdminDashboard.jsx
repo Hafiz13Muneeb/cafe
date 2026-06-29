@@ -1,28 +1,23 @@
-// src/pages/AdminDashboard.jsx - Cafe owner dashboard (menu management & QR)
+// src/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import {
   Plus,
-  LogOut,
-  Settings,
-  Menu,
   AlertCircle,
   CheckCircle,
+  Menu,
 } from 'lucide-react';
 import Button from '../components/common/Button';
 import QRCodeDisplay from '../components/owner/QRCodeDisplay';
 import MenuItemForm from '../components/owner/MenuItemForm';
 import MenuItemTable from '../components/owner/MenuItemTable';
+import DashboardLayout from '../components/layout/DashboardLayout';
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!user) navigate('/admin');
-  }, [user, navigate]);
 
   // --- State ---
   const [menuItems, setMenuItems] = useState([]);
@@ -37,7 +32,6 @@ const AdminDashboard = () => {
   const [imagePreview, setImagePreview] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
-  // QR code state
   const [qrValue, setQrValue] = useState('');
   const [cafeSlug, setCafeSlug] = useState(user?.slug || '');
 
@@ -54,9 +48,7 @@ const AdminDashboard = () => {
   }, [user]);
 
   useEffect(() => {
-    if (user) {
-      fetchMenuItems();
-    }
+    if (user) fetchMenuItems();
   }, [user]);
 
   // --- API calls ---
@@ -71,11 +63,6 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/admin');
   };
 
   // --- Menu CRUD ---
@@ -154,9 +141,9 @@ const AdminDashboard = () => {
 
   if (!user) return null;
 
-  // ---- Render helpers ----
-  const renderMessages = () => (
-    <>
+  return (
+    <DashboardLayout title="Menu Manager" subtitle={user.cafeName}>
+      {/* Messages */}
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
           <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
@@ -169,81 +156,48 @@ const AdminDashboard = () => {
           <span>{success}</span>
         </div>
       )}
-    </>
-  );
 
-  // ----- Main Render -----
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-20">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">{user.cafeName}</span>
-          </div>
+      {/* QR Code */}
+      <QRCodeDisplay
+        cafeName={user.cafeName}
+        slug={cafeSlug}
+        qrValue={qrValue}
+      />
+
+      {/* Menu Management */}
+      <div className="bg-white rounded-xl shadow-soft overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => navigate('/admin/dashboard/settings')}
-              className="p-2"
-            >
-              <Settings size={20} />
-            </Button>
-            <Button variant="secondary" onClick={handleLogout} className="p-2">
-              <LogOut size={20} />
-            </Button>
+            <Menu size={20} className="text-gray-600" />
+            <h2 className="text-lg font-semibold text-gray-800">Menu Items ({menuItems.length})</h2>
           </div>
+          <Button variant="primary" onClick={handleAddNew} className="flex items-center gap-1">
+            <Plus size={16} /> Add New
+          </Button>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-6">
-        {renderMessages()}
-
-        {/* QR Code */}
-        <QRCodeDisplay
-          cafeName={user.cafeName}
-          slug={cafeSlug}
-          qrValue={qrValue}
+        <MenuItemForm
+          isOpen={isFormOpen}
+          onClose={() => { setIsFormOpen(false); setImageFile(null); setImagePreview(''); }}
+          onSubmit={handleFormSubmit}
+          formData={formData}
+          setFormData={setFormData}
+          imageFile={imageFile}
+          setImageFile={setImageFile}
+          imagePreview={imagePreview}
+          setImagePreview={setImagePreview}
+          editingItem={editingItem}
+          loading={formLoading}
         />
 
-        {/* Menu Management */}
-        <div className="bg-white rounded-xl shadow-soft overflow-hidden">
-          <div className="p-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <Menu size={20} className="text-gray-600" />
-              <h2 className="text-lg font-semibold text-gray-800">Menu Items ({menuItems.length})</h2>
-            </div>
-            <Button variant="primary" onClick={handleAddNew} className="flex items-center gap-1">
-              <Plus size={16} /> Add New
-            </Button>
-          </div>
-
-          {/* Add/Edit Form */}
-          <MenuItemForm
-            isOpen={isFormOpen}
-            onClose={() => { setIsFormOpen(false); setImageFile(null); setImagePreview(''); }}
-            onSubmit={handleFormSubmit}
-            formData={formData}
-            setFormData={setFormData}
-            imageFile={imageFile}
-            setImageFile={setImageFile}
-            imagePreview={imagePreview}
-            setImagePreview={setImagePreview}
-            editingItem={editingItem}
-            loading={formLoading}
-          />
-
-          {/* Menu Table */}
-          <MenuItemTable
-            items={menuItems}
-            loading={loading}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        </div>
+        <MenuItemTable
+          items={menuItems}
+          loading={loading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
