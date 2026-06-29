@@ -4,8 +4,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');        // NEW
-const compression = require('compression'); // NEW
+const helmet = require('helmet');
+const compression = require('compression');
 const path = require('path');
 const connectDB = require('./config/db');
 const { errorHandler } = require('./utils/errorHandler');
@@ -20,22 +20,16 @@ const PORT = process.env.PORT || 5000;
 // ----------------------------
 // 1. Security & Performance Middleware
 // ----------------------------
-app.use(helmet()); // Sets various HTTP headers for security
-
-// Compression - compress responses (gzip)
+app.use(helmet());
 app.use(compression());
-
-// Trust proxy (if running behind Nginx or a load balancer)
 app.set('trust proxy', 1);
 
-// Logging - 'combined' for production, 'dev' for development
 if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'));
 } else {
   app.use(morgan('dev'));
 }
 
-// Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: process.env.RATE_LIMIT_MAX || 100,
@@ -45,11 +39,9 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-// Body parsers
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// CORS - restrict to frontend origin in production
 const allowedOrigins = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(
   cors({
@@ -58,7 +50,6 @@ app.use(
   })
 );
 
-// Cache control (optional, keep as is)
 const cacheControl = (req, res, next) => {
   if (req.method === 'GET' && req.path.startsWith('/api/menu/') && !req.path.includes('?all')) {
     res.setHeader('Cache-Control', 'public, max-age=300');
@@ -90,27 +81,34 @@ app.get('/api/health', async (req, res) => {
 });
 
 // ----------------------------
-// 3. Serve Frontend (Production)
+// 3. Favicon handler – prevent 500 errors
+// ----------------------------
+app.get('/favicon.ico', (req, res) => {
+  // Return 204 No Content – browser will stop requesting
+  res.status(204).end();
+});
+
+// ----------------------------
+// 4. Serve Frontend (Production)
 // ----------------------------
 if (process.env.NODE_ENV === 'production') {
-  // Serve static files from the frontend build directory
+  // Serve static files from the frontend build
   app.use(express.static(path.join(__dirname, 'client/dist')));
-  
-  // Handle client-side routing (SPA) - send index.html for all non-API routes
-  app.get('*', (req, res) => {
-    // Don't interfere with API routes
+
+  // Catch-all for client-side routing – must accept `next`
+  app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
     res.sendFile(path.join(__dirname, 'client/dist/index.html'));
   });
 }
 
 // ----------------------------
-// 4. Error Handler (must be last)
+// 5. Error Handler (must be last)
 // ----------------------------
 app.use(errorHandler);
 
 // ----------------------------
-// 5. Start Server
+// 6. Start Server
 // ----------------------------
 const startServer = async () => {
   try {
