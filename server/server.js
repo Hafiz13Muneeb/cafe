@@ -1,4 +1,4 @@
-// server.js
+// server/server.js
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -12,7 +12,13 @@ const { errorHandler } = require('./utils/errorHandler');
 const User = require('./models/User');
 const mongoose = require('mongoose');
 
-dotenv.config();
+// Load .env from parent directory if not found in current
+const envPath = path.resolve(__dirname, '../.env');
+if (require('fs').existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+} else {
+  dotenv.config(); // fallback to current dir
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -81,10 +87,9 @@ app.get('/api/health', async (req, res) => {
 });
 
 // ----------------------------
-// 3. Favicon handler – prevent 500 errors
+// 3. Favicon handler
 // ----------------------------
 app.get('/favicon.ico', (req, res) => {
-  // Return 204 No Content – browser will stop requesting
   res.status(204).end();
 });
 
@@ -92,18 +97,17 @@ app.get('/favicon.ico', (req, res) => {
 // 4. Serve Frontend (Production)
 // ----------------------------
 if (process.env.NODE_ENV === 'production') {
-  // Serve static files from the frontend build
-  app.use(express.static(path.join(__dirname, 'client/dist')));
+  const distPath = path.join(__dirname, '../client/dist');
+  app.use(express.static(distPath));
 
-  // Catch-all for client-side routing – must accept `next`
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
-    res.sendFile(path.join(__dirname, 'client/dist/index.html'));
+    res.sendFile(path.join(distPath, 'index.html'));
   });
 }
 
 // ----------------------------
-// 5. Error Handler (must be last)
+// 5. Error Handler
 // ----------------------------
 app.use(errorHandler);
 
