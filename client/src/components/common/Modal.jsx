@@ -1,52 +1,23 @@
-// src/components/common/Modal.jsx - Reusable modal
 import React from 'react';
 import { X } from 'lucide-react';
 
-const Modal = ({
-  isOpen,
-  onClose,
-  title,
-  children,
-  size = 'md',
-  showCloseButton = true,
-}) => {
+const Modal = ({ isOpen, onClose, title, children, size = 'md', showCloseButton = true }) => {
   if (!isOpen) return null;
-
-  const sizeClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-    full: 'max-w-4xl',
-  };
+  const sizeClasses = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg', xl: 'max-w-xl', full: 'max-w-4xl' };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in"
-      onClick={onClose}
-    >
-      <div
-        className={`
-          bg-white rounded-2xl shadow-2xl p-6 mx-4 relative
-          animate-scale-up w-full ${sizeClasses[size] || 'max-w-md'}
-        `}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3E2723]/40 backdrop-blur-sm" onClick={onClose}>
+      <div className={`bg-[#F5F5DC] border-4 border-[#3E2723] p-6 mx-4 relative w-full ${sizeClasses[size] || 'max-w-md'}`} 
+           style={{ boxShadow: "8px 8px 0px 0px #8A9A5B" }} onClick={(e) => e.stopPropagation()}>
         {showCloseButton && (
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 p-1 hover:bg-gray-100 rounded-full transition"
-          >
-            <X size={24} className="text-gray-500 hover:text-gray-700" />
+          <button onClick={onClose} className="absolute top-2 right-2 p-1 border-2 border-[#3E2723] bg-white hover:bg-[#EAE0C8] transition">
+            <X size={20} className="text-[#3E2723]" />
           </button>
         )}
-        {title && (
-          <h2 className="text-xl font-bold text-gray-800 mb-4">{title}</h2>
-        )}
+        {title && <h2 className="text-xl font-bold text-[#3E2723] mb-4 font-['Permanent_Marker']">{title}</h2>}
         {children}
       </div>
     </div>
   );
 };
-
 export default Modal;

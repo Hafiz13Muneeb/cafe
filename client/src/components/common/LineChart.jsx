@@ -1,95 +1,21 @@
-// src/components/common/LineChart.jsx - Reusable line chart with Filler plugin
 import React from 'react';
 import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler, // ← import the Filler plugin
-} from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
 
-// Register all required components including Filler
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler // ← register it
-);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
-const LineChart = ({ data, labels, label, color = '#d4a843', height = 250 }) => {
+const LineChart = ({ data, labels, label, color = '#8A9A5B', height = 250 }) => {
   const chartData = {
     labels: labels || [],
-    datasets: [
-      {
-        label: label || 'Data',
-        data: data || [],
-        borderColor: color,
-        backgroundColor: color + '20',
-        fill: true,
-        tension: 0.3,
-        pointRadius: 3,
-        pointBackgroundColor: color,
-      },
-    ],
+    datasets: [{ label: label || 'Data', data: data || [], borderColor: '#3E2723', backgroundColor: color + '40', fill: true, tension: 0, pointBackgroundColor: '#3E2723' }],
   };
 
   const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        backgroundColor: 'rgba(255,255,255,0.9)',
-        titleColor: '#0f172a',
-        bodyColor: '#0f172a',
-        borderColor: '#e2e8f0',
-        borderWidth: 1,
-        cornerRadius: 8,
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: 'rgba(0,0,0,0.05)',
-        },
-        ticks: {
-          font: {
-            size: 10,
-          },
-        },
-      },
-      x: {
-        grid: {
-          display: false,
-        },
-        ticks: {
-          font: {
-            size: 10,
-          },
-          maxRotation: 45,
-          minRotation: 45,
-        },
-      },
-    },
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#F5F5DC', titleColor: '#3E2723', bodyColor: '#3E2723', borderColor: '#3E2723', borderWidth: 2 } },
+    scales: { y: { grid: { color: '#EAE0C8' } }, x: { grid: { display: false } } }
   };
 
-  return (
-    <div style={{ height: `${height}px` }}>
-      <Line data={chartData} options={options} />
-    </div>
-  );
+  return <div style={{ height: `${height}px`, border: '2px solid #3E2723', padding: '10px', background: '#FFFFFF' }}><Line data={chartData} options={options} /></div>;
 };
-
 export default LineChart;

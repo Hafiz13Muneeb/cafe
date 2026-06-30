@@ -1,238 +1,203 @@
-// src/pages/CustomerMenu.jsx - Dynamic customer menu using global theme
-import React, { useState, useEffect } from 'react';
+// src/pages/CustomerMenu.jsx - Public menu with analytics tracking
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
 import { fetchPublicMenu } from '../api/axios';
+import { useCart } from '../context/CartContext';
 import MenuItemCard from '../components/MenuItemCard';
-import CategoryFilter from '../components/CategoryFilter';
 import CartFloatingButton from '../components/CartFloatingButton';
 import CartModal from '../components/CartModal';
-
-// Skeleton loader (inline, with subtle shimmer)
-const MenuSkeleton = () => (
-  <div className="grid grid-cols-2 gap-4">
-    {[...Array(6)].map((_, i) => (
-      <div key={i} className="rounded-xl shadow-sm border overflow-hidden" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
-        <div className="aspect-square animate-pulse" style={{ backgroundColor: 'var(--border-color)' }} />
-        <div className="p-3 space-y-2">
-          <div className="h-4 rounded w-3/4 animate-pulse" style={{ backgroundColor: 'var(--border-color)' }} />
-          <div className="h-3 rounded w-1/2 animate-pulse" style={{ backgroundColor: 'var(--border-color)' }} />
-          <div className="flex justify-between items-center mt-2">
-            <div className="h-4 rounded w-1/4 animate-pulse" style={{ backgroundColor: 'var(--border-color)' }} />
-            <div className="h-7 rounded w-16 animate-pulse" style={{ backgroundColor: 'var(--border-color)' }} />
-          </div>
-        </div>
-      </div>
-    ))}
-  </div>
-);
+import { Coffee, Utensils } from 'lucide-react';
+import api from '../api/axios';
 
 const CustomerMenu = () => {
   const { slug } = useParams();
-  const { cart, getTotalItems, getTotalPrice } = useCart();
+  const { getTotalItems, getTotalPrice } = useCart();
 
+  const [cafeData, setCafeData] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
   const [categories, setCategories] = useState(['all']);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showCartModal, setShowCartModal] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // Cafe details
-  const [cafeName, setCafeName] = useState('Cafe');
-  const [whatsappNumber, setWhatsappNumber] = useState('');
-  const [logoUrl, setLogoUrl] = useState('');
-  const [faviconUrl, setFaviconUrl] = useState('');
-  const [tables, setTables] = useState(['1', '2', '3', '4', '5']);
+  // Generate or retrieve a session ID for analytics tracking
+  const getSessionId = () => {
+    let sessionId = sessionStorage.getItem('analyticsSessionId');
+    if (!sessionId) {
+      sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      sessionStorage.setItem('analyticsSessionId', sessionId);
+    }
+    return sessionId;
+  };
 
+  // Track view when component mounts
+  useEffect(() => {
+    const trackView = async () => {
+      try {
+        const sessionId = getSessionId();
+        await api.post(`/analytics/${slug}/view`, { sessionId });
+      } catch (err) {
+        // Silently fail – analytics should not break the user experience
+        console.debug('View tracking failed:', err.message);
+      }
+    };
+    if (slug) trackView();
+  }, [slug]);
+
+  // Filtered items based on category
+  const filteredItems = useMemo(() => {
+    if (selectedCategory === 'all') return menuItems;
+    return menuItems.filter(item => item.category === selectedCategory);
+  }, [menuItems, selectedCategory]);
+
+  // Load menu and cafe data
   useEffect(() => {
     const loadMenu = async () => {
       try {
         setLoading(true);
         setError('');
-
         const response = await fetchPublicMenu(slug);
         const { cafe, menu, categories: catList } = response.data;
 
-        setCafeName(cafe.name || 'Cafe');
-        setWhatsappNumber(cafe.whatsappNumber || '');
-        setLogoUrl(cafe.logoUrl || '');
-        setFaviconUrl(cafe.faviconUrl || '');
-        setTables(cafe.tables || ['1', '2', '3', '4', '5']);
-
-        // NOTE: Theme is now global – we no longer override it with cafe.theme.
-        // The global theme is applied by ThemeContext and applies to all pages.
-
-        setMenuItems(menu || []);
-        setFilteredItems(menu || []);
-        setCategories(catList && catList.length > 0 ? ['all', ...catList] : ['all']);
+        setCafeData(cafe);
+        setMenuItems(menu);
+        setCategories(['all', ...(catList || [])]);
       } catch (err) {
         console.error('Error loading menu:', err);
-        if (err.response?.status === 404) {
-          setError('Cafe not found. Please check the URL.');
-        } else if (err.response?.status === 403) {
-          setError('This cafe is currently unavailable. It has been blocked by the administrator.');
-        } else {
-          setError(err.response?.data?.message || 'Failed to load menu. Please try again.');
-        }
+        setError(err.response?.data?.message || 'Failed to load menu');
       } finally {
         setLoading(false);
       }
     };
+    loadMenu();
+  }, [slug]);
 
-    if (slug) loadMenu();
-    else {
-      setError('Invalid cafe slug');
-      setLoading(false);
-    }
-  }, [slug]); // ← removed loadThemeFromSlug dependency
-
-  // Update favicon
+  // Apply dynamic theme from cafe data
   useEffect(() => {
-    if (faviconUrl) {
-      const link = document.querySelector("link[rel*='icon']");
-      if (link) link.remove();
-      const newLink = document.createElement('link');
-      newLink.rel = 'icon';
-      newLink.href = faviconUrl;
-      document.head.appendChild(newLink);
+    if (cafeData?.theme) {
+      const root = document.documentElement;
+      const { primaryColor, secondaryColor, mode } = cafeData.theme;
+      root.style.setProperty('--primary-color', primaryColor || '#d4a843');
+      root.style.setProperty('--secondary-color', secondaryColor || '#b8860b');
     }
-  }, [faviconUrl]);
+  }, [cafeData]);
 
-  // Filter items
+  // Handle favicon
   useEffect(() => {
-    setFilteredItems(
-      selectedCategory === 'all'
-        ? menuItems
-        : menuItems.filter(item => item.category === selectedCategory)
-    );
-  }, [selectedCategory, menuItems]);
+    if (cafeData?.faviconUrl) {
+      const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+      link.rel = 'icon';
+      link.href = cafeData.faviconUrl;
+      if (!document.querySelector("link[rel*='icon']")) {
+        document.head.appendChild(link);
+      }
+    }
+  }, [cafeData]);
 
   if (loading) {
     return (
-      <div className="min-h-screen pb-24" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
-        <header className="shadow-sm sticky top-0 z-10 border-b" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}>
-          <div className="container mx-auto px-4 py-4 flex items-center gap-3">
-            <div className="h-10 w-32 rounded animate-pulse" style={{ backgroundColor: 'var(--border-color)' }} />
-            <div className="h-4 w-20 rounded ml-auto animate-pulse" style={{ backgroundColor: 'var(--border-color)' }} />
-          </div>
-        </header>
-        <div className="sticky top-[72px] z-10" style={{ backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--border-color)' }}>
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex gap-2 overflow-x-auto">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-8 w-16 rounded-full animate-pulse flex-shrink-0" style={{ backgroundColor: 'var(--border-color)' }} />
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="container mx-auto px-4 py-4">
-          <MenuSkeleton />
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5DC] text-[#3E2723]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-[#8A9A5B]" />
+          <p className="mt-4 font-bold font-['Permanent_Marker'] text-xl">Loading menu...</p>
         </div>
       </div>
     );
   }
 
   if (error) {
-    const isBlocked = error.includes('blocked');
-    const isNotFound = error.includes('not found');
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
-        <div className="text-center max-w-md mx-auto p-6">
-          {isBlocked ? (
-            <>
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-                <span className="text-4xl">🚫</span>
-              </div>
-              <h2 className="text-2xl font-bold text-red-600 mb-2">Cafe Unavailable</h2>
-              <p className="text-gray-600">{error}</p>
-              <p className="text-sm text-gray-400 mt-4">Please contact the cafe owner for more information.</p>
-            </>
-          ) : isNotFound ? (
-            <>
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-yellow-100 flex items-center justify-center">
-                <span className="text-4xl">🔍</span>
-              </div>
-              <h2 className="text-2xl font-bold text-yellow-600 mb-2">Cafe Not Found</h2>
-              <p className="text-gray-600">{error}</p>
-              <p className="text-sm text-gray-400 mt-4">The cafe you are looking for does not exist or may have been removed.</p>
-            </>
-          ) : (
-            <>
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-                <span className="text-4xl">⚠️</span>
-              </div>
-              <h2 className="text-2xl font-bold text-red-500 mb-2">Oops!</h2>
-              <p className="text-gray-600">{error}</p>
-            </>
-          )}
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5DC] text-[#3E2723]">
+        <div className="text-center p-8 border-4 border-[#3E2723] bg-white shadow-[8px_8px_0px_0px_#8A9A5B]">
+          <Utensils size={48} className="mx-auto mb-4 text-[#3E2723]/30" />
+          <h2 className="text-2xl font-bold font-['Permanent_Marker'] mb-2">Oops!</h2>
+          <p className="text-sm">{error}</p>
         </div>
       </div>
     );
   }
 
+  const totalItems = getTotalItems();
+  const totalPrice = getTotalPrice();
+
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
-      <header
-        className="shadow-sm sticky top-0 z-10 border-b"
-        style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}
-      >
-        <div className="container mx-auto px-4 py-4 flex items-center gap-3">
-          {logoUrl ? (
-            <img src={logoUrl} alt={cafeName} className="h-10 w-auto object-contain" />
-          ) : (
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--primary-color)' }}>
-              {cafeName}
-            </h1>
+    <div className="min-h-screen bg-[#F5F5DC] text-[#3E2723] pb-28">
+      {/* Header */}
+      <header className="sticky top-0 z-20 bg-white border-b-4 border-[#3E2723] shadow-[4px_4px_0px_0px_#8A9A5B] py-3 px-4 flex items-center gap-4">
+        {cafeData?.logoUrl ? (
+          <img src={cafeData.logoUrl} alt="Cafe logo" className="h-12 w-12 rounded-full border-2 border-[#3E2723] object-cover" />
+        ) : (
+          <div className="h-12 w-12 rounded-full border-2 border-[#3E2723] bg-[#8A9A5B] flex items-center justify-center">
+            <Coffee size={24} className="text-white" />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl font-bold font-['Permanent_Marker'] truncate">
+            {cafeData?.name || 'Cafe Menu'}
+          </h1>
+          {cafeData?.whatsappNumber && (
+            <p className="text-xs font-bold text-[#3E2723]/60">📱 Order via WhatsApp</p>
           )}
-          <p className="text-sm ml-auto opacity-70" style={{ color: 'var(--text-color)' }}>
-            Scan & Order
-          </p>
+        </div>
+        <div className="border-2 border-[#3E2723] bg-[#EAE0C8] px-3 py-1 font-bold text-sm">
+          {menuItems.length} items
         </div>
       </header>
 
-      <div
-        className="sticky top-[72px] z-10 border-b"
-        style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-color)' }}
-      >
-        <div className="container mx-auto px-4 py-3 overflow-x-auto scrollbar-hide">
-          <CategoryFilter
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-          />
+      {/* Category Filter */}
+      {categories.length > 1 && (
+        <div className="sticky top-[76px] z-10 bg-[#F5F5DC] border-b-2 border-[#3E2723] py-2 px-4">
+          <div className="flex gap-1 bg-[#EAE0C8] border-2 border-[#3E2723] p-1 w-max overflow-x-auto max-w-full">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1 text-xs font-bold transition-all whitespace-nowrap ${
+                  selectedCategory === cat
+                    ? 'bg-[#8A9A5B] text-white border-2 border-[#3E2723]'
+                    : 'text-[#3E2723] hover:bg-[#3E2723]/10'
+                }`}
+              >
+                {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="container mx-auto px-4 py-4">
+      {/* Menu Grid */}
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
         {filteredItems.length === 0 ? (
-          <div className="text-center py-12 opacity-70" style={{ color: 'var(--text-color)' }}>
-            No items available
+          <div className="text-center py-16">
+            <p className="text-lg font-bold text-[#3E2723]/50">No items in this category</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
-            {filteredItems.map(item => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
+            {filteredItems.map((item) => (
               <MenuItemCard key={item._id} item={item} />
             ))}
           </div>
         )}
       </div>
 
-      {cart.length > 0 && (
+      {/* Floating Cart */}
+      {totalItems > 0 && (
         <CartFloatingButton
-          totalItems={getTotalItems()}
-          totalPrice={getTotalPrice()}
-          onClick={() => setShowCartModal(true)}
+          totalItems={totalItems}
+          totalPrice={totalPrice}
+          onClick={() => setIsCartOpen(true)}
         />
       )}
 
+      {/* Cart Modal - passing slug for analytics tracking */}
       <CartModal
-        isOpen={showCartModal}
-        onClose={() => setShowCartModal(false)}
-        cafeName={cafeName}
-        whatsappNumber={whatsappNumber}
-        tables={tables}
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cafeName={cafeData?.name || 'Cafe'}
+        whatsappNumber={cafeData?.whatsappNumber || ''}
+        tables={cafeData?.tables || []}
+        slug={slug}
       />
     </div>
   );

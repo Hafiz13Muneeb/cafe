@@ -1,80 +1,33 @@
-// src/components/common/Button.jsx - Reusable button component
 import React from 'react';
 
-const Button = ({
-  children,
-  onClick,
-  type = 'button',
-  variant = 'primary',
-  size = 'md',
-  disabled = false,
-  className = '',
+const Button = ({ 
+  children, 
+  onClick, 
+  type = 'button', 
+  variant = 'primary', 
+  size = 'md', 
+  disabled = false, 
+  className = '', 
   fullWidth = false,
-  ...props
+  ...props 
 }) => {
-  // Variant styles
-  const variantStyles = {
-    primary: {
-      bg: 'var(--primary-color)',
-      text: 'text-white',
-      hover: 'hover:opacity-90',
-      shadow: 'shadow-md',
-      border: 'border-transparent',
-    },
-    secondary: {
-      bg: 'bg-gray-200',
-      text: 'text-gray-700',
-      hover: 'hover:bg-gray-300',
-      shadow: '',
-      border: 'border-gray-300',
-    },
-    danger: {
-      bg: 'bg-red-500',
-      text: 'text-white',
-      hover: 'hover:bg-red-600',
-      shadow: 'shadow-md',
-      border: 'border-transparent',
-    },
-    outline: {
-      bg: 'bg-transparent',
-      text: 'text-primary',
-      hover: 'hover:bg-primary/10',
-      shadow: '',
-      border: 'border-primary',
-    },
+  const baseStyle = "font-bold transition-all border-2 border-[#3E2723] active:translate-y-1";
+  const variants = {
+    primary: "bg-[#8A9A5B] text-white",
+    secondary: "bg-[#EAE0C8] text-[#3E2723]",
+    danger: "bg-red-400 text-white",
+    outline: "bg-transparent text-[#3E2723]"
   };
 
-  const variantStyle = variantStyles[variant] || variantStyles.primary;
-
-  // Size styles
-  const sizeStyles = {
-    sm: 'px-3 py-1.5 text-xs',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
-  };
-
-  const sizeStyle = sizeStyles[size] || sizeStyles.md;
+  const widthClass = fullWidth ? 'w-full' : '';
 
   return (
-    <button
-      type={type}
-      onClick={onClick}
+    <button 
+      type={type} 
+      onClick={onClick} 
       disabled={disabled}
-      className={`
-        rounded-lg font-medium transition-all duration-200
-        disabled:opacity-50 disabled:cursor-not-allowed
-        active:scale-95
-        ${sizeStyle}
-        ${variantStyle.text}
-        ${variantStyle.hover}
-        ${variantStyle.shadow}
-        ${fullWidth ? 'w-full' : ''}
-        ${className}
-      `}
-      style={{
-        backgroundColor: variant === 'primary' ? 'var(--primary-color)' : variantStyle.bg,
-        border: `1px solid ${variant === 'outline' ? 'var(--primary-color)' : variantStyle.border}`,
-      }}
+      className={`${baseStyle} ${variants[variant]} ${widthClass} ${className} ${size === 'lg' ? 'px-6 py-3' : 'px-4 py-2'}`}
+      style={{ boxShadow: "4px 4px 0px 0px #3E2723" }}
       {...props}
     >
       {children}

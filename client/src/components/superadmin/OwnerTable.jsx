@@ -1,102 +1,40 @@
-// src/components/superadmin/OwnerTable.jsx - Table of cafe owners with actions
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff, Edit, Trash2, Users, Bell } from 'lucide-react';
 
 const OwnerTable = ({ owners, loading, onToggleBlock, onEdit, onDelete }) => {
-  if (loading) {
-    return (
-      <div className="p-8 text-center">
-        <div className="inline-block animate-spin rounded-full h-6 w-6 border-4 border-primary border-t-transparent" style={{ borderColor: 'var(--primary-color) transparent transparent transparent' }}></div>
-        <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>Loading owners...</p>
-      </div>
-    );
-  }
-
-  if (owners.length === 0) {
-    return (
-      <div className="p-8 text-center" style={{ color: 'var(--text-secondary)' }}>
-        <Users size={40} className="mx-auto mb-2" style={{ color: 'var(--border-color)' }} />
-        <p>No cafe owners registered yet.</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="p-8 text-center font-bold text-[#3E2723]">Loading owners...</div>;
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto border-2 border-[#3E2723] bg-white">
       <table className="w-full">
-        <thead className="bg-gray-50">
+        <thead className="bg-[#EAE0C8]">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cafe</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">WhatsApp</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            {['Cafe', 'Username', 'Email', 'Status', 'Actions'].map(h => (
+              <th key={h} className="px-4 py-3 text-left font-bold text-[#3E2723] uppercase text-xs">{h}</th>
+            ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y-2 divide-[#3E2723]">
           {owners.map((owner) => (
-            <tr key={owner._id} className="hover:bg-gray-50 transition">
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
-                  {owner.activeReminders > 0 && (
-                    <Bell size={14} className="text-red-500 animate-pulse" />
-                  )}
-                  <Link
-                    to={`/admin/super/${owner.slug}`}
-                    className="text-sm font-medium hover:underline transition"
-                    style={{ color: 'var(--primary-color)' }}
-                  >
-                    {owner.cafeName || '—'}
-                  </Link>
-                  {owner.activeReminders > 0 && (
-                    <span className="text-[10px] px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full font-medium">
-                      {owner.activeReminders}
-                    </span>
-                  )}
-                </div>
+            <tr key={owner._id} className="hover:bg-[#F5F5DC] transition">
+              <td className="px-4 py-3 font-bold text-[#3E2723]">
+                <Link to={`/admin/super/${owner.slug}`} className="hover:underline flex items-center gap-2">
+                  {owner.activeReminders > 0 && <Bell size={14} className="text-red-600 animate-pulse" />}
+                  {owner.cafeName}
+                </Link>
               </td>
-              <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{owner.username}</td>
-              <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{owner.email}</td>
-              <td className="px-4 py-3 text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>{owner.slug || '—'}</td>
-              <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{owner.whatsappNumber || '—'}</td>
+              <td className="px-4 py-3 text-sm">{owner.username}</td>
+              <td className="px-4 py-3 text-sm">{owner.email}</td>
               <td className="px-4 py-3">
-                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                  owner.isBlocked
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-primary/20 text-primary border border-primary/30'
-                }`}>
+                <span className={`px-2 py-1 font-bold text-xs border-2 border-[#3E2723] ${owner.isBlocked ? 'bg-red-300' : 'bg-[#8A9A5B] text-white'}`}>
                   {owner.isBlocked ? 'Blocked' : 'Active'}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right">
-                <div className="flex items-center justify-end gap-1">
-                  <button
-                    onClick={() => onToggleBlock(owner._id, owner.isBlocked)}
-                    className={`p-1.5 rounded-lg transition ${
-                      owner.isBlocked ? 'hover:bg-primary/20 text-primary' : 'hover:bg-red-50 text-red-600'
-                    }`}
-                    title={owner.isBlocked ? 'Unblock' : 'Block'}
-                  >
-                    {owner.isBlocked ? <Eye size={16} /> : <EyeOff size={16} />}
-                  </button>
-                  <button
-                    onClick={() => onEdit(owner)}
-                    className="p-1.5 hover:bg-primary/20 text-primary rounded-lg transition"
-                    title="Edit"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button
-                    onClick={() => onDelete(owner._id)}
-                    className="p-1.5 hover:bg-red-50 text-red-600 rounded-lg transition"
-                    title="Delete"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
+              <td className="px-4 py-3 flex gap-1">
+                <button onClick={() => onToggleBlock(owner._id, owner.isBlocked)} className="p-1.5 border-2 border-[#3E2723] hover:bg-[#EAE0C8]"><Eye size={16} /></button>
+                <button onClick={() => onEdit(owner)} className="p-1.5 border-2 border-[#3E2723] hover:bg-[#EAE0C8]"><Edit size={16} /></button>
+                <button onClick={() => onDelete(owner._id)} className="p-1.5 border-2 border-[#3E2723] hover:bg-red-400"><Trash2 size={16} /></button>
               </td>
             </tr>
           ))}
@@ -105,5 +43,4 @@ const OwnerTable = ({ owners, loading, onToggleBlock, onEdit, onDelete }) => {
     </div>
   );
 };
-
 export default OwnerTable;

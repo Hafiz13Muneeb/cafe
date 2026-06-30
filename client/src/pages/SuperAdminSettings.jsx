@@ -1,428 +1,316 @@
-// src/pages/SuperAdminSettings.jsx - SuperAdmin settings (refactored)
-import React, { useState, useEffect } from 'react';
+// src/pages/SuperAdminSettings.jsx - Complete superadmin settings with profile, security, and global theme
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../api/axios';
-import { User, Lock, Palette, Save, Upload, AlertCircle, CheckCircle } from 'lucide-react';
+import { User, Lock, Palette, Save, Upload, Eye, EyeOff } from 'lucide-react';
 import SettingsLayout from '../components/layout/SettingsLayout';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 
 const SuperAdminSettings = () => {
-  const { user, logout, updateUserData } = useAuth();
-  const { theme, updateTheme, loadGlobalSettings } = useTheme();
+  const { user, updateUserData } = useAuth();
+  const { theme, updateTheme } = useTheme();
   const navigate = useNavigate();
-
-  // --- Active tab ---
   const [activeTab, setActiveTab] = useState('profile');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ text: '', type: '' });
 
-  // --- Profile state ---
-  const [profile, setProfile] = useState({
-    username: user?.username || '',
-    email: user?.email || '',
-  });
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState('');
-  const [profileSuccess, setProfileSuccess] = useState('');
+  // Profile
+  const [username, setUsername] = useState(user?.username || '');
+  const [email, setEmail] = useState(user?.email || '');
 
-  // --- Password state ---
-  const [passwordForm, setPasswordForm] = useState({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
+  // Security
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  // --- Theme state ---
+  // Global Theme
   const [globalTheme, setGlobalTheme] = useState({
-    primaryColor: theme?.primaryColor || '#d4a843',
-    secondaryColor: theme?.secondaryColor || '#b8860b',
-    mode: theme?.mode || 'light',
+    primaryColor: '#d4a843',
+    secondaryColor: '#b8860b',
+    mode: 'light',
+    faviconUrl: '',
   });
-  const [themeLoading, setThemeLoading] = useState(false);
-  const [themeError, setThemeError] = useState('');
-  const [themeSuccess, setThemeSuccess] = useState('');
+  const faviconInputRef = useRef(null);
+  const [faviconPreview, setFaviconPreview] = useState('');
 
-  // --- Favicon state ---
-  const [faviconFile, setFaviconFile] = useState(null);
-  const [faviconPreview, setFaviconPreview] = useState(theme?.faviconUrl || '');
-  const [faviconLoading, setFaviconLoading] = useState(false);
-  const [faviconError, setFaviconError] = useState('');
-  const [faviconSuccess, setFaviconSuccess] = useState('');
-
-  // Load global theme on mount
+  // Fetch global settings on mount
   useEffect(() => {
-    const fetchTheme = async () => {
+    const fetchGlobalSettings = async () => {
       try {
-        const response = await api.get('/settings/global');
-        if (response.data.success) {
-          const data = response.data.data;
+        const res = await api.get('/settings/global');
+        if (res.data.success) {
+          const data = res.data.data;
           setGlobalTheme({
             primaryColor: data.primaryColor || '#d4a843',
             secondaryColor: data.secondaryColor || '#b8860b',
             mode: data.mode || 'light',
+            faviconUrl: data.faviconUrl || '',
           });
           setFaviconPreview(data.faviconUrl || '');
         }
       } catch (err) {
-        console.error('Failed to fetch global theme:', err);
+        console.error('Failed to fetch global settings:', err);
       }
     };
-    fetchTheme();
+    fetchGlobalSettings();
   }, []);
 
-  // --- Profile handlers ---
-  const handleProfileChange = (e) => {
-    const { name, value } = e.target;
-    setProfile(prev => ({ ...prev, [name]: value }));
-    setProfileError('');
-    setProfileSuccess('');
-  };
-
+  // Update profile
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    setProfileLoading(true);
-    setProfileError('');
-    setProfileSuccess('');
+    setLoading(true);
+    setMessage({ text: '', type: '' });
     try {
-      const response = await api.put('/auth/update-profile', {
-        username: profile.username,
-        email: profile.email,
-      });
-      if (response.data.success) {
-        const updatedUser = response.data.data;
-        updateUserData(updatedUser);
-        setProfileSuccess('Profile updated successfully!');
+      const res = await api.put('/auth/update-profile', { username, email });
+      if (res.data.success) {
+        updateUserData({ username, email });
+        setMessage({ text: 'Profile updated successfully!', type: 'success' });
       }
     } catch (err) {
-      setProfileError(err.response?.data?.message || 'Failed to update profile');
+      setMessage({ text: err.response?.data?.message || 'Failed to update profile', type: 'error' });
     } finally {
-      setProfileLoading(false);
+      setLoading(false);
     }
   };
 
-  // --- Password handlers ---
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordForm(prev => ({ ...prev, [name]: value }));
-    setPasswordError('');
-    setPasswordSuccess('');
-  };
-
-  const handlePasswordSubmit = async (e) => {
+  // Change password
+  const handlePasswordChange = async (e) => {
     e.preventDefault();
-    setPasswordLoading(true);
-    setPasswordError('');
-    setPasswordSuccess('');
-    try {
-      const response = await api.put('/auth/change-password', passwordForm);
-      if (response.data.success) {
-        setPasswordSuccess('Password changed successfully!');
-        setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
-      }
-    } catch (err) {
-      setPasswordError(err.response?.data?.message || 'Failed to change password');
-    } finally {
-      setPasswordLoading(false);
-    }
-  };
-
-  // --- Theme handlers ---
-  const handleThemeChange = (e) => {
-    const { name, value } = e.target;
-    setGlobalTheme(prev => ({ ...prev, [name]: value }));
-    setThemeError('');
-    setThemeSuccess('');
-  };
-
-  const handleThemeSubmit = async (e) => {
-    e.preventDefault();
-    setThemeLoading(true);
-    setThemeError('');
-    setThemeSuccess('');
-    try {
-      const response = await api.put('/settings/global', globalTheme);
-      if (response.data.success) {
-        setThemeSuccess('Global theme updated successfully!');
-        updateTheme(globalTheme);
-        await loadGlobalSettings();
-      }
-    } catch (err) {
-      setThemeError(err.response?.data?.message || 'Failed to update global theme');
-    } finally {
-      setThemeLoading(false);
-    }
-  };
-
-  // --- Favicon handlers ---
-  const handleFaviconChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFaviconFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setFaviconPreview(reader.result);
-      reader.readAsDataURL(file);
-      setFaviconError('');
-      setFaviconSuccess('');
-    }
-  };
-
-  const handleFaviconSubmit = async (e) => {
-    e.preventDefault();
-    if (!faviconFile) {
-      setFaviconError('Please select a favicon image');
+    if (newPassword !== confirmPassword) {
+      setMessage({ text: 'New password and confirmation do not match', type: 'error' });
       return;
     }
-    setFaviconLoading(true);
-    setFaviconError('');
-    setFaviconSuccess('');
+    if (newPassword.length < 6) {
+      setMessage({ text: 'New password must be at least 6 characters', type: 'error' });
+      return;
+    }
+    setLoading(true);
+    setMessage({ text: '', type: '' });
     try {
-      const formData = new FormData();
-      formData.append('favicon', faviconFile);
-      const response = await api.put('/settings/global/favicon', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      if (response.data.success) {
-        setFaviconSuccess('Favicon updated successfully!');
-        setFaviconPreview(response.data.data.faviconUrl);
-        setFaviconFile(null);
-        await loadGlobalSettings();
-      }
+      await api.put('/auth/change-password', { oldPassword, newPassword, confirmPassword });
+      setMessage({ text: 'Password changed successfully!', type: 'success' });
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (err) {
-      setFaviconError(err.response?.data?.message || 'Failed to update favicon');
+      setMessage({ text: err.response?.data?.message || 'Failed to change password', type: 'error' });
     } finally {
-      setFaviconLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/admin');
+  // Update global theme (colors + mode)
+  const handleThemeSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ text: '', type: '' });
+    try {
+      const payload = {
+        primaryColor: globalTheme.primaryColor,
+        secondaryColor: globalTheme.secondaryColor,
+        mode: globalTheme.mode,
+      };
+      const res = await api.put('/settings/global', payload);
+      if (res.data.success) {
+        updateTheme({ primaryColor: payload.primaryColor, secondaryColor: payload.secondaryColor, mode: payload.mode });
+        setMessage({ text: 'Theme updated successfully!', type: 'success' });
+      }
+    } catch (err) {
+      setMessage({ text: err.response?.data?.message || 'Failed to update theme', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // --- Sidebar navigation items ---
+  // Upload global favicon
+  const handleFaviconUpload = async (file) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('favicon', file);
+    setLoading(true);
+    setMessage({ text: '', type: '' });
+    try {
+      const res = await api.put('/settings/global/favicon', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data.success) {
+        const url = res.data.data.faviconUrl;
+        setFaviconPreview(url);
+        setGlobalTheme(prev => ({ ...prev, faviconUrl: url }));
+        // Also update theme context so it reflects globally
+        updateTheme({ faviconUrl: url });
+        setMessage({ text: 'Favicon updated successfully!', type: 'success' });
+      }
+    } catch (err) {
+      setMessage({ text: err.response?.data?.message || 'Failed to update favicon', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const navItems = [
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'password', label: 'Security', icon: Lock },
+    { id: 'security', label: 'Security', icon: Lock },
     { id: 'appearance', label: 'Appearance', icon: Palette },
   ];
 
-  // --- Render content based on active tab ---
-  const renderContent = () => {
-    if (activeTab === 'profile') {
-      return (
-        <div className="bg-white rounded-xl shadow-soft p-6">
-          <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-color)' }}>Profile Settings</h2>
-          {profileError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
-              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-              <span>{profileError}</span>
-            </div>
-          )}
-          {profileSuccess && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-start gap-2">
-              <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
-              <span>{profileSuccess}</span>
-            </div>
-          )}
-          <form onSubmit={handleProfileSubmit} className="space-y-4">
-            <Input
-              label="Username"
-              name="username"
-              value={profile.username}
-              onChange={handleProfileChange}
-              required
-              minLength={3}
-              maxLength={30}
-            />
-            <Input
-              label="Email"
-              name="email"
-              value={profile.email}
-              onChange={handleProfileChange}
-              type="email"
-              required
-            />
-            <Button type="submit" variant="primary" disabled={profileLoading} className="flex items-center gap-2">
-              <Save size={18} />
-              {profileLoading ? 'Saving...' : 'Update Profile'}
-            </Button>
-          </form>
-        </div>
-      );
-    }
-
-    if (activeTab === 'password') {
-      return (
-        <div className="bg-white rounded-xl shadow-soft p-6">
-          <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-color)' }}>Change Password</h2>
-          {passwordError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
-              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-              <span>{passwordError}</span>
-            </div>
-          )}
-          {passwordSuccess && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-start gap-2">
-              <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
-              <span>{passwordSuccess}</span>
-            </div>
-          )}
-          <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
-            <Input
-              label="Current Password"
-              name="oldPassword"
-              value={passwordForm.oldPassword}
-              onChange={handlePasswordChange}
-              type="password"
-              required
-            />
-            <Input
-              label="New Password"
-              name="newPassword"
-              value={passwordForm.newPassword}
-              onChange={handlePasswordChange}
-              type="password"
-              required
-              minLength={6}
-            />
-            <Input
-              label="Confirm New Password"
-              name="confirmPassword"
-              value={passwordForm.confirmPassword}
-              onChange={handlePasswordChange}
-              type="password"
-              required
-            />
-            <Button type="submit" variant="primary" disabled={passwordLoading}>
-              {passwordLoading ? 'Updating...' : 'Update Password'}
-            </Button>
-          </form>
-        </div>
-      );
-    }
-
-    if (activeTab === 'appearance') {
-      return (
-        <div className="space-y-6">
-          {/* Global Theme */}
-          <div className="bg-white rounded-xl shadow-soft p-6">
-            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-color)' }}>Global Theme</h2>
-            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-              Changes here affect the entire application – all dashboards and login page.
-            </p>
-            {themeError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
-                <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-                <span>{themeError}</span>
-              </div>
-            )}
-            {themeSuccess && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-start gap-2">
-                <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
-                <span>{themeSuccess}</span>
-              </div>
-            )}
-            <form onSubmit={handleThemeSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Primary Color</label>
-                  <input
-                    type="color"
-                    name="primaryColor"
-                    value={globalTheme.primaryColor}
-                    onChange={handleThemeChange}
-                    className="w-full h-10 p-1 border border-gray-300 rounded-lg cursor-pointer"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Secondary Color</label>
-                  <input
-                    type="color"
-                    name="secondaryColor"
-                    value={globalTheme.secondaryColor}
-                    onChange={handleThemeChange}
-                    className="w-full h-10 p-1 border border-gray-300 rounded-lg cursor-pointer"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Theme Mode</label>
-                  <select
-                    name="mode"
-                    value={globalTheme.mode}
-                    onChange={handleThemeChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                    style={{ '--tw-ring-color': 'var(--primary-color)' }}
-                  >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                  </select>
-                </div>
-              </div>
-              <Button type="submit" variant="primary" disabled={themeLoading}>
-                {themeLoading ? 'Saving...' : 'Apply Global Theme'}
-              </Button>
-            </form>
-          </div>
-
-          {/* Global Favicon */}
-          <div className="bg-white rounded-xl shadow-soft p-6">
-            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-color)' }}>Global Favicon</h2>
-            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-              This favicon will appear on the home page, login page, and all admin dashboards.
-            </p>
-            {faviconError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
-                <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-                <span>{faviconError}</span>
-              </div>
-            )}
-            {faviconSuccess && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-start gap-2">
-                <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
-                <span>{faviconSuccess}</span>
-              </div>
-            )}
-            <form onSubmit={handleFaviconSubmit} className="space-y-4">
-              <div className="flex items-center gap-4">
-                {faviconPreview && (
-                  <img src={faviconPreview} alt="Favicon Preview" className="w-12 h-12 object-cover rounded border border-gray-200" />
-                )}
-                <div>
-                  <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                    <Upload size={16} className="text-gray-500" />
-                    <span className="text-sm">{faviconFile ? faviconFile.name : 'Choose Favicon'}</span>
-                    <input type="file" accept="image/*" onChange={handleFaviconChange} className="hidden" />
-                  </label>
-                  <p className="text-xs text-gray-400 mt-1">Recommended: square image, at least 32x32px</p>
-                </div>
-              </div>
-              <Button type="submit" variant="primary" disabled={faviconLoading || !faviconFile} className="flex items-center gap-2">
-                {faviconLoading ? 'Uploading...' : 'Upload Favicon'}
-              </Button>
-            </form>
-          </div>
-        </div>
-      );
-    }
-
-    return null;
-  };
-
   return (
-    <SettingsLayout
-      title="Settings"
-      subtitle="SuperAdmin"
-      backTo="/admin/super"
-      onLogout={handleLogout}
-      navItems={navItems}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    >
-      {renderContent()}
+    <SettingsLayout title="Settings" subtitle="SuperAdmin" navItems={navItems} activeTab={activeTab} setActiveTab={setActiveTab}>
+      <div className="bg-[#F5F5DC] p-6 border-2 border-[#3E2723] min-h-[400px]">
+        {message.text && (
+          <div className={`mb-4 p-3 border-2 border-[#3E2723] font-bold ${message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'}`}>
+            {message.text}
+          </div>
+        )}
+
+        {/* Profile */}
+        {activeTab === 'profile' && (
+          <form onSubmit={handleProfileSubmit} className="space-y-4">
+            <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Button type="submit" variant="primary" disabled={loading}>
+              <Save size={16} className="inline mr-1" /> {loading ? 'Saving...' : 'Update Profile'}
+            </Button>
+          </form>
+        )}
+
+        {/* Security */}
+        {activeTab === 'security' && (
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div className="relative">
+              <Input
+                label="Current Password"
+                type={showOld ? 'text' : 'password'}
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowOld(!showOld)}
+                className="absolute right-3 top-9 text-[#3E2723]"
+              >
+                {showOld ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            <div className="relative">
+              <Input
+                label="New Password"
+                type={showNew ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew(!showNew)}
+                className="absolute right-3 top-9 text-[#3E2723]"
+              >
+                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            <div className="relative">
+              <Input
+                label="Confirm New Password"
+                type={showConfirm ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-9 text-[#3E2723]"
+              >
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            <Button type="submit" variant="primary" disabled={loading}>
+              {loading ? 'Changing...' : 'Change Password'}
+            </Button>
+          </form>
+        )}
+
+        {/* Appearance (Global Theme) */}
+        {activeTab === 'appearance' && (
+          <form onSubmit={handleThemeSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-[#3E2723] mb-1">Primary Color</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={globalTheme.primaryColor}
+                    onChange={(e) => setGlobalTheme({ ...globalTheme, primaryColor: e.target.value })}
+                    className="w-10 h-10 p-0 border-2 border-[#3E2723] cursor-pointer"
+                  />
+                  <Input value={globalTheme.primaryColor} onChange={(e) => setGlobalTheme({ ...globalTheme, primaryColor: e.target.value })} className="flex-1" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-[#3E2723] mb-1">Secondary Color</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={globalTheme.secondaryColor}
+                    onChange={(e) => setGlobalTheme({ ...globalTheme, secondaryColor: e.target.value })}
+                    className="w-10 h-10 p-0 border-2 border-[#3E2723] cursor-pointer"
+                  />
+                  <Input value={globalTheme.secondaryColor} onChange={(e) => setGlobalTheme({ ...globalTheme, secondaryColor: e.target.value })} className="flex-1" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-[#3E2723] mb-1">Mode</label>
+              <div className="flex gap-4">
+                {['light', 'dark'].map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setGlobalTheme({ ...globalTheme, mode: m })}
+                    className={`px-4 py-2 border-2 border-[#3E2723] font-bold transition ${
+                      globalTheme.mode === m ? 'bg-[#8A9A5B] text-white' : 'bg-white text-[#3E2723]'
+                    }`}
+                  >
+                    {m.charAt(0).toUpperCase() + m.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-[#3E2723] mb-1">Global Favicon</label>
+              <div className="flex items-center gap-3">
+                {faviconPreview && <img src={faviconPreview} alt="Favicon" className="w-10 h-10 border-2 border-[#3E2723] object-cover" />}
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={faviconInputRef}
+                  onChange={(e) => {
+                    if (e.target.files[0]) {
+                      handleFaviconUpload(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                />
+                <Button type="button" variant="secondary" onClick={() => faviconInputRef.current.click()}>
+                  <Upload size={16} className="inline mr-1" /> Upload Favicon
+                </Button>
+              </div>
+            </div>
+
+            <Button type="submit" variant="primary" disabled={loading}>
+              <Save size={16} className="inline mr-1" /> {loading ? 'Saving...' : 'Save Theme'}
+            </Button>
+          </form>
+        )}
+      </div>
     </SettingsLayout>
   );
 };

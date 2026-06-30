@@ -1,128 +1,197 @@
-// src/components/superadmin/OwnerFormModal.jsx
+// src/components/superadmin/OwnerFormModal.jsx - Complete owner form modal for add/edit
 import React from 'react';
 import Modal from '../common/Modal';
 import Input from '../common/Input';
 import Button from '../common/Button';
 
-const OwnerFormModal = ({
-  isOpen,
-  onClose,
-  onSubmit,
-  title,
-  formData,
-  setFormData,
-  loading,
-  isEdit = false,
-  submitLabel = 'Create Owner',
+const OwnerFormModal = ({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  title, 
+  formData, 
+  setFormData, 
+  loading, 
+  isEdit = false 
 }) => {
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
-      <form onSubmit={onSubmit} className="space-y-4">
-        {!isEdit && (
-          <>
-            <Input
-              label="Username"
-              name="username"
-              value={formData.username || ''}
-              onChange={handleChange}
-              required
-              minLength={3}
-              maxLength={30}
-            />
-            <Input
-              label="Email"
-              name="email"
-              value={formData.email || ''}
-              onChange={handleChange}
-              type="email"
-              required
-            />
-            <Input
-              label="Temporary Password"
-              name="temporaryPassword"
-              value={formData.temporaryPassword || ''}
-              onChange={handleChange}
-              type="password"
-              required
-              minLength={6}
-              placeholder="Enter a secure password"
-            />
-          </>
-        )}
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="lg">
+      <form onSubmit={onSubmit} className="space-y-4 font-bold text-[#3E2723]">
+        {/* Username */}
+        <Input
+          label="Username"
+          name="username"
+          value={formData.username || ''}
+          onChange={handleChange}
+          required
+          placeholder="Enter username"
+        />
+
+        {/* Email */}
+        <Input
+          label="Email"
+          name="email"
+          type="email"
+          value={formData.email || ''}
+          onChange={handleChange}
+          required={!isEdit}
+          placeholder="Enter email address"
+        />
+
+        {/* Cafe Name */}
         <Input
           label="Cafe Name"
           name="cafeName"
           value={formData.cafeName || ''}
           onChange={handleChange}
           required
+          placeholder="Enter cafe name"
         />
-        {isEdit && (
-          <>
-            <Input
-              label="WhatsApp Number"
-              name="whatsappNumber"
-              value={formData.whatsappNumber || ''}
-              onChange={handleChange}
-              type="tel"
-              placeholder="e.g., 923001234567"
-            />
-            <Input
-              label="Tables (comma-separated)"
-              name="tables"
-              value={formData.tables || ''}
-              onChange={handleChange}
-              placeholder="e.g., 1, 2, 3, VIP, Patio"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Primary Color</label>
-                <input
-                  type="color"
-                  name="primaryColor"
-                  value={formData.primaryColor || '#d4a843'}
-                  onChange={handleChange}
-                  className="w-full h-10 p-1 border border-gray-300 rounded-lg cursor-pointer"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Secondary Color</label>
-                <input
-                  type="color"
-                  name="secondaryColor"
-                  value={formData.secondaryColor || '#b8860b'}
-                  onChange={handleChange}
-                  className="w-full h-10 p-1 border border-gray-300 rounded-lg cursor-pointer"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Theme Mode</label>
-              <select
-                name="mode"
-                value={formData.mode || 'light'}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ '--tw-ring-color': 'var(--primary-color)' }}
-              >
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-              </select>
-            </div>
-          </>
+
+        {/* Temporary Password - only for adding new owners */}
+        {!isEdit && (
+          <Input
+            label="Temporary Password"
+            name="temporaryPassword"
+            type="password"
+            value={formData.temporaryPassword || ''}
+            onChange={handleChange}
+            required
+            placeholder="Min 6 characters"
+          />
         )}
-        <div className="flex gap-2 pt-2">
-          <Button type="submit" variant="primary" disabled={loading} className="flex-1">
-            {loading ? (isEdit ? 'Saving...' : 'Creating...') : submitLabel}
-          </Button>
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-        </div>
+
+        {/* WhatsApp Number - only for editing */}
+        {isEdit && (
+          <Input
+            label="WhatsApp Number"
+            name="whatsappNumber"
+            value={formData.whatsappNumber || ''}
+            onChange={handleChange}
+            placeholder="e.g. 03001234567"
+          />
+        )}
+
+        {/* Tables - only for editing */}
+        {isEdit && (
+          <Input
+            label="Table Numbers / Names"
+            name="tables"
+            value={formData.tables || ''}
+            onChange={handleChange}
+            placeholder="1, 2, 3, 4, 5 (comma separated)"
+          />
+        )}
+
+        {/* Theme Settings - only for editing */}
+        {isEdit && (
+          <div className="space-y-3">
+            <p className="text-sm font-bold text-[#3E2723]">Theme Settings</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-[#3E2723]/70 mb-1">
+                  Primary Color
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    name="primaryColor"
+                    value={formData.primaryColor || '#d4a843'}
+                    onChange={handleChange}
+                    className="w-10 h-10 p-0 border-2 border-[#3E2723] cursor-pointer"
+                  />
+                  <Input
+                    name="primaryColor"
+                    value={formData.primaryColor || '#d4a843'}
+                    onChange={handleChange}
+                    className="flex-1"
+                    placeholder="#d4a843"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#3E2723]/70 mb-1">
+                  Secondary Color
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    name="secondaryColor"
+                    value={formData.secondaryColor || '#b8860b'}
+                    onChange={handleChange}
+                    className="w-10 h-10 p-0 border-2 border-[#3E2723] cursor-pointer"
+                  />
+                  <Input
+                    name="secondaryColor"
+                    value={formData.secondaryColor || '#b8860b'}
+                    onChange={handleChange}
+                    className="flex-1"
+                    placeholder="#b8860b"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Mode Toggle */}
+            <div>
+              <label className="block text-xs font-bold text-[#3E2723]/70 mb-1">
+                Mode
+              </label>
+              <div className="flex gap-3">
+                {['light', 'dark'].map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    name="mode"
+                    onClick={() => setFormData(prev => ({ ...prev, mode: m }))}
+                    className={`px-4 py-2 border-2 border-[#3E2723] font-bold transition ${
+                      formData.mode === m 
+                        ? 'bg-[#8A9A5B] text-white' 
+                        : 'bg-white text-[#3E2723] hover:bg-[#EAE0C8]'
+                    }`}
+                  >
+                    {m.charAt(0).toUpperCase() + m.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <Button 
+          type="submit" 
+          variant="primary" 
+          disabled={loading}
+          className="w-full border-2 border-[#3E2723] py-3 text-center justify-center"
+        >
+          {loading ? (
+            <>
+              <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+              Saving...
+            </>
+          ) : (
+            isEdit ? 'Update Owner' : 'Create Owner'
+          )}
+        </Button>
+
+        {/* Cancel Button */}
+        <Button 
+          type="button" 
+          variant="secondary" 
+          onClick={onClose}
+          className="w-full border-2 border-[#3E2723] py-3 text-center justify-center"
+        >
+          Cancel
+        </Button>
       </form>
     </Modal>
   );

@@ -1,4 +1,3 @@
-// src/components/layout/DashboardLayout.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -15,22 +14,15 @@ const DashboardLayout = ({ children, title, subtitle, showSidebar = true }) => {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-color)' }}>
-      <Header
-        title={title}
-        subtitle={subtitle}
-        onLogout={handleLogout}
-        user={user}
-      />
+    <div className="min-h-screen bg-[#F5F5DC] text-[#3E2723]">
+      <Header title={title} subtitle={subtitle} onLogout={handleLogout} user={user} />
       <div className="flex">
         {showSidebar && (
-          <aside className="w-64 flex-shrink-0 border-r" style={{ borderColor: 'var(--border-color)' }}>
+          <aside className="w-64 flex-shrink-0 border-r-4 border-[#3E2723]">
             <Sidebar user={user} />
           </aside>
         )}
-        <main className="flex-1 p-6">
-          {children}
-        </main>
+        <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
   );

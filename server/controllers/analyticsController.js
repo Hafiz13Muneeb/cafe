@@ -12,6 +12,9 @@ const mongoose = require('mongoose');
 // @access  Private (SuperAdmin)
 const getCafeAnalytics = async (req, res, next) => {
   try {
+    // Disable caching for this endpoint
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+
     const { cafeId } = req.params;
     const { period = 'week' } = req.query; // 'week', 'month', 'year'
 
@@ -250,7 +253,6 @@ const getCafeNotes = async (req, res, next) => {
   try {
     const { cafeId } = req.params;
 
-    // Validate cafeId
     if (!mongoose.Types.ObjectId.isValid(cafeId)) {
       res.status(400);
       throw new Error('Invalid cafe ID');
@@ -282,7 +284,6 @@ const createNote = async (req, res, next) => {
       throw new Error('Cafe ID, title, and content are required');
     }
 
-    // Validate cafeId
     if (!mongoose.Types.ObjectId.isValid(cafeId)) {
       res.status(400);
       throw new Error('Invalid cafe ID');

@@ -1,168 +1,53 @@
-// src/components/BentoShowcase.jsx - Dark, 3D-tilt, asymmetrical feature grid with dynamic theming
-import React, { useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { Smartphone, Share2, Zap, RefreshCw, QrCode, DollarSign, Sparkles } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
-// 3D tilt card component – unified primary glow
-const BentoCard = ({ icon: Icon, title, description, className, delay = 0 }) => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
-
+const BentoCard = ({ icon: Icon, title, description, className }) => {
+  const { theme } = useTheme();
+  
+  // Hand-drawn sketch style shadows
+  const shadowStyle = "8px 8px 0px 0px rgba(138, 154, 91, 1)";
+  
   return (
     <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 50, rotateX: 10 }}
-      animate={isInView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
-      transition={{ duration: 0.8, delay, ease: [0.25, 0.1, 0.25, 1] }}
-      whileHover={{
-        rotateX: -4,
-        rotateY: 6,
-        scale: 1.02,
-        transition: { duration: 0.4, ease: 'easeOut' },
-      }}
-      className={`relative overflow-hidden rounded-2xl backdrop-blur-md border p-6 shadow-lg shadow-black/20 transition-shadow duration-500 group ${className}`}
-      style={{
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        borderColor: 'rgba(255,255,255,0.1)',
-        boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-        perspective: '800px',
-        transformStyle: 'preserve-3d',
-      }}
+      whileHover={{ y: -5, x: -2 }}
+      className={`p-6 border-4 border-[#3E2723] bg-[#FAF9F6] transition-all ${className}`}
+      style={{ boxShadow: shadowStyle }}
     >
-      {/* Glow on hover – unified primary */}
-      <div 
-        className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-2xl"
-        style={{ '--primary-opacity': '0.3' }}
-      />
-
-      {/* Icon with neon glow ring – unified primary */}
-      <div 
-        className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-all duration-500"
-        style={{ 
-          backgroundColor: 'rgba(255,255,255,0.05)',
-          boxShadow: '0 0 30px rgba(212,168,67,0)',
-        }}
-      >
-        <div 
-          className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500"
-        />
-        <Icon size={26} className="relative z-10" style={{ color: 'var(--primary-color)' }} />
+      <div className="w-12 h-12 mb-4 flex items-center justify-center border-2 border-[#3E2723] bg-[#EAE0C8]">
+        <Icon size={24} className="text-[#3E2723]" />
       </div>
-
-      <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-primary transition-colors duration-300">
+      <h3 className="text-2xl font-bold text-[#3E2723] mb-2" style={{ fontFamily: "'Permanent Marker', cursive" }}>
         {title}
       </h3>
-      <p className="text-white/60 text-sm leading-relaxed group-hover:text-white/80 transition-colors duration-300">
+      <p className="text-[#3E2723]/80 text-sm leading-relaxed font-medium">
         {description}
       </p>
-
-      {/* Corner glow – unified primary */}
-      <div 
-        className="absolute -bottom-20 -right-20 w-48 h-48 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-        style={{ backgroundColor: 'rgba(var(--primary-color), 0.1)' }}
-      />
-      
-      {/* Subtle border glow on hover – unified primary */}
-      <div 
-        className="absolute inset-0 rounded-2xl border border-transparent group-hover:border-primary/30 transition-all duration-700 pointer-events-none"
-      />
     </motion.div>
   );
 };
 
 const BentoShowcase = () => {
   const cards = [
-    {
-      icon: RefreshCw,
-      title: "Real-time Menu Sync",
-      description: "Update prices, stock, and item descriptions instantly. Changes reflect immediately on all customer devices—no app update required.",
-      className: "col-span-1 md:col-span-2 row-span-1",
-      delay: 0,
-    },
-    {
-      icon: DollarSign,
-      title: "Zero-Commission Checkout",
-      description: "Every rupee goes directly to you. No hidden fees, no percentage cuts—just pure WhatsApp-based ordering.",
-      className: "col-span-1 row-span-1",
-      delay: 0.1,
-    },
-    {
-      icon: QrCode,
-      title: "Lightning Fast QR Scanning",
-      description: "Generate and download premium QR codes in seconds. Optimized scanning works even in low light.",
-      className: "col-span-1 row-span-1",
-      delay: 0.15,
-    },
-    {
-      icon: Smartphone,
-      title: "Mobile-First Experience",
-      description: "Designed for the palm of your hand. Every tap, swipe, and scroll is buttery smooth and instantly responsive.",
-      className: "col-span-1 row-span-1",
-      delay: 0.2,
-    },
-    {
-      icon: Share2,
-      title: "Viral Sharing",
-      description: "Customers can share your menu via WhatsApp, Instagram, or SMS—turning every order into free marketing.",
-      className: "col-span-1 md:col-span-2 row-span-1",
-      delay: 0.25,
-    },
+    { icon: RefreshCw, title: "Real-time Sync", description: "Update prices instantly. Changes hit your cafe menu in seconds.", className: "col-span-1 md:col-span-2" },
+    { icon: DollarSign, title: "Zero-Commission", description: "Keep 100% of your earnings. No hidden cuts, ever.", className: "col-span-1" },
+    { icon: QrCode, title: "Fast QR", description: "Premium QR codes generated in a snap. Works everywhere.", className: "col-span-1" },
+    { icon: Smartphone, title: "Mobile Optimized", description: "Looks perfect on every phone. Just tap and order.", className: "col-span-1" },
+    { icon: Share2, title: "Viral Sharing", description: "Let customers do the marketing. Sharing made easy.", className: "col-span-1 md:col-span-1" },
   ];
 
   return (
-    <section className="relative py-20 md:py-32 px-4 overflow-hidden" style={{ backgroundColor: '#0a0a0f' }}>
-      {/* Animated background orbs – unified primary */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          animate={{ x: [0, 80, 0], y: [0, -60, 0] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute w-96 h-96 rounded-full blur-3xl top-10 right-20"
-          style={{ backgroundColor: 'rgba(var(--primary-color), 0.1)' }}
-        />
-        <motion.div
-          animate={{ x: [0, -70, 0], y: [0, 50, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute w-80 h-80 rounded-full blur-3xl bottom-10 left-20"
-          style={{ backgroundColor: 'rgba(var(--primary-color), 0.06)' }}
-        />
-        <motion.div
-          animate={{ x: [0, 50, 0], y: [0, 30, 0] }}
-          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute w-64 h-64 rounded-full blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-          style={{ backgroundColor: 'rgba(var(--primary-color), 0.05)' }}
-        />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(var(--primary-color), 0.08), transparent 70%)' }} />
-      </div>
-
-      <div className="max-w-7xl mx-auto relative z-10">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <div 
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-primary text-sm font-medium mb-4 backdrop-blur-sm shadow-[0_0_30px_rgba(212,168,67,0.15)]"
-            style={{ backgroundColor: 'rgba(var(--primary-color), 0.2)', border: '1px solid rgba(var(--primary-color), 0.3)' }}
-          >
-            <Sparkles size={14} />
-            <span>Features</span>
-          </div>
-          <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight">
-            Everything you need to <br />
-            <span className="bg-gradient-to-r from-primary to-amber-400 bg-clip-text text-transparent">
-              scale your cafe
-            </span>
+    <section className="py-24 px-4 bg-[#F5F5DC]">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="text-5xl font-bold text-[#3E2723] mb-4" style={{ fontFamily: "'Permanent Marker', cursive" }}>
+            Cafe Toolkit
           </h2>
-          <p className="mt-4 text-white/60 max-w-2xl mx-auto text-lg">
-            From menu management to instant ordering—your digital storefront, fully powered.
-          </p>
-        </motion.div>
+          <p className="text-[#3E2723]/70 text-lg">Built for speed, styled for soul.</p>
+        </div>
 
-        {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 auto-rows-[220px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {cards.map((card, index) => (
             <BentoCard key={index} {...card} />
           ))}

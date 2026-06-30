@@ -1,296 +1,336 @@
-// src/pages/OwnerSettings.jsx - Cafe owner settings (refactored)
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../api/axios';
-import { Settings, Lock, Save, X, Upload, AlertCircle, CheckCircle } from 'lucide-react';
+import { Settings, Lock, Palette, Upload, Save, Eye, EyeOff } from 'lucide-react';
 import SettingsLayout from '../components/layout/SettingsLayout';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 
 const OwnerSettings = () => {
-  const { user, logout, updateUserData } = useAuth();
+  const { user, updateUserData } = useAuth();
+  const { theme, updateTheme } = useTheme();
   const navigate = useNavigate();
-
-  // --- Active tab ---
   const [activeTab, setActiveTab] = useState('cafe');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ text: '', type: '' });
 
-  // --- Cafe Settings State ---
+  // Cafe settings
   const [cafeName, setCafeName] = useState(user?.cafeName || '');
   const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || '');
-  const [tables, setTables] = useState(user?.tables || []);
-  const [newTableInput, setNewTableInput] = useState('');
-  const [logoUrl, setLogoUrl] = useState(user?.logoUrl || '');
-  const [faviconUrl, setFaviconUrl] = useState(user?.faviconUrl || '');
-  const [logoFile, setLogoFile] = useState(null);
-  const [faviconFile, setFaviconFile] = useState(null);
+  const [tables, setTables] = useState((user?.tables || []).join(', '));
 
-  // --- Password state ---
-  const [passwordForm, setPasswordForm] = useState({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
+  // Theme settings
+  const [primaryColor, setPrimaryColor] = useState(user?.theme?.primaryColor || '#d4a843');
+  const [secondaryColor, setSecondaryColor] = useState(user?.theme?.secondaryColor || '#b8860b');
+  const [mode, setMode] = useState(user?.theme?.mode || 'light');
 
-  // --- Loading & messages ---
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  // Logo & Favicon preview
+  const [logoPreview, setLogoPreview] = useState(user?.logoUrl || '');
+  const [faviconPreview, setFaviconPreview] = useState(user?.faviconUrl || '');
+  const logoInputRef = useRef(null);
+  const faviconInputRef = useRef(null);
 
-  // --- Handlers ---
-  const handleAddTable = () => {
-    const val = newTableInput.trim();
-    if (val && !tables.includes(val)) {
-      setTables([...tables, val]);
-      setNewTableInput('');
+  // Security
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // Fetch fresh settings on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get('/settings');
+        if (res.data.success) {
+          const data = res.data.data;
+          setCafeName(data.cafeName || '');
+          setWhatsappNumber(data.whatsappNumber || '');
+          setTables((data.tables || []).join(', '));
+          setLogoPreview(data.logoUrl || '');
+          setFaviconPreview(data.faviconUrl || '');
+        }
+      } catch (err) {
+        console.error('Failed to fetch settings:', err);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  // Update local user data when theme changes
+  useEffect(() => {
+    if (user?.theme) {
+      setPrimaryColor(user.theme.primaryColor || '#d4a843');
+      setSecondaryColor(user.theme.secondaryColor || '#b8860b');
+      setMode(user.theme.mode || 'light');
     }
-  };
+  }, [user]);
 
-  const handleRemoveTable = (table) => {
-    setTables(tables.filter(t => t !== table));
-  };
-
-  const handleSettingsSubmit = async (e) => {
+  const handleCafeSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setMessage({ text: '', type: '' });
     try {
-      const formData = new FormData();
-      formData.append('cafeName', cafeName);
-      formData.append('whatsappNumber', whatsappNumber);
-      formData.append('tables', tables.join(','));
-      if (logoFile) formData.append('logo', logoFile);
-      if (faviconFile) formData.append('favicon', faviconFile);
-
-      const response = await api.put('/settings', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      if (response.data.success) {
-        const data = response.data.data;
-        updateUserData({
-          cafeName: data.cafeName,
-          whatsappNumber: data.whatsappNumber,
-          logoUrl: data.logoUrl || '',
-          faviconUrl: data.faviconUrl || '',
-          tables: data.tables || [],
-        });
-        setLogoUrl(data.logoUrl || '');
-        setFaviconUrl(data.faviconUrl || '');
-        setLogoFile(null);
-        setFaviconFile(null);
-        setSuccess('Settings updated successfully!');
+      const payload = {
+        cafeName,
+        whatsappNumber,
+        tables: tables.split(',').map(t => t.trim()).filter(t => t.length > 0),
+        primaryColor,
+        secondaryColor,
+        mode,
+      };
+      const res = await api.put('/settings', payload);
+      if (res.data.success) {
+        // Update user context with new data (excluding images if not uploaded)
+        const updatedData = {
+          cafeName,
+          whatsappNumber,
+          tables: payload.tables,
+          theme: { primaryColor, secondaryColor, mode },
+        };
+        updateUserData(updatedData);
+        // Also update global theme context for live preview
+        updateTheme({ primaryColor, secondaryColor, mode });
+        setMessage({ text: 'Settings saved successfully!', type: 'success' });
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update settings');
+      setMessage({ text: err.response?.data?.message || 'Failed to save settings', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
-  // --- Password handlers ---
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordForm(prev => ({ ...prev, [name]: value }));
-    setPasswordError('');
-    setPasswordSuccess('');
-  };
-
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    setPasswordLoading(true);
-    setPasswordError('');
-    setPasswordSuccess('');
+  const handleImageUpload = async (file, type) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append(type, file);
     try {
-      const response = await api.put('/auth/change-password', passwordForm);
-      if (response.data.success) {
-        setPasswordSuccess('Password changed successfully!');
-        setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      setLoading(true);
+      const res = await api.put('/settings', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data.success) {
+        const data = res.data.data;
+        if (type === 'logo') setLogoPreview(data.logoUrl || '');
+        if (type === 'favicon') setFaviconPreview(data.faviconUrl || '');
+        updateUserData({ logoUrl: data.logoUrl, faviconUrl: data.faviconUrl });
+        setMessage({ text: `${type} updated successfully!`, type: 'success' });
       }
     } catch (err) {
-      setPasswordError(err.response?.data?.message || 'Failed to change password');
+      setMessage({ text: err.response?.data?.message || `Failed to update ${type}`, type: 'error' });
     } finally {
-      setPasswordLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/admin');
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setMessage({ text: 'New password and confirmation do not match', type: 'error' });
+      return;
+    }
+    if (newPassword.length < 6) {
+      setMessage({ text: 'New password must be at least 6 characters', type: 'error' });
+      return;
+    }
+    setLoading(true);
+    setMessage({ text: '', type: '' });
+    try {
+      await api.put('/auth/change-password', { oldPassword, newPassword, confirmPassword });
+      setMessage({ text: 'Password changed successfully!', type: 'success' });
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setMessage({ text: err.response?.data?.message || 'Failed to change password', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // --- Sidebar navigation items ---
   const navItems = [
     { id: 'cafe', label: 'Cafe Settings', icon: Settings },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'security', label: 'Security', icon: Lock },
   ];
 
-  // --- Render content based on active tab ---
-  const renderContent = () => {
-    if (activeTab === 'cafe') {
-      return (
-        <div className="bg-white rounded-xl shadow-soft p-6">
-          <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-color)' }}>Cafe Settings</h2>
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
-              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-          {success && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm flex items-start gap-2">
-              <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
-              <span>{success}</span>
-            </div>
-          )}
-          <form onSubmit={handleSettingsSubmit} className="space-y-5">
-            <Input
-              label="Cafe Name"
-              name="cafeName"
-              value={cafeName}
-              onChange={(e) => setCafeName(e.target.value)}
-              required
-            />
-            <Input
-              label="WhatsApp Number"
-              name="whatsappNumber"
-              value={whatsappNumber}
-              onChange={(e) => setWhatsappNumber(e.target.value)}
-              type="tel"
-              placeholder="923001234567"
-              required
-            />
+  return (
+    <SettingsLayout title="Settings" subtitle="Owner" navItems={navItems} activeTab={activeTab} setActiveTab={setActiveTab}>
+      <div className="bg-[#F5F5DC] p-6 border-2 border-[#3E2723] min-h-[400px]">
+        {message.text && (
+          <div className={`mb-4 p-3 border-2 border-[#3E2723] font-bold ${message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'}`}>
+            {message.text}
+          </div>
+        )}
 
-            {/* Tables */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tables (comma separated)</label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {tables.map(table => (
-                  <span key={table} className="inline-flex items-center gap-1 px-3 py-1 bg-primary/20 text-primary rounded-full text-sm border border-primary/30">
-                    {table}
-                    <button type="button" onClick={() => handleRemoveTable(table)} className="hover:text-red-600">
-                      <X size={14} />
-                    </button>
-                  </span>
-                ))}
+        {/* Cafe Settings */}
+        {activeTab === 'cafe' && (
+          <form onSubmit={handleCafeSubmit} className="space-y-4">
+            <Input label="Cafe Name" value={cafeName} onChange={(e) => setCafeName(e.target.value)} required />
+            <Input label="WhatsApp Number" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="e.g. 03001234567" required />
+            <Input label="Table Numbers / Names" value={tables} onChange={(e) => setTables(e.target.value)} placeholder="1, 2, 3, 4, 5 (comma separated)" required />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-[#3E2723] mb-1">Logo</label>
+                <div className="flex items-center gap-3">
+                  {logoPreview && <img src={logoPreview} alt="Logo" className="w-12 h-12 border-2 border-[#3E2723] object-cover" />}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={logoInputRef}
+                    onChange={(e) => {
+                      if (e.target.files[0]) {
+                        handleImageUpload(e.target.files[0], 'logo');
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <Button type="button" variant="secondary" onClick={() => logoInputRef.current.click()}>
+                    <Upload size={16} className="inline mr-1" /> Upload Logo
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Input
-                  value={newTableInput}
-                  onChange={(e) => setNewTableInput(e.target.value)}
-                  placeholder="e.g., 6, VIP, Patio"
-                  className="flex-1"
-                />
-                <Button variant="primary" onClick={handleAddTable} className="px-4 py-2">
-                  Add
-                </Button>
+              <div>
+                <label className="block text-sm font-bold text-[#3E2723] mb-1">Favicon</label>
+                <div className="flex items-center gap-3">
+                  {faviconPreview && <img src={faviconPreview} alt="Favicon" className="w-10 h-10 border-2 border-[#3E2723] object-cover" />}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={faviconInputRef}
+                    onChange={(e) => {
+                      if (e.target.files[0]) {
+                        handleImageUpload(e.target.files[0], 'favicon');
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <Button type="button" variant="secondary" onClick={() => faviconInputRef.current.click()}>
+                    <Upload size={16} className="inline mr-1" /> Upload Favicon
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Logo */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
-              <div className="flex items-center gap-4">
-                {logoUrl && <img src={logoUrl} alt="Logo" className="w-16 h-16 object-cover rounded-lg border border-gray-200" />}
-                <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                  <Upload size={16} className="text-gray-500" />
-                  <span className="text-sm">{logoFile ? logoFile.name : 'Upload Logo'}</span>
-                  <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files[0])} className="hidden" />
-                </label>
-              </div>
-            </div>
-
-            {/* Favicon */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Favicon (for customer menu)</label>
-              <div className="flex items-center gap-4">
-                {faviconUrl && <img src={faviconUrl} alt="Favicon" className="w-10 h-10 object-cover rounded border border-gray-200" />}
-                <label className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                  <Upload size={16} className="text-gray-500" />
-                  <span className="text-sm">{faviconFile ? faviconFile.name : 'Upload Favicon'}</span>
-                  <input type="file" accept="image/*" onChange={(e) => setFaviconFile(e.target.files[0])} className="hidden" />
-                </label>
-              </div>
-              <p className="text-xs text-gray-400 mt-1">This favicon will appear on your public menu page.</p>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button type="submit" variant="primary" disabled={loading} className="flex items-center gap-2">
-                <Save size={18} />
-                {loading ? 'Saving...' : 'Save Settings'}
-              </Button>
-              <Button variant="secondary" onClick={() => navigate('/admin/dashboard')}>Cancel</Button>
-            </div>
-          </form>
-        </div>
-      );
-    }
-
-    if (activeTab === 'security') {
-      return (
-        <div className="bg-white rounded-xl shadow-soft p-6">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
-            <Lock size={20} style={{ color: 'var(--primary-color)' }} />
-            Change Password
-          </h2>
-          {passwordError && (
-            <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{passwordError}</div>
-          )}
-          {passwordSuccess && (
-            <div className="mb-4 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">{passwordSuccess}</div>
-          )}
-          <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
-            <Input
-              label="Current Password"
-              name="oldPassword"
-              value={passwordForm.oldPassword}
-              onChange={handlePasswordChange}
-              type="password"
-              required
-            />
-            <Input
-              label="New Password"
-              name="newPassword"
-              value={passwordForm.newPassword}
-              onChange={handlePasswordChange}
-              type="password"
-              required
-              minLength={6}
-            />
-            <Input
-              label="Confirm New Password"
-              name="confirmPassword"
-              value={passwordForm.confirmPassword}
-              onChange={handlePasswordChange}
-              type="password"
-              required
-            />
-            <Button type="submit" variant="primary" disabled={passwordLoading}>
-              {passwordLoading ? 'Updating...' : 'Update Password'}
+            <Button type="submit" variant="primary" disabled={loading}>
+              <Save size={16} className="inline mr-1" /> {loading ? 'Saving...' : 'Save Settings'}
             </Button>
           </form>
-        </div>
-      );
-    }
+        )}
 
-    return null;
-  };
+        {/* Appearance (Theme) */}
+        {activeTab === 'appearance' && (
+          <form onSubmit={handleCafeSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-[#3E2723] mb-1">Primary Color</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="w-10 h-10 p-0 border-2 border-[#3E2723] cursor-pointer"
+                  />
+                  <Input value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="flex-1" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-[#3E2723] mb-1">Secondary Color</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={secondaryColor}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    className="w-10 h-10 p-0 border-2 border-[#3E2723] cursor-pointer"
+                  />
+                  <Input value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="flex-1" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-[#3E2723] mb-1">Mode</label>
+              <div className="flex gap-4">
+                {['light', 'dark'].map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setMode(m)}
+                    className={`px-4 py-2 border-2 border-[#3E2723] font-bold transition ${
+                      mode === m ? 'bg-[#8A9A5B] text-white' : 'bg-white text-[#3E2723]'
+                    }`}
+                  >
+                    {m.charAt(0).toUpperCase() + m.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Button type="submit" variant="primary" disabled={loading}>
+              <Save size={16} className="inline mr-1" /> {loading ? 'Saving...' : 'Save Theme'}
+            </Button>
+          </form>
+        )}
 
-  return (
-    <SettingsLayout
-      title="Settings"
-      subtitle="Owner"
-      backTo="/admin/dashboard"
-      onLogout={handleLogout}
-      navItems={navItems}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    >
-      {renderContent()}
+        {/* Security */}
+        {activeTab === 'security' && (
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div className="relative">
+              <Input
+                label="Current Password"
+                type={showOld ? 'text' : 'password'}
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowOld(!showOld)}
+                className="absolute right-3 top-9 text-[#3E2723]"
+              >
+                {showOld ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            <div className="relative">
+              <Input
+                label="New Password"
+                type={showNew ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew(!showNew)}
+                className="absolute right-3 top-9 text-[#3E2723]"
+              >
+                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            <div className="relative">
+              <Input
+                label="Confirm New Password"
+                type={showConfirm ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-9 text-[#3E2723]"
+              >
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            <Button type="submit" variant="primary" disabled={loading}>
+              {loading ? 'Changing...' : 'Change Password'}
+            </Button>
+          </form>
+        )}
+      </div>
     </SettingsLayout>
   );
 };

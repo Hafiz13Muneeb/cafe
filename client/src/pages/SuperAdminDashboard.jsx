@@ -1,4 +1,3 @@
-// src/pages/SuperAdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -10,22 +9,22 @@ import OwnerFormModal from '../components/superadmin/OwnerFormModal';
 import DashboardLayout from '../components/layout/DashboardLayout';
 
 const SuperAdminDashboard = () => {
-  const { user, isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useAuth();
   const navigate = useNavigate();
 
+  // Redirect if not superadmin
   useEffect(() => {
     if (!isSuperAdmin) navigate('/admin/dashboard');
   }, [isSuperAdmin, navigate]);
 
+  // State
   const [owners, setOwners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Add modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedOwner, setSelectedOwner] = useState(null);
-
   const [addFormData, setAddFormData] = useState({
     username: '',
     email: '',
@@ -34,6 +33,9 @@ const SuperAdminDashboard = () => {
   });
   const [addLoading, setAddLoading] = useState(false);
 
+  // Edit modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedOwner, setSelectedOwner] = useState(null);
   const [editFormData, setEditFormData] = useState({
     cafeName: '',
     whatsappNumber: '',
@@ -44,16 +46,21 @@ const SuperAdminDashboard = () => {
   });
   const [editLoading, setEditLoading] = useState(false);
 
+  // Fetch owners on mount
   useEffect(() => {
     fetchOwners();
   }, []);
 
+  // Clear messages after 5 seconds
   useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => setSuccess(''), 5000);
+    if (success || error) {
+      const timer = setTimeout(() => {
+        setSuccess('');
+        setError('');
+      }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [success]);
+  }, [success, error]);
 
   const fetchOwners = async () => {
     try {
@@ -62,13 +69,16 @@ const SuperAdminDashboard = () => {
       const response = await api.get('/users/owners');
       if (response.data.success) {
         const ownersData = response.data.data || [];
+        // Fetch active reminders for each owner
         const ownersWithNotes = await Promise.all(
           ownersData.map(async (owner) => {
             try {
               const notesRes = await api.get(`/analytics/notes/${owner._id}`);
               const notes = notesRes.data.data || [];
               const activeReminders = notes.filter(n => 
-                n.isReminderActive && n.reminderDate && new Date(n.reminderDate) <= new Date()
+                n.isReminderActive && 
+                n.reminderDate && 
+                new Date(n.reminderDate) <= new Date()
               );
               return { ...owner, activeReminders: activeReminders.length };
             } catch {
@@ -76,6 +86,7 @@ const SuperAdminDashboard = () => {
             }
           })
         );
+        // Sort by active reminders (most urgent first)
         ownersWithNotes.sort((a, b) => b.activeReminders - a.activeReminders);
         setOwners(ownersWithNotes);
       }
@@ -92,19 +103,18 @@ const SuperAdminDashboard = () => {
     setError('');
     setSuccess('');
     try {
-      const payload = {
-        username: addFormData.username.trim(),
-        email: addFormData.email.trim().toLowerCase(),
-        cafeName: addFormData.cafeName.trim(),
-        temporaryPassword: addFormData.temporaryPassword,
-      };
-      const response = await api.post('/auth/create-owner', payload);
+      const response = await api.post('/auth/create-owner', addFormData);
       if (response.data.success) {
-        const newOwner = response.data.data.user;
-        setOwners(prev => [newOwner, ...prev]);
+        setOwners(prev => [response.data.data.user, ...prev]);
         setIsAddModalOpen(false);
-        setAddFormData({ username: '', email: '', cafeName: '', temporaryPassword: '' });
-        setSuccess(`✅ Owner created successfully!\nUsername: ${newOwner.username}\nCafe: ${newOwner.cafeName}`);
+        setSuccess('Owner created successfully!');
+        // Reset form
+        setAddFormData({
+          username: '',
+          email: '',
+          cafeName: '',
+          temporaryPassword: '',
+        });
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create owner');
@@ -114,32 +124,31 @@ const SuperAdminDashboard = () => {
   };
 
   const handleToggleBlock = async (ownerId, currentStatus) => {
-    if (!window.confirm(`Are you sure you want to ${currentStatus ? 'unblock' : 'block'} this owner?`)) return;
     try {
       setError('');
+      setSuccess('');
       const response = await api.put(`/users/owners/${ownerId}/toggle-block`);
       if (response.data.success) {
-        setOwners(prev => prev.map(o =>
+        setOwners(prev => prev.map(o => 
           o._id === ownerId ? { ...o, isBlocked: !o.isBlocked } : o
         ));
-        setSuccess(`Owner ${currentStatus ? 'unblocked' : 'blocked'} successfully`);
+        setSuccess(`Owner ${!currentStatus ? 'blocked' : 'unblocked'} successfully`);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to toggle block status');
+      setError('Failed to toggle block status');
     }
   };
 
   const handleDelete = async (ownerId) => {
-    if (!window.confirm('Are you sure you want to permanently delete this owner? This cannot be undone.')) return;
+    if (!window.confirm('Are you sure you want to delete this owner? This action cannot be undone.')) return;
     try {
       setError('');
-      const response = await api.delete(`/users/owners/${ownerId}`);
-      if (response.data.success) {
-        setOwners(prev => prev.filter(o => o._id !== ownerId));
-        setSuccess('Owner deleted successfully');
-      }
+      setSuccess('');
+      await api.delete(`/users/owners/${ownerId}`);
+      setOwners(prev => prev.filter(o => o._id !== ownerId));
+      setSuccess('Owner deleted successfully');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete owner');
+      setError('Failed to delete owner');
     }
   };
 
@@ -162,9 +171,10 @@ const SuperAdminDashboard = () => {
     setError('');
     setSuccess('');
     try {
+      // Prepare payload - convert tables string to array
       const payload = {
-        cafeName: editFormData.cafeName.trim(),
-        whatsappNumber: editFormData.whatsappNumber.trim(),
+        cafeName: editFormData.cafeName,
+        whatsappNumber: editFormData.whatsappNumber,
         tables: editFormData.tables.split(',').map(t => t.trim()).filter(t => t.length > 0),
         theme: {
           primaryColor: editFormData.primaryColor,
@@ -174,11 +184,10 @@ const SuperAdminDashboard = () => {
       };
       const response = await api.put(`/users/owners/${selectedOwner._id}`, payload);
       if (response.data.success) {
-        setOwners(prev => prev.map(o =>
+        setOwners(prev => prev.map(o => 
           o._id === selectedOwner._id ? response.data.data : o
         ));
         setIsEditModalOpen(false);
-        setSelectedOwner(null);
         setSuccess('Owner updated successfully');
       }
     } catch (err) {
@@ -188,40 +197,36 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  if (!isSuperAdmin) return null;
-
   return (
     <DashboardLayout title="Super Admin" subtitle="Control Panel">
+      {/* Messages */}
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
-          <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-          <span>{error}</span>
+        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-red-300 text-[#3E2723] font-bold flex items-center gap-2">
+          <AlertCircle size={18} /> {error}
         </div>
       )}
       {success && (
-        <div className="mb-4 p-4 rounded-lg text-sm flex items-start gap-2 whitespace-pre-line" style={{ backgroundColor: 'var(--primary-light)', border: '1px solid var(--primary-color)', color: 'var(--primary-color)' }}>
-          <CheckCircle size={18} className="flex-shrink-0 mt-0.5" />
-          <span>{success}</span>
+        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold flex items-center gap-2">
+          <CheckCircle size={18} /> {success}
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold" style={{ color: 'var(--text-color)' }}>Cafe Owners</h2>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Manage all registered cafe owners</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={fetchOwners} className="p-2">
-            <RefreshCw size={18} />
+      {/* Header */}
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-6 bg-[#EAE0C8] p-4 border-2 border-[#3E2723]">
+        <h2 className="text-2xl font-bold text-[#3E2723]">Cafe Owners</h2>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={fetchOwners} disabled={loading}>
+            <RefreshCw size={16} className={`inline mr-1 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
-          <Button variant="primary" onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
-            <Plus size={18} />
-            Add Owner
+          <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>
+            <Plus size={16} className="inline mr-1" /> Add Owner
           </Button>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-soft overflow-hidden">
+      {/* Table */}
+      <div className="border-2 border-[#3E2723] bg-white p-2 overflow-x-auto">
         <OwnerTable
           owners={owners}
           loading={loading}
@@ -231,28 +236,34 @@ const SuperAdminDashboard = () => {
         />
       </div>
 
+      {/* Add Modal */}
       <OwnerFormModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setAddFormData({ username: '', email: '', cafeName: '', temporaryPassword: '' });
+        }}
         onSubmit={handleAddOwner}
         title="Add New Cafe Owner"
         formData={addFormData}
         setFormData={setAddFormData}
         loading={addLoading}
         isEdit={false}
-        submitLabel="Create Owner"
       />
 
+      {/* Edit Modal */}
       <OwnerFormModal
         isOpen={isEditModalOpen}
-        onClose={() => { setIsEditModalOpen(false); setSelectedOwner(null); }}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedOwner(null);
+        }}
         onSubmit={handleEditSubmit}
-        title={`Edit Owner: ${selectedOwner?.cafeName || ''}`}
+        title="Edit Owner Details"
         formData={editFormData}
         setFormData={setEditFormData}
         loading={editLoading}
         isEdit={true}
-        submitLabel="Save Changes"
       />
     </DashboardLayout>
   );

@@ -1,4 +1,4 @@
-// src/App.jsx - Main App component with dynamic multi-tenant routing
+// src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
@@ -12,9 +12,19 @@ import SuperAdminSettings from './pages/SuperAdminSettings';
 import OwnerSettings from './pages/OwnerSettings';
 import SuperAdminCafeDetails from './pages/SuperAdminCafeDetails';
 
-// Protected route wrapper – redirects to login if not authenticated
 const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
-  const { user, isAuthenticated, isSuperAdmin } = useAuth();
+  const { user, isAuthenticated, isSuperAdmin, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5DC]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-t-transparent border-[#8A9A5B]" />
+          <p className="mt-4 text-[#3E2723]">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/admin" replace />;
@@ -27,15 +37,12 @@ const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
   return children;
 };
 
-// Favicon manager component – sets global or per-cafe favicon
 const FaviconManager = ({ children }) => {
   const location = useLocation();
   const { theme } = useTheme();
   const isMenuRoute = location.pathname.startsWith('/menu/');
 
   useEffect(() => {
-    // If it's a menu route, CustomerMenu will handle the favicon
-    // For all other routes, use the global favicon
     if (!isMenuRoute) {
       const faviconUrl = theme?.faviconUrl || '';
       const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
@@ -55,16 +62,10 @@ function App() {
     <Router>
       <FaviconManager>
         <Routes>
-          {/* Public landing page (static) */}
           <Route path="/" element={<Home />} />
-
-          {/* Dynamic customer menu – /menu/:slug */}
           <Route path="/menu/:slug" element={<CustomerMenu />} />
-
-          {/* Admin login – public */}
           <Route path="/admin" element={<AdminLogin />} />
 
-          {/* Admin dashboard – protected (owner & superadmin) */}
           <Route
             path="/admin/dashboard"
             element={
@@ -74,7 +75,6 @@ function App() {
             }
           />
 
-          {/* Owner Settings – protected (owner only, not superadmin) */}
           <Route
             path="/admin/dashboard/settings"
             element={
@@ -84,7 +84,6 @@ function App() {
             }
           />
 
-          {/* SuperAdmin dashboard – protected (superadmin only) */}
           <Route
             path="/admin/super"
             element={
@@ -94,7 +93,6 @@ function App() {
             }
           />
 
-          {/* SuperAdmin Settings – protected (superadmin only) */}
           <Route
             path="/admin/settings"
             element={
@@ -104,7 +102,6 @@ function App() {
             }
           />
 
-          {/* SuperAdmin Cafe Details – protected (superadmin only) */}
           <Route
             path="/admin/super/:cafeSlug"
             element={
@@ -114,7 +111,6 @@ function App() {
             }
           />
 
-          {/* Catch-all – redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </FaviconManager>

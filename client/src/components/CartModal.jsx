@@ -1,9 +1,10 @@
-// src/components/CartModal.jsx - Cart modal with dynamic theming
+// src/components/CartModal.jsx - Cart modal with dynamic theming and analytics tracking
 import React, { useState } from 'react';
 import { X, Minus, Plus, Trash2, Send } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import api from '../api/axios';
 
-const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [] }) => {
+const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slug }) => {
   const { cart, addToCart, removeFromCart, clearCart, getTotalItems, getTotalPrice, formatPrice, getOrderText } = useCart();
   const [selectedTable, setSelectedTable] = useState('');
   const [error, setError] = useState('');
@@ -11,7 +12,12 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [] }) =
 
   const tableOptions = tables.length > 0 ? tables : ['1', '2', '3', '4', '5'];
 
-  const handlePlaceOrder = () => {
+  // Get session ID for analytics
+  const getSessionId = () => {
+    return sessionStorage.getItem('analyticsSessionId') || '';
+  };
+
+  const handlePlaceOrder = async () => {
     if (!selectedTable) {
       setError('Please select your table');
       return;
@@ -26,46 +32,89 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [] }) =
     }
     setError('');
     setIsSubmitting(true);
+
     try {
+      // 1. Track order attempt (if slug is provided)
+      if (slug) {
+        try {
+          await api.post(`/analytics/${slug}/order-attempt`, {
+            sessionId: getSessionId(),
+          });
+        } catch (trackErr) {
+          // Silently fail – analytics should not break the order flow
+          console.debug('Order attempt tracking failed:', trackErr.message);
+        }
+      }
+
+      // 2. Generate WhatsApp link and open it
       const orderText = getOrderText(selectedTable, cafeName);
       const url = `https://wa.me/${whatsappNumber}?text=${orderText}`;
       window.open(url, '_blank');
+
+      // 3. Track completed order (if slug is provided)
+      if (slug) {
+        try {
+          await api.post(`/analytics/${slug}/order-completed`, {
+            sessionId: getSessionId(),
+            orderAmount: getTotalPrice(),
+          });
+        } catch (trackErr) {
+          // Silently fail – analytics should not break the order flow
+          console.debug('Order completed tracking failed:', trackErr.message);
+        }
+      }
+
+      // 4. Clear cart and close modal
       clearCart();
       onClose();
       setSelectedTable('');
     } catch (err) {
-      setError('Failed to place order');
+      setError('Failed to place order. Please try again.');
+      console.error('Order placement error:', err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   if (!isOpen) return null;
-  if (cart.length === 0) { onClose(); return null; }
+  if (cart.length === 0) {
+    onClose();
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center bg-black/30 backdrop-blur-sm animate-fade-in">
-      <div 
+      <div
         className="w-full max-w-lg rounded-t-2xl md:rounded-2xl max-h-[90vh] flex flex-col animate-slide-up"
         style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)' }}
       >
+        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
           <h2 className="text-lg font-semibold" style={{ color: 'var(--text-color)' }}>
             Your Order ({getTotalItems()} items)
           </h2>
-          <button onClick={onClose} className="p-1 rounded-full transition hover:opacity-70" style={{ backgroundColor: 'var(--bg-color)' }}>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-full transition hover:opacity-70"
+            style={{ backgroundColor: 'var(--bg-color)' }}
+          >
             <X size={22} style={{ color: 'var(--text-color)' }} />
           </button>
         </div>
 
+        {/* Cart Items */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {cart.map(item => (
-            <div 
-              key={item._id} 
+          {cart.map((item) => (
+            <div
+              key={item._id}
               className="flex items-center gap-3 rounded-lg p-3"
               style={{ backgroundColor: 'var(--bg-color)' }}
             >
-              <img src={item.imageUrl} alt={item.title} className="w-14 h-14 rounded-lg object-cover" />
+              <img
+                src={item.imageUrl}
+                alt={item.title}
+                className="w-14 h-14 rounded-lg object-cover"
+              />
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-sm truncate" style={{ color: 'var(--text-color)' }}>
                   {item.title}
@@ -75,42 +124,58 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [] }) =
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => removeFromCart(item._id)} 
+                <button
+                  onClick={() => removeFromCart(item._id)}
                   className="p-1 rounded-full transition hover:opacity-70"
                   style={{ backgroundColor: 'var(--border-color)' }}
                 >
-                  {item.quantity === 1 ? <Trash2 size={14} className="text-red-500" /> : <Minus size={14} style={{ color: 'var(--text-color)' }} />}
+                  {item.quantity === 1 ? (
+                    <Trash2 size={14} className="text-red-500" />
+                  ) : (
+                    <Minus size={14} style={{ color: 'var(--text-color)' }} />
+                  )}
                 </button>
                 <span className="w-6 text-center text-sm font-medium" style={{ color: 'var(--text-color)' }}>
                   {item.quantity}
                 </span>
-                <button 
-                  onClick={() => addToCart(item)} 
+                <button
+                  onClick={() => addToCart(item)}
                   className="p-1 rounded-full transition hover:opacity-70"
                   style={{ backgroundColor: 'var(--border-color)' }}
                   disabled={!item.isAvailable}
                 >
-                  <Plus size={14} style={{ color: item.isAvailable ? 'var(--text-color)' : 'var(--text-secondary)' }} />
+                  <Plus
+                    size={14}
+                    style={{ color: item.isAvailable ? 'var(--text-color)' : 'var(--text-secondary)' }}
+                  />
                 </button>
               </div>
             </div>
           ))}
           {cart.length > 0 && (
-            <button onClick={clearCart} className="text-sm font-medium hover:underline" style={{ color: '#ef4444' }}>
+            <button
+              onClick={clearCart}
+              className="text-sm font-medium hover:underline"
+              style={{ color: '#ef4444' }}
+            >
               Clear Cart
             </button>
           )}
         </div>
 
+        {/* Footer */}
         <div className="border-t p-4 space-y-3" style={{ borderColor: 'var(--border-color)' }}>
+          {/* Table Selection */}
           <div>
             <label className="text-sm font-medium" style={{ color: 'var(--text-color)' }}>
               Select Table <span className="text-red-500">*</span>
             </label>
             <select
               value={selectedTable}
-              onChange={(e) => { setSelectedTable(e.target.value); setError(''); }}
+              onChange={(e) => {
+                setSelectedTable(e.target.value);
+                setError('');
+              }}
               className="mt-1 w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
               style={{
                 backgroundColor: 'var(--bg-color)',
@@ -120,11 +185,16 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [] }) =
               }}
             >
               <option value="">-- Choose your table --</option>
-              {tableOptions.map(table => <option key={table} value={table}>{table}</option>)}
+              {tableOptions.map((table) => (
+                <option key={table} value={table}>
+                  {table}
+                </option>
+              ))}
             </select>
             {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
           </div>
 
+          {/* Total */}
           <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
             <span style={{ color: 'var(--text-secondary, #64748b)' }}>Total:</span>
             <span className="text-lg font-bold" style={{ color: 'var(--primary-color)' }}>
@@ -132,6 +202,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [] }) =
             </span>
           </div>
 
+          {/* Place Order Button */}
           <button
             onClick={handlePlaceOrder}
             disabled={isSubmitting}

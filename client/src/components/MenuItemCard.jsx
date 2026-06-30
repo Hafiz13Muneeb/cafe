@@ -1,66 +1,46 @@
-// src/components/MenuItemCard.jsx - Menu item card with dynamic theming
 import React from 'react';
 import { useCart } from '../context/CartContext';
+import { Plus } from 'lucide-react';
 
 const MenuItemCard = ({ item }) => {
   const { addToCart } = useCart();
 
   return (
-    <div 
-      className="rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow duration-300"
-      style={{
-        backgroundColor: 'var(--card-bg)',
-        borderColor: 'var(--border-color)',
-      }}
+    <div
+      className="group bg-white border-2 border-[#3E2723] overflow-hidden transition-all hover:shadow-[8px_8px_0px_0px_#8A9A5B] hover:-translate-y-1"
+      style={{ boxShadow: '6px 6px 0px 0px #EAE0C8' }}
     >
-      <div className="relative aspect-square overflow-hidden" style={{ backgroundColor: 'var(--bg-color)' }}>
+      {/* Image */}
+      <div className="relative aspect-square overflow-hidden bg-[#F5F5DC]">
         <img
           src={item.imageUrl}
           alt={item.title}
-          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
         />
         {!item.isAvailable && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="text-white font-semibold px-3 py-1 bg-red-500 rounded-full text-xs">Unavailable</span>
+          <div className="absolute inset-0 bg-[#3E2723]/60 flex items-center justify-center">
+            <span className="bg-red-500 text-white font-bold px-3 py-1 border-2 border-[#3E2723] text-xs uppercase">
+              Sold Out
+            </span>
           </div>
         )}
       </div>
-      <div className="p-3">
-        <h3 className="font-semibold text-sm truncate" style={{ color: 'var(--text-color)' }}>
-          {item.title}
-        </h3>
+
+      {/* Content */}
+      <div className="p-3 space-y-1">
+        <h3 className="font-bold text-sm truncate">{item.title}</h3>
         {item.description && (
-          <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--text-secondary, #64748b)' }}>
-            {item.description}
-          </p>
+          <p className="text-xs text-[#3E2723]/60 line-clamp-2">{item.description}</p>
         )}
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-sm font-bold" style={{ color: 'var(--primary-color)' }}>
-            Rs. {item.price}
-          </span>
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-base font-bold text-[#8A9A5B]">Rs. {item.price}</span>
           <button
             onClick={() => addToCart(item)}
             disabled={!item.isAvailable}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200"
-            style={{
-              backgroundColor: item.isAvailable ? 'var(--primary-color)' : 'var(--border-color)',
-              color: item.isAvailable ? '#ffffff' : 'var(--text-secondary, #94a3b8)',
-              cursor: item.isAvailable ? 'pointer' : 'not-allowed',
-              boxShadow: item.isAvailable ? '0 4px 15px rgba(0,0,0,0.1)' : 'none',
-            }}
-            onMouseEnter={(e) => {
-              if (item.isAvailable) {
-                e.target.style.opacity = '0.85';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (item.isAvailable) {
-                e.target.style.opacity = '1';
-              }
-            }}
+            className="flex items-center justify-center w-8 h-8 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold transition-all hover:bg-[#3E2723] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#8A9A5B]"
           >
-            {item.isAvailable ? 'Add +' : 'Sold'}
+            <Plus size={16} strokeWidth={2.5} />
           </button>
         </div>
       </div>

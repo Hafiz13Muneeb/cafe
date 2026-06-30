@@ -1,180 +1,339 @@
-// src/pages/SuperAdminCafeDetails.jsx
+// src/pages/SuperAdminCafeDetails.jsx - Full analytics dashboard with notes
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import {
-  ArrowLeft,
-  Eye,
-  ShoppingBag,
-  DollarSign,
-  TrendingUp,
-  RefreshCw,
-} from 'lucide-react';
-import Button from '../components/common/Button';
-import StatCard from '../components/common/StatCard';
-import LineChart from '../components/common/LineChart';
-import PeriodFilter from '../components/common/PeriodFilter';
 import NoteList from '../components/superadmin/NoteList';
-import ChartCard from '../components/common/ChartCard';
+import StatCard from '../components/common/StatCard';
+import PeriodFilter from '../components/common/PeriodFilter';
+import LineChart from '../components/common/LineChart';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import Card from '../components/common/Card';
+import { Eye, ShoppingBag, DollarSign, TrendingDown, BarChart3, AlertCircle } from 'lucide-react';
 
 const SuperAdminCafeDetails = () => {
   const { cafeSlug } = useParams();
-  const { isSuperAdmin } = useAuth();
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
 
+  // State
+  const [cafeName, setCafeName] = useState('');
+  const [cafeId, setCafeId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Notes state
+  const [notes, setNotes] = useState([]);
+  const [notesLoading, setNotesLoading] = useState(false);
+
+  // Analytics state
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState('');
+
+  // Period options and state
+  const periods = [
+    { value: 'week', label: 'Week' },
+    { value: 'month', label: 'Month' },
+    { value: 'year', label: 'Year' },
+  ];
+  const [period, setPeriod] = useState('week');
+
+  // Redirect if not superadmin
   useEffect(() => {
     if (!isSuperAdmin) navigate('/admin/dashboard');
   }, [isSuperAdmin, navigate]);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [period, setPeriod] = useState('week');
-  const [analytics, setAnalytics] = useState(null);
-  const [notes, setNotes] = useState([]);
-  const [cafeName, setCafeName] = useState('');
+  // Fetch functions
+  const fetchNotes = async (id) => {
+    try {
+      setNotesLoading(true);
+      const res = await api.get(`/analytics/notes/${id}`);
+      setNotes(res.data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch notes:', err);
+    } finally {
+      setNotesLoading(false);
+    }
+  };
 
-  const periods = [
-    { value: 'week', label: 'This Week' },
-    { value: 'month', label: 'This Month' },
-    { value: 'year', label: 'This Year' },
-  ];
-
-  useEffect(() => {
-    if (cafeSlug) fetchData();
-  }, [cafeSlug, period]);
+ const fetchAnalytics = async (id, periodParam) => {
+  try {
+    setAnalyticsLoading(true);
+    setAnalyticsError('');
+    // Add cache-busting query param
+    const timestamp = Date.now();
+    const res = await api.get(`/analytics/cafe/${id}?period=${periodParam}&_t=${timestamp}`);
+    console.log('Analytics response:', res); // Check this log
+    if (res.data && res.data.success) {
+      const data = res.data.data;
+      if (data && data.summary && data.charts) {
+        setAnalytics(data);
+      } else {
+        setAnalytics(data);
+        setAnalyticsError('Received incomplete analytics data.');
+      }
+    } else {
+      setAnalyticsError('Invalid response from server.');
+    }
+  } catch (err) {
+    console.error('Failed to fetch analytics:', err);
+    setAnalyticsError(err.response?.data?.message || err.message || 'Failed to fetch analytics');
+    setAnalytics(null);
+  } finally {
+    setAnalyticsLoading(false);
+  }
+};
 
   const fetchData = async () => {
-    setLoading(true);
-    setError('');
     try {
-      const cafeRes = await api.get(`/users/owners`);
-      const cafe = cafeRes.data.data.find((c) => c.slug === cafeSlug);
+      setLoading(true);
+      setError('');
+
+      const ownersRes = await api.get('/users/owners');
+      const cafe = ownersRes.data.data?.find((c) => c.slug === cafeSlug);
+
       if (!cafe) {
         setError('Cafe not found');
-        setLoading(false);
         return;
       }
-      setCafeName(cafe.cafeName || cafeSlug);
 
-      const analyticsRes = await api.get(`/analytics/cafe/${cafe._id}?period=${period}`);
-      if (analyticsRes.data.success) setAnalytics(analyticsRes.data.data);
+      setCafeName(cafe.cafeName || '');
+      setCafeId(cafe._id);
 
-      const notesRes = await api.get(`/analytics/notes/${cafe._id}`);
-      if (notesRes.data.success) setNotes(notesRes.data.data);
+      await Promise.all([
+        fetchNotes(cafe._id),
+        fetchAnalytics(cafe._id, period),
+      ]);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load cafe data');
+      setError(err.response?.data?.message || 'Failed to load data');
+      console.error('Fetch data error:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Re-fetch analytics when period changes
+  useEffect(() => {
+    if (cafeId) {
+      fetchAnalytics(cafeId, period);
+    }
+  }, [period, cafeId]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchData();
+  }, [cafeSlug]);
+
+  // Handlers for notes CRUD
   const handleAddNote = async (noteData) => {
-    const response = await api.post('/analytics/notes', noteData);
-    if (response.data.success) setNotes(prev => [response.data.data, ...prev]);
-    return response;
+    try {
+      const response = await api.post('/analytics/notes', noteData);
+      if (response.data.success) {
+        setNotes(prev => [response.data.data, ...prev]);
+      }
+      return response.data;
+    } catch (err) {
+      console.error('Failed to add note:', err);
+      throw err;
+    }
   };
 
   const handleEditNote = async (noteId, noteData) => {
-    const response = await api.put(`/analytics/notes/${noteId}`, noteData);
-    if (response.data.success) setNotes(prev => prev.map(n => n._id === noteId ? response.data.data : n));
-    return response;
+    try {
+      const response = await api.put(`/analytics/notes/${noteId}`, noteData);
+      if (response.data.success) {
+        setNotes(prev => prev.map(n => n._id === noteId ? response.data.data : n));
+      }
+      return response.data;
+    } catch (err) {
+      console.error('Failed to update note:', err);
+      throw err;
+    }
   };
 
   const handleDeleteNote = async (noteId) => {
-    const response = await api.delete(`/analytics/notes/${noteId}`);
-    if (response.data.success) setNotes(prev => prev.filter(n => n._id !== noteId));
-    return response;
+    try {
+      await api.delete(`/analytics/notes/${noteId}`);
+      setNotes(prev => prev.filter(n => n._id !== noteId));
+    } catch (err) {
+      console.error('Failed to delete note:', err);
+      throw err;
+    }
   };
 
-  if (!isSuperAdmin) return null;
+  // Prepare chart data
+  const prepareChartData = () => {
+    if (!analytics || !analytics.charts) return null;
+
+    const { views, orderAttempts, completedOrders } = analytics.charts;
+
+    const allDates = new Set();
+    views.forEach(d => allDates.add(d._id));
+    orderAttempts.forEach(d => allDates.add(d._id));
+    completedOrders.forEach(d => allDates.add(d._id));
+
+    const labels = Array.from(allDates).sort();
+
+    const getValue = (data, date) => {
+      const entry = data.find(d => d._id === date);
+      return entry ? entry.count : 0;
+    };
+
+    const getRevenue = (date) => {
+      const entry = completedOrders.find(d => d._id === date);
+      return entry ? entry.revenue : 0;
+    };
+
+    return {
+      labels,
+      viewsData: labels.map(d => getValue(views, d)),
+      attemptsData: labels.map(d => getValue(orderAttempts, d)),
+      ordersData: labels.map(d => getValue(completedOrders, d)),
+      revenueData: labels.map(d => getRevenue(d)),
+    };
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-color)' }}>
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent" style={{ borderColor: 'var(--primary-color) transparent transparent transparent' }}></div>
-          <p className="mt-4" style={{ color: 'var(--text-secondary)' }}>Loading cafe data...</p>
+      <DashboardLayout title="Loading..." subtitle="Analytics">
+        <div className="bg-[#F5F5DC] p-6 border-2 border-[#3E2723] text-center">
+          <p className="text-[#3E2723]/60">Loading cafe details...</p>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-color)' }}>
-        <div className="text-center">
-          <p className="text-red-500">{error}</p>
-          <Button variant="primary" onClick={() => navigate('/admin/super')} className="mt-4">
-            Back to Dashboard
-          </Button>
+      <DashboardLayout title="Error" subtitle="Analytics">
+        <div className="bg-[#F5F5DC] p-6 border-2 border-[#3E2723] bg-red-100">
+          <p className="text-red-600 font-bold">{error}</p>
+          <button
+            onClick={() => navigate('/admin/super')}
+            className="mt-4 px-4 py-2 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold"
+          >
+            Back to Owners
+          </button>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
-  const summary = analytics?.summary || {};
-  const charts = analytics?.charts || {};
+  const chartData = prepareChartData();
 
   return (
-    <DashboardLayout title={cafeName} subtitle="Analytics">
+    <DashboardLayout title={cafeName || 'Cafe Details'} subtitle="Analytics & Notes">
       {/* Period Filter */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 className="text-lg font-bold text-[#3E2723]">Performance Overview</h2>
         <PeriodFilter periods={periods} selected={period} onSelect={setPeriod} />
-        <div className="flex items-center gap-3">
-          <Button variant="secondary" onClick={fetchData} className="flex items-center gap-2">
-            <RefreshCw size={16} />
-            Refresh
-          </Button>
-          <Button variant="secondary" onClick={() => navigate('/admin/super')} className="flex items-center gap-2">
-            <ArrowLeft size={18} />
-            Back
-          </Button>
+      </div>
+
+      {/* Stats Cards */}
+      {analyticsLoading && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white border-2 border-[#3E2723] p-4 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+              <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+            </div>
+          ))}
         </div>
-      </div>
+      )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={Eye} label="Total Views" value={summary.totalViews || 0} />
-        <StatCard icon={ShoppingBag} label="Orders" value={summary.totalOrders || 0} />
-        <StatCard icon={DollarSign} label="Revenue" value={summary.totalRevenue || 0} prefix="Rs. " />
-        <StatCard icon={TrendingUp} label="Bounce Rate" value={summary.bounceRate || 0} suffix="%" />
-      </div>
+      {!analyticsLoading && analyticsError && (
+        <div className="bg-red-100 border-2 border-red-500 p-4 mb-4 flex items-start gap-3">
+          <AlertCircle size={20} className="text-red-600 mt-0.5" />
+          <div>
+            <p className="font-bold text-red-700">Failed to load analytics:</p>
+            <p className="text-red-600 text-sm">{analyticsError}</p>
+          </div>
+        </div>
+      )}
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <ChartCard title="Views & Orders" subtitle="Daily activity">
-          <LineChart
-            data={charts.views?.map(d => d.count) || []}
-            labels={charts.views?.map(d => d._id) || []}
-            label="Views"
-            color="#d4a843"
-            height={220}
-          />
-        </ChartCard>
-        <ChartCard title="Completed Orders" subtitle="Daily orders">
-          <LineChart
-            data={charts.completedOrders?.map(d => d.count) || []}
-            labels={charts.completedOrders?.map(d => d._id) || []}
-            label="Orders"
-            color="#3b82f6"
-            height={220}
-          />
-        </ChartCard>
-      </div>
+      {!analyticsLoading && analytics && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <StatCard
+              icon={Eye}
+              label="Total Views"
+              value={analytics.summary.totalViews}
+            />
+            <StatCard
+              icon={ShoppingBag}
+              label="Total Orders"
+              value={analytics.summary.totalOrders}
+            />
+            <StatCard
+              icon={DollarSign}
+              label="Revenue"
+              value={analytics.summary.totalRevenue}
+              prefix="Rs. "
+            />
+            <StatCard
+              icon={TrendingDown}
+              label="Bounce Rate"
+              value={analytics.summary.bounceRate}
+              suffix="%"
+            />
+          </div>
 
-      {/* Notes */}
-      <Card title="Notes" subtitle="Add notes with reminders for this cafe">
+          {/* Charts */}
+          {chartData && chartData.labels.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
+                <h3 className="text-md font-bold text-[#3E2723] mb-2">Views</h3>
+                <LineChart
+                  labels={chartData.labels}
+                  data={chartData.viewsData}
+                  label="Views"
+                  color="#8A9A5B"
+                  height={200}
+                />
+              </div>
+              <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
+                <h3 className="text-md font-bold text-[#3E2723] mb-2">Completed Orders</h3>
+                <LineChart
+                  labels={chartData.labels}
+                  data={chartData.ordersData}
+                  label="Orders"
+                  color="#d4a843"
+                  height={200}
+                />
+              </div>
+              <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8] lg:col-span-2">
+                <h3 className="text-md font-bold text-[#3E2723] mb-2">Revenue Trend</h3>
+                <LineChart
+                  labels={chartData.labels}
+                  data={chartData.revenueData}
+                  label="Revenue (Rs.)"
+                  color="#3b82f6"
+                  height={200}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white border-2 border-[#3E2723] p-8 text-center shadow-[6px_6px_0px_0px_#EAE0C8] mb-6">
+              <BarChart3 size={48} className="mx-auto text-[#3E2723]/30 mb-2" />
+              <p className="text-[#3E2723]/60 font-bold">No analytics data available yet.</p>
+              <p className="text-sm text-[#3E2723]/40">Data will appear once customers start viewing the menu and placing orders.</p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Notes Section */}
+      <div className="mt-6">
+        <h3 className="text-lg font-bold text-[#3E2723] mb-2">Notes</h3>
         <NoteList
           notes={notes}
+          cafeId={cafeId}
           onAdd={handleAddNote}
           onEdit={handleEditNote}
           onDelete={handleDeleteNote}
-          cafeId={analytics?.cafe?.id || ''}
+          loading={notesLoading}
         />
-      </Card>
+      </div>
     </DashboardLayout>
   );
 };
