@@ -15,22 +15,18 @@ const SuperAdminCafeDetails = () => {
   const navigate = useNavigate();
   const { isSuperAdmin } = useAuth();
 
-  // State
   const [cafeName, setCafeName] = useState('');
   const [cafeId, setCafeId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Notes state
   const [notes, setNotes] = useState([]);
   const [notesLoading, setNotesLoading] = useState(false);
 
-  // Analytics state
   const [analytics, setAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState('');
 
-  // Period options and state
   const periods = [
     { value: 'week', label: 'Week' },
     { value: 'month', label: 'Month' },
@@ -38,12 +34,10 @@ const SuperAdminCafeDetails = () => {
   ];
   const [period, setPeriod] = useState('week');
 
-  // Redirect if not superadmin
   useEffect(() => {
     if (!isSuperAdmin) navigate('/admin/dashboard');
   }, [isSuperAdmin, navigate]);
 
-  // Fetch functions
   const fetchNotes = async (id) => {
     try {
       setNotesLoading(true);
@@ -56,33 +50,32 @@ const SuperAdminCafeDetails = () => {
     }
   };
 
- const fetchAnalytics = async (id, periodParam) => {
-  try {
-    setAnalyticsLoading(true);
-    setAnalyticsError('');
-    // Add cache-busting query param
-    const timestamp = Date.now();
-    const res = await api.get(`/analytics/cafe/${id}?period=${periodParam}&_t=${timestamp}`);
-    console.log('Analytics response:', res); // Check this log
-    if (res.data && res.data.success) {
-      const data = res.data.data;
-      if (data && data.summary && data.charts) {
-        setAnalytics(data);
+  const fetchAnalytics = async (id, periodParam) => {
+    try {
+      setAnalyticsLoading(true);
+      setAnalyticsError('');
+      const timestamp = Date.now();
+      const res = await api.get(`/analytics/cafe/${id}?period=${periodParam}&_t=${timestamp}`);
+      console.log('Analytics response:', res);
+      if (res.data && res.data.success) {
+        const data = res.data.data;
+        if (data && data.summary && data.charts) {
+          setAnalytics(data);
+        } else {
+          setAnalytics(data);
+          setAnalyticsError('Received incomplete analytics data.');
+        }
       } else {
-        setAnalytics(data);
-        setAnalyticsError('Received incomplete analytics data.');
+        setAnalyticsError('Invalid response from server.');
       }
-    } else {
-      setAnalyticsError('Invalid response from server.');
+    } catch (err) {
+      console.error('Failed to fetch analytics:', err);
+      setAnalyticsError(err.response?.data?.message || err.message || 'Failed to fetch analytics');
+      setAnalytics(null);
+    } finally {
+      setAnalyticsLoading(false);
     }
-  } catch (err) {
-    console.error('Failed to fetch analytics:', err);
-    setAnalyticsError(err.response?.data?.message || err.message || 'Failed to fetch analytics');
-    setAnalytics(null);
-  } finally {
-    setAnalyticsLoading(false);
-  }
-};
+  };
 
   const fetchData = async () => {
     try {
@@ -112,19 +105,16 @@ const SuperAdminCafeDetails = () => {
     }
   };
 
-  // Re-fetch analytics when period changes
   useEffect(() => {
     if (cafeId) {
       fetchAnalytics(cafeId, period);
     }
   }, [period, cafeId]);
 
-  // Initial fetch
   useEffect(() => {
     fetchData();
   }, [cafeSlug]);
 
-  // Handlers for notes CRUD
   const handleAddNote = async (noteData) => {
     try {
       const response = await api.post('/analytics/notes', noteData);
@@ -161,7 +151,6 @@ const SuperAdminCafeDetails = () => {
     }
   };
 
-  // Prepare chart data
   const prepareChartData = () => {
     if (!analytics || !analytics.charts) return null;
 
@@ -223,17 +212,15 @@ const SuperAdminCafeDetails = () => {
 
   return (
     <DashboardLayout title={cafeName || 'Cafe Details'} subtitle="Analytics & Notes">
-      {/* Period Filter */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h2 className="text-lg font-bold text-[#3E2723]">Performance Overview</h2>
         <PeriodFilter periods={periods} selected={period} onSelect={setPeriod} />
       </div>
 
-      {/* Stats Cards */}
       {analyticsLoading && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white border-2 border-[#3E2723] p-4 animate-pulse">
+            <div key={i} className="bg-white border-2 border-[#3E2723] p-3 sm:p-4 animate-pulse">
               <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
               <div className="h-6 bg-gray-200 rounded w-3/4"></div>
             </div>
@@ -242,7 +229,7 @@ const SuperAdminCafeDetails = () => {
       )}
 
       {!analyticsLoading && analyticsError && (
-        <div className="bg-red-100 border-2 border-red-500 p-4 mb-4 flex items-start gap-3">
+        <div className="bg-red-100 border-2 border-red-500 p-4 mb-4 flex flex-col sm:flex-row items-start gap-3">
           <AlertCircle size={20} className="text-red-600 mt-0.5" />
           <div>
             <p className="font-bold text-red-700">Failed to load analytics:</p>
@@ -253,7 +240,7 @@ const SuperAdminCafeDetails = () => {
 
       {!analyticsLoading && analytics && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <StatCard
               icon={Eye}
               label="Total Views"
@@ -278,9 +265,8 @@ const SuperAdminCafeDetails = () => {
             />
           </div>
 
-          {/* Charts */}
           {chartData && chartData.labels.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
               <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
                 <h3 className="text-md font-bold text-[#3E2723] mb-2">Views</h3>
                 <LineChart
@@ -313,7 +299,7 @@ const SuperAdminCafeDetails = () => {
               </div>
             </div>
           ) : (
-            <div className="bg-white border-2 border-[#3E2723] p-8 text-center shadow-[6px_6px_0px_0px_#EAE0C8] mb-6">
+            <div className="bg-white border-2 border-[#3E2723] p-6 sm:p-8 text-center shadow-[6px_6px_0px_0px_#EAE0C8] mb-6">
               <BarChart3 size={48} className="mx-auto text-[#3E2723]/30 mb-2" />
               <p className="text-[#3E2723]/60 font-bold">No analytics data available yet.</p>
               <p className="text-sm text-[#3E2723]/40">Data will appear once customers start viewing the menu and placing orders.</p>
@@ -322,7 +308,6 @@ const SuperAdminCafeDetails = () => {
         </>
       )}
 
-      {/* Notes Section */}
       <div className="mt-6">
         <h3 className="text-lg font-bold text-[#3E2723] mb-2">Notes</h3>
         <NoteList

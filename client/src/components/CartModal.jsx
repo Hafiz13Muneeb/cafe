@@ -12,7 +12,6 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
 
   const tableOptions = tables.length > 0 ? tables : ['1', '2', '3', '4', '5'];
 
-  // Get session ID for analytics
   const getSessionId = () => {
     return sessionStorage.getItem('analyticsSessionId') || '';
   };
@@ -34,24 +33,20 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
     setIsSubmitting(true);
 
     try {
-      // 1. Track order attempt (if slug is provided)
       if (slug) {
         try {
           await api.post(`/analytics/${slug}/order-attempt`, {
             sessionId: getSessionId(),
           });
         } catch (trackErr) {
-          // Silently fail – analytics should not break the order flow
           console.debug('Order attempt tracking failed:', trackErr.message);
         }
       }
 
-      // 2. Generate WhatsApp link and open it
       const orderText = getOrderText(selectedTable, cafeName);
       const url = `https://wa.me/${whatsappNumber}?text=${orderText}`;
       window.open(url, '_blank');
 
-      // 3. Track completed order (if slug is provided)
       if (slug) {
         try {
           await api.post(`/analytics/${slug}/order-completed`, {
@@ -59,12 +54,10 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
             orderAmount: getTotalPrice(),
           });
         } catch (trackErr) {
-          // Silently fail – analytics should not break the order flow
           console.debug('Order completed tracking failed:', trackErr.message);
         }
       }
 
-      // 4. Clear cart and close modal
       clearCart();
       onClose();
       setSelectedTable('');
@@ -83,14 +76,13 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center bg-black/30 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center bg-black/30 backdrop-blur-sm animate-fade-in p-4">
       <div
         className="w-full max-w-lg rounded-t-2xl md:rounded-2xl max-h-[90vh] flex flex-col animate-slide-up"
         style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)' }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--text-color)' }}>
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+          <h2 className="text-base sm:text-lg font-semibold" style={{ color: 'var(--text-color)' }}>
             Your Order ({getTotalItems()} items)
           </h2>
           <button
@@ -102,8 +94,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
           </button>
         </div>
 
-        {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
           {cart.map((item) => (
             <div
               key={item._id}
@@ -113,7 +104,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
               <img
                 src={item.imageUrl}
                 alt={item.title}
-                className="w-14 h-14 rounded-lg object-cover"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover"
               />
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-sm truncate" style={{ color: 'var(--text-color)' }}>
@@ -123,7 +114,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
                   {formatPrice(item.price)}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   onClick={() => removeFromCart(item._id)}
                   className="p-1 rounded-full transition hover:opacity-70"
@@ -163,9 +154,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
           )}
         </div>
 
-        {/* Footer */}
-        <div className="border-t p-4 space-y-3" style={{ borderColor: 'var(--border-color)' }}>
-          {/* Table Selection */}
+        <div className="border-t p-3 sm:p-4 space-y-3" style={{ borderColor: 'var(--border-color)' }}>
           <div>
             <label className="text-sm font-medium" style={{ color: 'var(--text-color)' }}>
               Select Table <span className="text-red-500">*</span>
@@ -176,7 +165,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
                 setSelectedTable(e.target.value);
                 setError('');
               }}
-              className="mt-1 w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+              className="mt-1 w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-sm"
               style={{
                 backgroundColor: 'var(--bg-color)',
                 color: 'var(--text-color)',
@@ -194,7 +183,6 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
             {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
           </div>
 
-          {/* Total */}
           <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
             <span style={{ color: 'var(--text-secondary, #64748b)' }}>Total:</span>
             <span className="text-lg font-bold" style={{ color: 'var(--primary-color)' }}>
@@ -202,11 +190,10 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
             </span>
           </div>
 
-          {/* Place Order Button */}
           <button
             onClick={handlePlaceOrder}
             disabled={isSubmitting}
-            className="w-full py-3 rounded-lg font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200"
+            className="w-full py-2.5 sm:py-3 rounded-lg font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200 text-sm sm:text-base"
             style={{
               backgroundColor: isSubmitting ? 'var(--border-color)' : 'var(--primary-color)',
               cursor: isSubmitting ? 'not-allowed' : 'pointer',

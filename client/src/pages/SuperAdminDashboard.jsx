@@ -12,18 +12,15 @@ const SuperAdminDashboard = () => {
   const { isSuperAdmin } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if not superadmin
   useEffect(() => {
     if (!isSuperAdmin) navigate('/admin/dashboard');
   }, [isSuperAdmin, navigate]);
 
-  // State
   const [owners, setOwners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Add modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addFormData, setAddFormData] = useState({
     username: '',
@@ -33,7 +30,6 @@ const SuperAdminDashboard = () => {
   });
   const [addLoading, setAddLoading] = useState(false);
 
-  // Edit modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState(null);
   const [editFormData, setEditFormData] = useState({
@@ -46,12 +42,10 @@ const SuperAdminDashboard = () => {
   });
   const [editLoading, setEditLoading] = useState(false);
 
-  // Fetch owners on mount
   useEffect(() => {
     fetchOwners();
   }, []);
 
-  // Clear messages after 5 seconds
   useEffect(() => {
     if (success || error) {
       const timer = setTimeout(() => {
@@ -69,7 +63,6 @@ const SuperAdminDashboard = () => {
       const response = await api.get('/users/owners');
       if (response.data.success) {
         const ownersData = response.data.data || [];
-        // Fetch active reminders for each owner
         const ownersWithNotes = await Promise.all(
           ownersData.map(async (owner) => {
             try {
@@ -86,7 +79,6 @@ const SuperAdminDashboard = () => {
             }
           })
         );
-        // Sort by active reminders (most urgent first)
         ownersWithNotes.sort((a, b) => b.activeReminders - a.activeReminders);
         setOwners(ownersWithNotes);
       }
@@ -108,7 +100,6 @@ const SuperAdminDashboard = () => {
         setOwners(prev => [response.data.data.user, ...prev]);
         setIsAddModalOpen(false);
         setSuccess('Owner created successfully!');
-        // Reset form
         setAddFormData({
           username: '',
           email: '',
@@ -171,7 +162,6 @@ const SuperAdminDashboard = () => {
     setError('');
     setSuccess('');
     try {
-      // Prepare payload - convert tables string to array
       const payload = {
         cafeName: editFormData.cafeName,
         whatsappNumber: editFormData.whatsappNumber,
@@ -199,34 +189,31 @@ const SuperAdminDashboard = () => {
 
   return (
     <DashboardLayout title="Super Admin" subtitle="Control Panel">
-      {/* Messages */}
       {error && (
-        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-red-300 text-[#3E2723] font-bold flex items-center gap-2">
+        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-red-300 text-[#3E2723] font-bold flex items-center gap-2 text-sm sm:text-base">
           <AlertCircle size={18} /> {error}
         </div>
       )}
       {success && (
-        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold flex items-center gap-2">
+        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold flex items-center gap-2 text-sm sm:text-base">
           <CheckCircle size={18} /> {success}
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-6 bg-[#EAE0C8] p-4 border-2 border-[#3E2723]">
-        <h2 className="text-2xl font-bold text-[#3E2723]">Cafe Owners</h2>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={fetchOwners} disabled={loading}>
+      <div className="flex flex-wrap justify-between items-center gap-3 sm:gap-4 mb-6 bg-[#EAE0C8] p-3 sm:p-4 border-2 border-[#3E2723]">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#3E2723]">Cafe Owners</h2>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={fetchOwners} disabled={loading} className="text-sm sm:text-base">
             <RefreshCw size={16} className={`inline mr-1 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>
+          <Button variant="primary" onClick={() => setIsAddModalOpen(true)} className="text-sm sm:text-base">
             <Plus size={16} className="inline mr-1" /> Add Owner
           </Button>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="border-2 border-[#3E2723] bg-white p-2 overflow-x-auto">
+      <div className="border-2 border-[#3E2723] bg-white p-1 sm:p-2 overflow-x-auto">
         <OwnerTable
           owners={owners}
           loading={loading}
@@ -236,7 +223,6 @@ const SuperAdminDashboard = () => {
         />
       </div>
 
-      {/* Add Modal */}
       <OwnerFormModal
         isOpen={isAddModalOpen}
         onClose={() => {
@@ -251,7 +237,6 @@ const SuperAdminDashboard = () => {
         isEdit={false}
       />
 
-      {/* Edit Modal */}
       <OwnerFormModal
         isOpen={isEditModalOpen}
         onClose={() => {

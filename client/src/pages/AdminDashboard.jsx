@@ -17,7 +17,6 @@ const AdminDashboard = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({
@@ -33,7 +32,6 @@ const AdminDashboard = () => {
 
   const fileInputRef = useRef(null);
 
-  // Fetch menu items
   const fetchMenuItems = async () => {
     try {
       setLoading(true);
@@ -54,7 +52,6 @@ const AdminDashboard = () => {
     if (user) fetchMenuItems();
   }, [user]);
 
-  // Clear messages after 5 seconds
   useEffect(() => {
     if (success || error) {
       const timer = setTimeout(() => {
@@ -65,7 +62,6 @@ const AdminDashboard = () => {
     }
   }, [success, error]);
 
-  // Reset form when closing
   const resetForm = () => {
     setFormData({ title: '', description: '', price: '', category: '', isAvailable: true });
     setImageFile(null);
@@ -75,14 +71,12 @@ const AdminDashboard = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Open form for adding new item
   const openAddForm = () => {
     resetForm();
     setIsFormOpen(true);
     setEditingItem(null);
   };
 
-  // Open form for editing existing item
   const openEditForm = (item) => {
     setEditingItem(item);
     setFormData({
@@ -98,7 +92,6 @@ const AdminDashboard = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Handle form field changes
   const handleFormChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -107,7 +100,6 @@ const AdminDashboard = () => {
     }));
   };
 
-  // Handle image file selection
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -120,11 +112,9 @@ const AdminDashboard = () => {
     }
   };
 
-  // Submit form (add or update)
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate
     if (!formData.title.trim()) {
       setError('Title is required');
       return;
@@ -160,12 +150,10 @@ const AdminDashboard = () => {
 
       let response;
       if (editingItem) {
-        // Update existing item
         response = await api.put(`/menu/${editingItem._id}`, formDataToSend, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else {
-        // Create new item
         response = await api.post('/menu', formDataToSend, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -184,7 +172,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Delete menu item
   const handleDelete = async (itemId) => {
     if (!window.confirm('Are you sure you want to delete this menu item? This action cannot be undone.')) return;
     
@@ -203,47 +190,46 @@ const AdminDashboard = () => {
 
   return (
     <DashboardLayout title="Menu Manager" subtitle={user?.cafeName}>
-      {/* Messages */}
       {error && (
-        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-red-300 text-[#3E2723] font-bold">
+        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-red-300 text-[#3E2723] font-bold text-sm sm:text-base">
           {error}
         </div>
       )}
       {success && (
-        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold">
+        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold text-sm sm:text-base">
           {success}
         </div>
       )}
 
-      {/* QR Code Display */}
       <QRCodeDisplay 
         cafeName={user?.cafeName} 
         slug={user?.slug} 
         qrValue={`${window.location.origin}/menu/${user?.slug}`} 
       />
 
-      {/* Menu Items Section */}
       <div className="bg-white border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] overflow-hidden mt-6">
-        <div className="p-4 border-b-2 border-[#3E2723] flex flex-wrap justify-between items-center gap-3">
-          <h2 className="text-lg font-bold text-[#3E2723] flex items-center gap-2">
+        <div className="p-3 sm:p-4 border-b-2 border-[#3E2723] flex flex-wrap justify-between items-center gap-3">
+          <h2 className="text-base sm:text-lg font-bold text-[#3E2723] flex items-center gap-2">
             <Menu size={20} /> Menu Items ({menuItems.length})
           </h2>
-          <Button variant="primary" onClick={openAddForm}>
+          <Button variant="primary" onClick={openAddForm} className="text-sm sm:text-base">
             <Plus size={16} className="inline mr-1" /> Add New
           </Button>
         </div>
 
-        <MenuItemTable 
-          items={menuItems} 
-          loading={loading} 
-          onEdit={openEditForm} 
-          onDelete={handleDelete} 
-        />
+        {/* Wrapper with horizontal scroll for table on small screens */}
+        <div className="overflow-x-auto">
+          <MenuItemTable 
+            items={menuItems} 
+            loading={loading} 
+            onEdit={openEditForm} 
+            onDelete={handleDelete} 
+          />
+        </div>
       </div>
 
-      {/* Add/Edit Form Modal - shown as inline form below header */}
       {isFormOpen && (
-        <div className="mt-6 bg-white border-2 border-[#3E2723] p-6 shadow-[6px_6px_0px_0px_#3E2723]">
+        <div className="mt-6 bg-white border-2 border-[#3E2723] p-4 sm:p-6 shadow-[6px_6px_0px_0px_#3E2723]">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold font-['Permanent_Marker'] text-[#3E2723]">
               {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
@@ -294,14 +280,13 @@ const AdminDashboard = () => {
               />
             </div>
 
-            {/* Image Upload */}
             <div>
               <label className="block text-sm font-bold text-[#3E2723] mb-1">
                 Image {!editingItem && <span className="text-red-500">*</span>}
               </label>
-              <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 flex-wrap">
                 {imagePreview && (
-                  <div className="relative w-20 h-20 border-2 border-[#3E2723] overflow-hidden">
+                  <div className="relative w-20 h-20 border-2 border-[#3E2723] overflow-hidden flex-shrink-0">
                     <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                     <button
                       type="button"
@@ -327,6 +312,7 @@ const AdminDashboard = () => {
                   type="button"
                   variant="secondary"
                   onClick={() => fileInputRef.current?.click()}
+                  className="text-sm"
                 >
                   <Upload size={16} className="inline mr-1" />
                   {editingItem && !imageFile ? 'Change Image' : 'Upload Image'}
@@ -337,7 +323,6 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Availability Toggle */}
             <div className="flex items-center gap-3">
               <label className="text-sm font-bold text-[#3E2723]">Available:</label>
               <button
@@ -358,8 +343,8 @@ const AdminDashboard = () => {
               </span>
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <Button type="submit" variant="primary" disabled={formLoading} className="flex-1 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button type="submit" variant="primary" disabled={formLoading} className="flex-1 justify-center text-sm sm:text-base">
                 {formLoading ? (
                   <>
                     <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
@@ -372,7 +357,7 @@ const AdminDashboard = () => {
                   </>
                 )}
               </Button>
-              <Button type="button" variant="secondary" onClick={resetForm} className="flex-1 justify-center">
+              <Button type="button" variant="secondary" onClick={resetForm} className="flex-1 justify-center text-sm sm:text-base">
                 Cancel
               </Button>
             </div>

@@ -17,11 +17,9 @@ const SuperAdminSettings = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
-  // Profile
   const [username, setUsername] = useState(user?.username || '');
   const [email, setEmail] = useState(user?.email || '');
 
-  // Security
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -29,7 +27,6 @@ const SuperAdminSettings = () => {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Global Theme
   const [globalTheme, setGlobalTheme] = useState({
     primaryColor: '#d4a843',
     secondaryColor: '#b8860b',
@@ -39,7 +36,6 @@ const SuperAdminSettings = () => {
   const faviconInputRef = useRef(null);
   const [faviconPreview, setFaviconPreview] = useState('');
 
-  // Fetch global settings on mount
   useEffect(() => {
     const fetchGlobalSettings = async () => {
       try {
@@ -61,7 +57,6 @@ const SuperAdminSettings = () => {
     fetchGlobalSettings();
   }, []);
 
-  // Update profile
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -79,7 +74,6 @@ const SuperAdminSettings = () => {
     }
   };
 
-  // Change password
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
@@ -105,7 +99,6 @@ const SuperAdminSettings = () => {
     }
   };
 
-  // Update global theme (colors + mode)
   const handleThemeSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -128,7 +121,6 @@ const SuperAdminSettings = () => {
     }
   };
 
-  // Upload global favicon
   const handleFaviconUpload = async (file) => {
     if (!file) return;
     const formData = new FormData();
@@ -143,7 +135,6 @@ const SuperAdminSettings = () => {
         const url = res.data.data.faviconUrl;
         setFaviconPreview(url);
         setGlobalTheme(prev => ({ ...prev, faviconUrl: url }));
-        // Also update theme context so it reflects globally
         updateTheme({ faviconUrl: url });
         setMessage({ text: 'Favicon updated successfully!', type: 'success' });
       }
@@ -162,25 +153,23 @@ const SuperAdminSettings = () => {
 
   return (
     <SettingsLayout title="Settings" subtitle="SuperAdmin" navItems={navItems} activeTab={activeTab} setActiveTab={setActiveTab}>
-      <div className="bg-[#F5F5DC] p-6 border-2 border-[#3E2723] min-h-[400px]">
+      <div className="bg-[#F5F5DC] p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]">
         {message.text && (
-          <div className={`mb-4 p-3 border-2 border-[#3E2723] font-bold ${message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'}`}>
+          <div className={`mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base ${message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'}`}>
             {message.text}
           </div>
         )}
 
-        {/* Profile */}
         {activeTab === 'profile' && (
           <form onSubmit={handleProfileSubmit} className="space-y-4">
             <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
             <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            <Button type="submit" variant="primary" disabled={loading}>
+            <Button type="submit" variant="primary" disabled={loading} className="w-full sm:w-auto">
               <Save size={16} className="inline mr-1" /> {loading ? 'Saving...' : 'Update Profile'}
             </Button>
           </form>
         )}
 
-        {/* Security */}
         {activeTab === 'security' && (
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div className="relative">
@@ -231,16 +220,15 @@ const SuperAdminSettings = () => {
                 {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            <Button type="submit" variant="primary" disabled={loading}>
+            <Button type="submit" variant="primary" disabled={loading} className="w-full sm:w-auto">
               {loading ? 'Changing...' : 'Change Password'}
             </Button>
           </form>
         )}
 
-        {/* Appearance (Global Theme) */}
         {activeTab === 'appearance' && (
           <form onSubmit={handleThemeSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-[#3E2723] mb-1">Primary Color</label>
                 <div className="flex items-center gap-2">
@@ -268,13 +256,13 @@ const SuperAdminSettings = () => {
             </div>
             <div>
               <label className="block text-sm font-bold text-[#3E2723] mb-1">Mode</label>
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-2 sm:gap-4">
                 {['light', 'dark'].map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setGlobalTheme({ ...globalTheme, mode: m })}
-                    className={`px-4 py-2 border-2 border-[#3E2723] font-bold transition ${
+                    className={`px-3 sm:px-4 py-2 border-2 border-[#3E2723] font-bold transition text-sm sm:text-base ${
                       globalTheme.mode === m ? 'bg-[#8A9A5B] text-white' : 'bg-white text-[#3E2723]'
                     }`}
                   >
@@ -286,7 +274,7 @@ const SuperAdminSettings = () => {
 
             <div>
               <label className="block text-sm font-bold text-[#3E2723] mb-1">Global Favicon</label>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {faviconPreview && <img src={faviconPreview} alt="Favicon" className="w-10 h-10 border-2 border-[#3E2723] object-cover" />}
                 <input
                   type="file"
@@ -299,13 +287,13 @@ const SuperAdminSettings = () => {
                   }}
                   className="hidden"
                 />
-                <Button type="button" variant="secondary" onClick={() => faviconInputRef.current.click()}>
+                <Button type="button" variant="secondary" onClick={() => faviconInputRef.current.click()} className="text-sm sm:text-base">
                   <Upload size={16} className="inline mr-1" /> Upload Favicon
                 </Button>
               </div>
             </div>
 
-            <Button type="submit" variant="primary" disabled={loading}>
+            <Button type="submit" variant="primary" disabled={loading} className="w-full sm:w-auto">
               <Save size={16} className="inline mr-1" /> {loading ? 'Saving...' : 'Save Theme'}
             </Button>
           </form>

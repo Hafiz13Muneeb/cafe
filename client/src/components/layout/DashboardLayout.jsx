@@ -16,13 +16,13 @@ const DashboardLayout = ({ children, title, subtitle, showSidebar = true }) => {
   return (
     <div className="min-h-screen bg-[#F5F5DC] text-[#3E2723]">
       <Header title={title} subtitle={subtitle} onLogout={handleLogout} user={user} />
-      <div className="flex">
+      <div className="flex flex-col sm:flex-row">
         {showSidebar && (
-          <aside className="w-64 flex-shrink-0 border-r-4 border-[#3E2723]">
+          <aside className="w-full sm:w-56 md:w-64 flex-shrink-0 border-b-2 sm:border-b-0 sm:border-r-4 border-[#3E2723]">
             <Sidebar user={user} />
           </aside>
         )}
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-3 sm:p-6 overflow-x-auto">{children}</main>
       </div>
     </div>
   );

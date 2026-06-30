@@ -26,8 +26,8 @@ const Button = ({
       type={type} 
       onClick={onClick} 
       disabled={disabled}
-      className={`${baseStyle} ${variants[variant]} ${widthClass} ${className} ${size === 'lg' ? 'px-6 py-3' : 'px-4 py-2'}`}
-      style={{ boxShadow: "4px 4px 0px 0px #3E2723" }}
+      className={`${baseStyle} ${variants[variant]} ${widthClass} ${className} ${size === 'lg' ? 'px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base' : 'px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base'}`}
+      style={{ boxShadow: "3px 3px 0px 0px #3E2723" }}
       {...props}
     >
       {children}

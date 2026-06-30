@@ -21,7 +21,6 @@ const CustomerMenu = () => {
   const [error, setError] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // Generate or retrieve a session ID for analytics tracking
   const getSessionId = () => {
     let sessionId = sessionStorage.getItem('analyticsSessionId');
     if (!sessionId) {
@@ -31,27 +30,23 @@ const CustomerMenu = () => {
     return sessionId;
   };
 
-  // Track view when component mounts
   useEffect(() => {
     const trackView = async () => {
       try {
         const sessionId = getSessionId();
         await api.post(`/analytics/${slug}/view`, { sessionId });
       } catch (err) {
-        // Silently fail – analytics should not break the user experience
         console.debug('View tracking failed:', err.message);
       }
     };
     if (slug) trackView();
   }, [slug]);
 
-  // Filtered items based on category
   const filteredItems = useMemo(() => {
     if (selectedCategory === 'all') return menuItems;
     return menuItems.filter(item => item.category === selectedCategory);
   }, [menuItems, selectedCategory]);
 
-  // Load menu and cafe data
   useEffect(() => {
     const loadMenu = async () => {
       try {
@@ -73,7 +68,6 @@ const CustomerMenu = () => {
     loadMenu();
   }, [slug]);
 
-  // Apply dynamic theme from cafe data
   useEffect(() => {
     if (cafeData?.theme) {
       const root = document.documentElement;
@@ -83,7 +77,6 @@ const CustomerMenu = () => {
     }
   }, [cafeData]);
 
-  // Handle favicon
   useEffect(() => {
     if (cafeData?.faviconUrl) {
       const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
@@ -100,7 +93,7 @@ const CustomerMenu = () => {
       <div className="min-h-screen flex items-center justify-center bg-[#F5F5DC] text-[#3E2723]">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-[#8A9A5B]" />
-          <p className="mt-4 font-bold font-['Permanent_Marker'] text-xl">Loading menu...</p>
+          <p className="mt-4 font-bold font-['Permanent_Marker'] text-lg sm:text-xl">Loading menu...</p>
         </div>
       </div>
     );
@@ -108,8 +101,8 @@ const CustomerMenu = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F5DC] text-[#3E2723]">
-        <div className="text-center p-8 border-4 border-[#3E2723] bg-white shadow-[8px_8px_0px_0px_#8A9A5B]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5DC] text-[#3E2723] px-4">
+        <div className="text-center p-6 sm:p-8 border-4 border-[#3E2723] bg-white shadow-[8px_8px_0px_0px_#8A9A5B] max-w-sm w-full">
           <Utensils size={48} className="mx-auto mb-4 text-[#3E2723]/30" />
           <h2 className="text-2xl font-bold font-['Permanent_Marker'] mb-2">Oops!</h2>
           <p className="text-sm">{error}</p>
@@ -124,36 +117,36 @@ const CustomerMenu = () => {
   return (
     <div className="min-h-screen bg-[#F5F5DC] text-[#3E2723] pb-28">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-white border-b-4 border-[#3E2723] shadow-[4px_4px_0px_0px_#8A9A5B] py-3 px-4 flex items-center gap-4">
+      <header className="sticky top-0 z-20 bg-white border-b-4 border-[#3E2723] shadow-[4px_4px_0px_0px_#8A9A5B] py-2 sm:py-3 px-3 sm:px-4 flex items-center gap-3 sm:gap-4">
         {cafeData?.logoUrl ? (
-          <img src={cafeData.logoUrl} alt="Cafe logo" className="h-12 w-12 rounded-full border-2 border-[#3E2723] object-cover" />
+          <img src={cafeData.logoUrl} alt="Cafe logo" className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-2 border-[#3E2723] object-cover" />
         ) : (
-          <div className="h-12 w-12 rounded-full border-2 border-[#3E2723] bg-[#8A9A5B] flex items-center justify-center">
+          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-2 border-[#3E2723] bg-[#8A9A5B] flex items-center justify-center">
             <Coffee size={24} className="text-white" />
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold font-['Permanent_Marker'] truncate">
+          <h1 className="text-xl sm:text-2xl font-bold font-['Permanent_Marker'] truncate">
             {cafeData?.name || 'Cafe Menu'}
           </h1>
           {cafeData?.whatsappNumber && (
             <p className="text-xs font-bold text-[#3E2723]/60">📱 Order via WhatsApp</p>
           )}
         </div>
-        <div className="border-2 border-[#3E2723] bg-[#EAE0C8] px-3 py-1 font-bold text-sm">
+        <div className="border-2 border-[#3E2723] bg-[#EAE0C8] px-2 sm:px-3 py-1 font-bold text-xs sm:text-sm">
           {menuItems.length} items
         </div>
       </header>
 
       {/* Category Filter */}
       {categories.length > 1 && (
-        <div className="sticky top-[76px] z-10 bg-[#F5F5DC] border-b-2 border-[#3E2723] py-2 px-4">
+        <div className="sticky top-[68px] sm:top-[76px] z-10 bg-[#F5F5DC] border-b-2 border-[#3E2723] py-1 sm:py-2 px-3 sm:px-4">
           <div className="flex gap-1 bg-[#EAE0C8] border-2 border-[#3E2723] p-1 w-max overflow-x-auto max-w-full">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1 text-xs font-bold transition-all whitespace-nowrap ${
+                className={`px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
                   selectedCategory === cat
                     ? 'bg-[#8A9A5B] text-white border-2 border-[#3E2723]'
                     : 'text-[#3E2723] hover:bg-[#3E2723]/10'
@@ -167,13 +160,13 @@ const CustomerMenu = () => {
       )}
 
       {/* Menu Grid */}
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {filteredItems.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-lg font-bold text-[#3E2723]/50">No items in this category</p>
+          <div className="text-center py-12 sm:py-16">
+            <p className="text-base sm:text-lg font-bold text-[#3E2723]/50">No items in this category</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {filteredItems.map((item) => (
               <MenuItemCard key={item._id} item={item} />
             ))}
@@ -190,7 +183,7 @@ const CustomerMenu = () => {
         />
       )}
 
-      {/* Cart Modal - passing slug for analytics tracking */}
+      {/* Cart Modal */}
       <CartModal
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}

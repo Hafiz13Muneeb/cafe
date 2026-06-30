@@ -24,13 +24,13 @@ const faqData = [
 
 const FAQItem = ({ question, answer, isOpen, onClick }) => (
   <div className="border-4 border-[#3E2723] mb-4 bg-white transition-all" 
-       style={{ boxShadow: isOpen ? "6px 6px 0px 0px #8A9A5B" : "none" }}>
+       style={{ boxShadow: isOpen ? "4px 4px 0px 0px #8A9A5B" : "none" }}>
     <button
       onClick={onClick}
-      className="w-full px-6 py-5 flex items-center justify-between text-left font-bold text-[#3E2723]"
+      className="w-full px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between text-left font-bold text-[#3E2723] text-sm sm:text-base"
     >
-      <span className="text-lg">{question}</span>
-      <ChevronDown className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      <span className="text-sm sm:text-base md:text-lg">{question}</span>
+      <ChevronDown className={`transition-transform flex-shrink-0 ml-2 ${isOpen ? 'rotate-180' : ''}`} size={20} />
     </button>
     
     <AnimatePresence>
@@ -41,7 +41,7 @@ const FAQItem = ({ question, answer, isOpen, onClick }) => (
           exit={{ height: 0 }}
           className="overflow-hidden border-t-2 border-[#3E2723]"
         >
-          <p className="px-6 py-4 text-[#3E2723]/80 bg-[#FAF9F6]">
+          <p className="px-4 sm:px-6 py-3 sm:py-4 text-[#3E2723]/80 bg-[#FAF9F6] text-sm sm:text-base">
             {answer}
           </p>
         </motion.div>
@@ -54,9 +54,9 @@ const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(null);
 
   return (
-    <section className="py-24 px-4 bg-[#F5F5DC]">
+    <section className="py-16 sm:py-20 md:py-24 px-4 bg-[#F5F5DC]">
       <div className="max-w-3xl mx-auto">
-        <h2 className="text-5xl font-bold text-[#3E2723] mb-12 text-center" style={{ fontFamily: "'Permanent Marker', cursive" }}>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#3E2723] mb-8 sm:mb-12 text-center" style={{ fontFamily: "'Permanent Marker', cursive" }}>
           Common Questions
         </h2>
 

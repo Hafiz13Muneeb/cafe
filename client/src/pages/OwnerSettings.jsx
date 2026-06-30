@@ -16,23 +16,19 @@ const OwnerSettings = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
-  // Cafe settings
   const [cafeName, setCafeName] = useState(user?.cafeName || '');
   const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || '');
   const [tables, setTables] = useState((user?.tables || []).join(', '));
 
-  // Theme settings
   const [primaryColor, setPrimaryColor] = useState(user?.theme?.primaryColor || '#d4a843');
   const [secondaryColor, setSecondaryColor] = useState(user?.theme?.secondaryColor || '#b8860b');
   const [mode, setMode] = useState(user?.theme?.mode || 'light');
 
-  // Logo & Favicon preview
   const [logoPreview, setLogoPreview] = useState(user?.logoUrl || '');
   const [faviconPreview, setFaviconPreview] = useState(user?.faviconUrl || '');
   const logoInputRef = useRef(null);
   const faviconInputRef = useRef(null);
 
-  // Security
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -40,7 +36,6 @@ const OwnerSettings = () => {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Fetch fresh settings on mount
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -60,7 +55,6 @@ const OwnerSettings = () => {
     fetchSettings();
   }, []);
 
-  // Update local user data when theme changes
   useEffect(() => {
     if (user?.theme) {
       setPrimaryColor(user.theme.primaryColor || '#d4a843');
@@ -84,7 +78,6 @@ const OwnerSettings = () => {
       };
       const res = await api.put('/settings', payload);
       if (res.data.success) {
-        // Update user context with new data (excluding images if not uploaded)
         const updatedData = {
           cafeName,
           whatsappNumber,
@@ -92,7 +85,6 @@ const OwnerSettings = () => {
           theme: { primaryColor, secondaryColor, mode },
         };
         updateUserData(updatedData);
-        // Also update global theme context for live preview
         updateTheme({ primaryColor, secondaryColor, mode });
         setMessage({ text: 'Settings saved successfully!', type: 'success' });
       }
@@ -159,24 +151,23 @@ const OwnerSettings = () => {
 
   return (
     <SettingsLayout title="Settings" subtitle="Owner" navItems={navItems} activeTab={activeTab} setActiveTab={setActiveTab}>
-      <div className="bg-[#F5F5DC] p-6 border-2 border-[#3E2723] min-h-[400px]">
+      <div className="bg-[#F5F5DC] p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]">
         {message.text && (
-          <div className={`mb-4 p-3 border-2 border-[#3E2723] font-bold ${message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'}`}>
+          <div className={`mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base ${message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'}`}>
             {message.text}
           </div>
         )}
 
-        {/* Cafe Settings */}
         {activeTab === 'cafe' && (
           <form onSubmit={handleCafeSubmit} className="space-y-4">
             <Input label="Cafe Name" value={cafeName} onChange={(e) => setCafeName(e.target.value)} required />
             <Input label="WhatsApp Number" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="e.g. 03001234567" required />
             <Input label="Table Numbers / Names" value={tables} onChange={(e) => setTables(e.target.value)} placeholder="1, 2, 3, 4, 5 (comma separated)" required />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-[#3E2723] mb-1">Logo</label>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   {logoPreview && <img src={logoPreview} alt="Logo" className="w-12 h-12 border-2 border-[#3E2723] object-cover" />}
                   <input
                     type="file"
@@ -189,14 +180,14 @@ const OwnerSettings = () => {
                     }}
                     className="hidden"
                   />
-                  <Button type="button" variant="secondary" onClick={() => logoInputRef.current.click()}>
+                  <Button type="button" variant="secondary" onClick={() => logoInputRef.current.click()} className="text-sm sm:text-base">
                     <Upload size={16} className="inline mr-1" /> Upload Logo
                   </Button>
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-[#3E2723] mb-1">Favicon</label>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   {faviconPreview && <img src={faviconPreview} alt="Favicon" className="w-10 h-10 border-2 border-[#3E2723] object-cover" />}
                   <input
                     type="file"
@@ -209,23 +200,22 @@ const OwnerSettings = () => {
                     }}
                     className="hidden"
                   />
-                  <Button type="button" variant="secondary" onClick={() => faviconInputRef.current.click()}>
+                  <Button type="button" variant="secondary" onClick={() => faviconInputRef.current.click()} className="text-sm sm:text-base">
                     <Upload size={16} className="inline mr-1" /> Upload Favicon
                   </Button>
                 </div>
               </div>
             </div>
 
-            <Button type="submit" variant="primary" disabled={loading}>
+            <Button type="submit" variant="primary" disabled={loading} className="w-full sm:w-auto">
               <Save size={16} className="inline mr-1" /> {loading ? 'Saving...' : 'Save Settings'}
             </Button>
           </form>
         )}
 
-        {/* Appearance (Theme) */}
         {activeTab === 'appearance' && (
           <form onSubmit={handleCafeSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-[#3E2723] mb-1">Primary Color</label>
                 <div className="flex items-center gap-2">
@@ -253,13 +243,13 @@ const OwnerSettings = () => {
             </div>
             <div>
               <label className="block text-sm font-bold text-[#3E2723] mb-1">Mode</label>
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-2 sm:gap-4">
                 {['light', 'dark'].map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setMode(m)}
-                    className={`px-4 py-2 border-2 border-[#3E2723] font-bold transition ${
+                    className={`px-3 sm:px-4 py-2 border-2 border-[#3E2723] font-bold transition text-sm sm:text-base ${
                       mode === m ? 'bg-[#8A9A5B] text-white' : 'bg-white text-[#3E2723]'
                     }`}
                   >
@@ -268,13 +258,12 @@ const OwnerSettings = () => {
                 ))}
               </div>
             </div>
-            <Button type="submit" variant="primary" disabled={loading}>
+            <Button type="submit" variant="primary" disabled={loading} className="w-full sm:w-auto">
               <Save size={16} className="inline mr-1" /> {loading ? 'Saving...' : 'Save Theme'}
             </Button>
           </form>
         )}
 
-        {/* Security */}
         {activeTab === 'security' && (
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div className="relative">
@@ -325,7 +314,7 @@ const OwnerSettings = () => {
                 {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            <Button type="submit" variant="primary" disabled={loading}>
+            <Button type="submit" variant="primary" disabled={loading} className="w-full sm:w-auto">
               {loading ? 'Changing...' : 'Change Password'}
             </Button>
           </form>

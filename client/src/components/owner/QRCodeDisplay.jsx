@@ -52,12 +52,13 @@ const QRCodeDisplay = ({ cafeName, slug, qrValue }) => {
   }
 
   return (
-    <div className="bg-white border-2 border-[#3E2723] p-6 shadow-[6px_6px_0px_0px_#3E2723] flex flex-col md:flex-row items-center gap-6">
+    <div className="bg-white border-2 border-[#3E2723] p-4 sm:p-6 shadow-[6px_6px_0px_0px_#3E2723] flex flex-col md:flex-row items-center gap-4 sm:gap-6">
       <div className="flex-shrink-0">
         <div ref={qrRef} className="p-2 border-2 border-[#3E2723] bg-white">
           <QRCodeSVG
             value={qrValue}
-            size={180}
+            size={140}
+            className="sm:w-[180px] sm:h-[180px] w-[140px] h-[140px]"
             bgColor="#ffffff"
             fgColor="#3E2723"
             level="H"
@@ -66,22 +67,22 @@ const QRCodeDisplay = ({ cafeName, slug, qrValue }) => {
         </div>
       </div>
       <div className="flex-1 text-center md:text-left">
-        <h3 className="text-lg font-bold text-[#3E2723] font-['Permanent_Marker']">
+        <h3 className="text-base sm:text-lg font-bold text-[#3E2723] font-['Permanent_Marker']">
           {cafeName || 'Cafe'} QR Code
         </h3>
-        <p className="text-sm text-[#3E2723]/70 mt-1">
+        <p className="text-xs sm:text-sm text-[#3E2723]/70 mt-1">
           Scan to view menu
         </p>
         <div className="flex flex-wrap gap-2 mt-3 justify-center md:justify-start">
-          <Button variant="primary" onClick={handleDownload} className="flex items-center gap-1">
+          <Button variant="primary" onClick={handleDownload} className="flex items-center gap-1 text-sm sm:text-base px-3 sm:px-4 py-1.5 sm:py-2">
             <Download size={16} /> Download PNG
           </Button>
-          <Button variant="secondary" onClick={handleCopy} className="flex items-center gap-1">
+          <Button variant="secondary" onClick={handleCopy} className="flex items-center gap-1 text-sm sm:text-base px-3 sm:px-4 py-1.5 sm:py-2">
             {copied ? <Check size={16} /> : <Copy size={16} />}
             {copied ? 'Copied!' : 'Copy Link'}
           </Button>
         </div>
-        <p className="text-xs text-[#3E2723]/50 mt-2 break-all">
+        <p className="text-[10px] sm:text-xs text-[#3E2723]/50 mt-2 break-all">
           {qrValue}
         </p>
       </div>
