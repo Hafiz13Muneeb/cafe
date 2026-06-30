@@ -26,7 +26,18 @@ const PORT = process.env.PORT || 5000;
 // ----------------------------
 // 1. Security & Performance Middleware
 // ----------------------------
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+        // Add other directives if needed, e.g., scriptSrc, styleSrc, etc.
+        // For simplicity, we keep the default for others.
+      },
+    },
+  })
+);
 app.use(compression());
 app.set('trust proxy', 1);
 

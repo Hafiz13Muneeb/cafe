@@ -1,6 +1,29 @@
-// src/components/common/LineChart.jsx - Reusable line chart
+// src/components/common/LineChart.jsx - Reusable line chart with Filler plugin
 import React from 'react';
 import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler, // ← import the Filler plugin
+} from 'chart.js';
+
+// Register all required components including Filler
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler // ← register it
+);
 
 const LineChart = ({ data, labels, label, color = '#d4a843', height = 250 }) => {
   const chartData = {
