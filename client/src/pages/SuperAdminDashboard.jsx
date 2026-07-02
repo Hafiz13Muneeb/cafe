@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/SuperAdminDashboard.jsx
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
@@ -8,10 +9,51 @@ import OwnerTable from '../components/superadmin/OwnerTable';
 import OwnerFormModal from '../components/superadmin/OwnerFormModal';
 import DashboardLayout from '../components/layout/DashboardLayout';
 
+/**
+ * Helper: Fetch notes for a single owner with error handling
+ */
+const fetchOwnerNotes = async (ownerId) => {
+  try {
+    const response = await api.get(`/analytics/notes/${ownerId}`);
+    const notes = response.data?.data || [];
+    const activeReminders = notes.filter(
+      (n) =>
+        n.isReminderActive &&
+        n.reminderDate &&
+        new Date(n.reminderDate) <= new Date()
+    );
+    return { ownerId, activeReminders: activeReminders.length, error: null };
+  } catch (err) {
+    console.error(`Failed to fetch notes for owner ${ownerId}:`, err.message);
+    return { ownerId, activeReminders: 0, error: err };
+  }
+};
+
+/**
+ * Process an array of promises with a concurrency limit
+ */
+const promiseAllWithLimit = async (tasks, limit) => {
+  const results = [];
+  const executing = [];
+  for (const task of tasks) {
+    const p = task().then((result) => {
+      executing.splice(executing.indexOf(p), 1);
+      return result;
+    });
+    results.push(p);
+    executing.push(p);
+    if (executing.length >= limit) {
+      await Promise.race(executing);
+    }
+  }
+  return Promise.all(results);
+};
+
 const SuperAdminDashboard = () => {
   const { isSuperAdmin } = useAuth();
   const navigate = useNavigate();
 
+  // Redirect if not superadmin
   useEffect(() => {
     if (!isSuperAdmin) navigate('/admin/dashboard');
   }, [isSuperAdmin, navigate]);
@@ -21,6 +63,10 @@ const SuperAdminDashboard = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Cache for activeReminders to avoid refetching on refresh
+  const reminderCache = useRef({});
+
+  // Add/Edit modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addFormData, setAddFormData] = useState({
     username: '',
@@ -42,10 +88,69 @@ const SuperAdminDashboard = () => {
   });
   const [editLoading, setEditLoading] = useState(false);
 
+  // Fetch owners with optional force refresh
+  const fetchOwners = useCallback(
+    async (forceRefresh = false) => {
+      try {
+        setLoading(true);
+        setError('');
+
+        const response = await api.get('/users/owners');
+        if (!response.data.success) {
+          throw new Error(response.data.message || 'Failed to load owners');
+        }
+
+        const ownersData = response.data.data || [];
+
+        // If forceRefresh is false, try to use cached reminder counts
+        let ownersWithReminders;
+        if (!forceRefresh && reminderCache.current) {
+          ownersWithReminders = ownersData.map((owner) => ({
+            ...owner,
+            activeReminders: reminderCache.current[owner._id] ?? 0,
+          }));
+        } else {
+          // Fetch notes for each owner with concurrency limit (5 at a time)
+          const noteTasks = ownersData.map(
+            (owner) => () => fetchOwnerNotes(owner._id)
+          );
+          const noteResults = await promiseAllWithLimit(noteTasks, 5);
+
+          // Build map of ownerId -> activeReminders
+          const reminderMap = {};
+          noteResults.forEach((result) => {
+            if (result.ownerId) {
+              reminderMap[result.ownerId] = result.activeReminders;
+            }
+          });
+
+          // Update cache
+          reminderCache.current = { ...reminderCache.current, ...reminderMap };
+
+          ownersWithReminders = ownersData.map((owner) => ({
+            ...owner,
+            activeReminders: reminderMap[owner._id] ?? 0,
+          }));
+        }
+
+        // Sort by activeReminders descending (most urgent first)
+        ownersWithReminders.sort((a, b) => b.activeReminders - a.activeReminders);
+        setOwners(ownersWithReminders);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to load owners');
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     fetchOwners();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-dismiss messages after 5 seconds
   useEffect(() => {
     if (success || error) {
       const timer = setTimeout(() => {
@@ -56,39 +161,7 @@ const SuperAdminDashboard = () => {
     }
   }, [success, error]);
 
-  const fetchOwners = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const response = await api.get('/users/owners');
-      if (response.data.success) {
-        const ownersData = response.data.data || [];
-        const ownersWithNotes = await Promise.all(
-          ownersData.map(async (owner) => {
-            try {
-              const notesRes = await api.get(`/analytics/notes/${owner._id}`);
-              const notes = notesRes.data.data || [];
-              const activeReminders = notes.filter(n => 
-                n.isReminderActive && 
-                n.reminderDate && 
-                new Date(n.reminderDate) <= new Date()
-              );
-              return { ...owner, activeReminders: activeReminders.length };
-            } catch {
-              return { ...owner, activeReminders: 0 };
-            }
-          })
-        );
-        ownersWithNotes.sort((a, b) => b.activeReminders - a.activeReminders);
-        setOwners(ownersWithNotes);
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load owners');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // ----- Handlers -----
   const handleAddOwner = async (e) => {
     e.preventDefault();
     setAddLoading(true);
@@ -97,7 +170,8 @@ const SuperAdminDashboard = () => {
     try {
       const response = await api.post('/auth/create-owner', addFormData);
       if (response.data.success) {
-        setOwners(prev => [response.data.data.user, ...prev]);
+        const newOwner = { ...response.data.data.user, activeReminders: 0 };
+        setOwners((prev) => [newOwner, ...prev]);
         setIsAddModalOpen(false);
         setSuccess('Owner created successfully!');
         setAddFormData({
@@ -106,6 +180,10 @@ const SuperAdminDashboard = () => {
           cafeName: '',
           temporaryPassword: '',
         });
+        // Invalidate cache for this owner (will be fetched on next refresh)
+        if (newOwner._id) {
+          delete reminderCache.current[newOwner._id];
+        }
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create owner');
@@ -120,9 +198,11 @@ const SuperAdminDashboard = () => {
       setSuccess('');
       const response = await api.put(`/users/owners/${ownerId}/toggle-block`);
       if (response.data.success) {
-        setOwners(prev => prev.map(o => 
-          o._id === ownerId ? { ...o, isBlocked: !o.isBlocked } : o
-        ));
+        setOwners((prev) =>
+          prev.map((o) =>
+            o._id === ownerId ? { ...o, isBlocked: !o.isBlocked } : o
+          )
+        );
         setSuccess(`Owner ${!currentStatus ? 'blocked' : 'unblocked'} successfully`);
       }
     } catch (err) {
@@ -131,12 +211,14 @@ const SuperAdminDashboard = () => {
   };
 
   const handleDelete = async (ownerId) => {
-    if (!window.confirm('Are you sure you want to delete this owner? This action cannot be undone.')) return;
+    if (!window.confirm('Are you sure you want to delete this owner? This action cannot be undone.'))
+      return;
     try {
       setError('');
       setSuccess('');
       await api.delete(`/users/owners/${ownerId}`);
-      setOwners(prev => prev.filter(o => o._id !== ownerId));
+      setOwners((prev) => prev.filter((o) => o._id !== ownerId));
+      delete reminderCache.current[ownerId];
       setSuccess('Owner deleted successfully');
     } catch (err) {
       setError('Failed to delete owner');
@@ -165,7 +247,10 @@ const SuperAdminDashboard = () => {
       const payload = {
         cafeName: editFormData.cafeName,
         whatsappNumber: editFormData.whatsappNumber,
-        tables: editFormData.tables.split(',').map(t => t.trim()).filter(t => t.length > 0),
+        tables: editFormData.tables
+          .split(',')
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0),
         theme: {
           primaryColor: editFormData.primaryColor,
           secondaryColor: editFormData.secondaryColor,
@@ -174,9 +259,15 @@ const SuperAdminDashboard = () => {
       };
       const response = await api.put(`/users/owners/${selectedOwner._id}`, payload);
       if (response.data.success) {
-        setOwners(prev => prev.map(o => 
-          o._id === selectedOwner._id ? response.data.data : o
-        ));
+        const updatedOwner = response.data.data;
+        const cachedReminders = reminderCache.current[updatedOwner._id] ?? 0;
+        setOwners((prev) =>
+          prev.map((o) =>
+            o._id === selectedOwner._id
+              ? { ...updatedOwner, activeReminders: cachedReminders }
+              : o
+          )
+        );
         setIsEditModalOpen(false);
         setSuccess('Owner updated successfully');
       }
@@ -203,11 +294,20 @@ const SuperAdminDashboard = () => {
       <div className="flex flex-wrap justify-between items-center gap-3 sm:gap-4 mb-6 bg-[#EAE0C8] p-3 sm:p-4 border-2 border-[#3E2723]">
         <h2 className="text-xl sm:text-2xl font-bold text-[#3E2723]">Cafe Owners</h2>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={fetchOwners} disabled={loading} className="text-sm sm:text-base">
+          <Button
+            variant="secondary"
+            onClick={() => fetchOwners(true)}
+            disabled={loading}
+            className="text-sm sm:text-base"
+          >
             <RefreshCw size={16} className={`inline mr-1 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button variant="primary" onClick={() => setIsAddModalOpen(true)} className="text-sm sm:text-base">
+          <Button
+            variant="primary"
+            onClick={() => setIsAddModalOpen(true)}
+            className="text-sm sm:text-base"
+          >
             <Plus size={16} className="inline mr-1" /> Add Owner
           </Button>
         </div>
@@ -235,6 +335,7 @@ const SuperAdminDashboard = () => {
         setFormData={setAddFormData}
         loading={addLoading}
         isEdit={false}
+        error={error}
       />
 
       <OwnerFormModal
@@ -249,6 +350,7 @@ const SuperAdminDashboard = () => {
         setFormData={setEditFormData}
         loading={editLoading}
         isEdit={true}
+        error={error}
       />
     </DashboardLayout>
   );

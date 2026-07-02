@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
+const cookieParser = require('cookie-parser'); // 🆕 added
 const connectDB = require('./config/db');
 const { errorHandler } = require('./utils/errorHandler');
 const User = require('./models/User');
@@ -47,6 +48,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(morgan('dev'));
 }
 
+// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: process.env.RATE_LIMIT_MAX || 100,
@@ -56,17 +58,23 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
+// Body parsers
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// 🆕 Cookie parser (for reading/writing httpOnly cookies)
+app.use(cookieParser());
+
+// CORS configuration – allow credentials
 const allowedOrigins = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(
   cors({
     origin: allowedOrigins,
-    credentials: true,
+    credentials: true, // required for cookies
   })
 );
 
+// Cache control for public menu
 const cacheControl = (req, res, next) => {
   if (req.method === 'GET' && req.path.startsWith('/api/menu/') && !req.path.includes('?all')) {
     res.setHeader('Cache-Control', 'public, max-age=300');

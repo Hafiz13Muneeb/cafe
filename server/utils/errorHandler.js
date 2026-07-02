@@ -3,7 +3,7 @@ const errorHandler = (err, req, res, next) => {
   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   let message = err.message || 'Internal Server Error';
 
-  // Mongoose validation error
+  // Mongoose validation error (400)
   if (err.name === 'ValidationError') {
     statusCode = 400;
     message = Object.values(err.errors)
@@ -11,20 +11,20 @@ const errorHandler = (err, req, res, next) => {
       .join(', ');
   }
 
-  // MongoDB duplicate key error (code 11000)
+  // MongoDB duplicate key error (400)
   if (err.code === 11000) {
     statusCode = 400;
     const field = Object.keys(err.keyPattern)[0];
     message = `${field} already exists.`;
   }
 
-  // Mongoose CastError (invalid ObjectId)
+  // Mongoose CastError (invalid ObjectId) – treat as 404
   if (err.name === 'CastError') {
     statusCode = 404;
     message = 'Resource not found';
   }
 
-  // JWT errors
+  // JWT errors (401)
   if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Invalid token';
@@ -35,10 +35,17 @@ const errorHandler = (err, req, res, next) => {
     message = 'Token expired';
   }
 
+  // 🆕 For 500 errors in production, send a generic message
+  // (This prevents leaking internal details like DB structure or file paths)
+  if (statusCode === 500 && process.env.NODE_ENV === 'production') {
+    message = 'Something went wrong. Please try again later.';
+  }
+
   res.status(statusCode).json({
     success: false,
     message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    // Hide stack trace in production; show only in development
+    stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
   });
 };
 

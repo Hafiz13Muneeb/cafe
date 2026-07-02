@@ -68,10 +68,22 @@ const OwnerSettings = () => {
     setLoading(true);
     setMessage({ text: '', type: '' });
     try {
+      // 🆕 Trim and validate tables before sending
+      const trimmedTables = tables
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+
+      if (trimmedTables.length === 0) {
+        setMessage({ text: 'Please enter at least one table number/name.', type: 'error' });
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         cafeName,
         whatsappNumber,
-        tables: tables.split(',').map(t => t.trim()).filter(t => t.length > 0),
+        tables: trimmedTables,
         primaryColor,
         secondaryColor,
         mode,
@@ -81,7 +93,7 @@ const OwnerSettings = () => {
         const updatedData = {
           cafeName,
           whatsappNumber,
-          tables: payload.tables,
+          tables: trimmedTables,
           theme: { primaryColor, secondaryColor, mode },
         };
         updateUserData(updatedData);
@@ -143,6 +155,16 @@ const OwnerSettings = () => {
     }
   };
 
+  // 🆕 Helper to trim tables input on blur for better UX
+  const handleTablesBlur = () => {
+    const trimmed = tables
+      .split(',')
+      .map(t => t.trim())
+      .filter(t => t.length > 0)
+      .join(', ');
+    setTables(trimmed);
+  };
+
   const navItems = [
     { id: 'cafe', label: 'Cafe Settings', icon: Settings },
     { id: 'appearance', label: 'Appearance', icon: Palette },
@@ -153,22 +175,57 @@ const OwnerSettings = () => {
     <SettingsLayout title="Settings" subtitle="Owner" navItems={navItems} activeTab={activeTab} setActiveTab={setActiveTab}>
       <div className="bg-[#F5F5DC] p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]">
         {message.text && (
-          <div className={`mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base ${message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'}`}>
+          <div
+            className={`mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base ${
+              message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'
+            }`}
+            role="alert"
+            aria-live="polite"
+          >
             {message.text}
           </div>
         )}
 
         {activeTab === 'cafe' && (
           <form onSubmit={handleCafeSubmit} className="space-y-4">
-            <Input label="Cafe Name" value={cafeName} onChange={(e) => setCafeName(e.target.value)} required />
-            <Input label="WhatsApp Number" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="e.g. 03001234567" required />
-            <Input label="Table Numbers / Names" value={tables} onChange={(e) => setTables(e.target.value)} placeholder="1, 2, 3, 4, 5 (comma separated)" required />
+            <Input
+              label="Cafe Name"
+              value={cafeName}
+              onChange={(e) => setCafeName(e.target.value)}
+              required
+              aria-label="Cafe name"
+            />
+            <Input
+              label="WhatsApp Number"
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value)}
+              placeholder="e.g. 03001234567"
+              required
+              aria-label="WhatsApp number"
+            />
+            <Input
+              label="Table Numbers / Names"
+              value={tables}
+              onChange={(e) => setTables(e.target.value)}
+              onBlur={handleTablesBlur} // 🆕 trim on blur
+              placeholder="1, 2, 3, 4, 5 (comma separated)"
+              required
+              aria-label="Table numbers or names"
+            />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-[#3E2723] mb-1">Logo</label>
+                <label className="block text-sm font-bold text-[#3E2723] mb-1" htmlFor="logoUpload">
+                  Logo
+                </label>
                 <div className="flex flex-wrap items-center gap-3">
-                  {logoPreview && <img src={logoPreview} alt="Logo" className="w-12 h-12 border-2 border-[#3E2723] object-cover" />}
+                  {logoPreview && (
+                    <img
+                      src={logoPreview}
+                      alt="Cafe logo preview"
+                      className="w-12 h-12 border-2 border-[#3E2723] object-cover"
+                    />
+                  )}
                   <input
                     type="file"
                     accept="image/*"
@@ -179,16 +236,31 @@ const OwnerSettings = () => {
                       }
                     }}
                     className="hidden"
+                    id="logoUpload"
+                    aria-label="Upload logo"
                   />
-                  <Button type="button" variant="secondary" onClick={() => logoInputRef.current.click()} className="text-sm sm:text-base">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => logoInputRef.current.click()}
+                    className="text-sm sm:text-base"
+                  >
                     <Upload size={16} className="inline mr-1" /> Upload Logo
                   </Button>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-bold text-[#3E2723] mb-1">Favicon</label>
+                <label className="block text-sm font-bold text-[#3E2723] mb-1" htmlFor="faviconUpload">
+                  Favicon
+                </label>
                 <div className="flex flex-wrap items-center gap-3">
-                  {faviconPreview && <img src={faviconPreview} alt="Favicon" className="w-10 h-10 border-2 border-[#3E2723] object-cover" />}
+                  {faviconPreview && (
+                    <img
+                      src={faviconPreview}
+                      alt="Favicon preview"
+                      className="w-10 h-10 border-2 border-[#3E2723] object-cover"
+                    />
+                  )}
                   <input
                     type="file"
                     accept="image/*"
@@ -199,8 +271,15 @@ const OwnerSettings = () => {
                       }
                     }}
                     className="hidden"
+                    id="faviconUpload"
+                    aria-label="Upload favicon"
                   />
-                  <Button type="button" variant="secondary" onClick={() => faviconInputRef.current.click()} className="text-sm sm:text-base">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => faviconInputRef.current.click()}
+                    className="text-sm sm:text-base"
+                  >
                     <Upload size={16} className="inline mr-1" /> Upload Favicon
                   </Button>
                 </div>
@@ -217,27 +296,45 @@ const OwnerSettings = () => {
           <form onSubmit={handleCafeSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-[#3E2723] mb-1">Primary Color</label>
+                <label className="block text-sm font-bold text-[#3E2723] mb-1" htmlFor="primaryColor">
+                  Primary Color
+                </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
+                    id="primaryColor"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
                     className="w-10 h-10 p-0 border-2 border-[#3E2723] cursor-pointer"
+                    aria-label="Primary color picker"
                   />
-                  <Input value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="flex-1" />
+                  <Input
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="flex-1"
+                    aria-label="Primary color hex"
+                  />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-bold text-[#3E2723] mb-1">Secondary Color</label>
+                <label className="block text-sm font-bold text-[#3E2723] mb-1" htmlFor="secondaryColor">
+                  Secondary Color
+                </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
+                    id="secondaryColor"
                     value={secondaryColor}
                     onChange={(e) => setSecondaryColor(e.target.value)}
                     className="w-10 h-10 p-0 border-2 border-[#3E2723] cursor-pointer"
+                    aria-label="Secondary color picker"
                   />
-                  <Input value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="flex-1" />
+                  <Input
+                    value={secondaryColor}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    className="flex-1"
+                    aria-label="Secondary color hex"
+                  />
                 </div>
               </div>
             </div>
@@ -252,6 +349,8 @@ const OwnerSettings = () => {
                     className={`px-3 sm:px-4 py-2 border-2 border-[#3E2723] font-bold transition text-sm sm:text-base ${
                       mode === m ? 'bg-[#8A9A5B] text-white' : 'bg-white text-[#3E2723]'
                     }`}
+                    aria-label={`Switch to ${m} mode`}
+                    aria-pressed={mode === m}
                   >
                     {m.charAt(0).toUpperCase() + m.slice(1)}
                   </button>
@@ -273,11 +372,13 @@ const OwnerSettings = () => {
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
                 required
+                aria-label="Current password"
               />
               <button
                 type="button"
                 onClick={() => setShowOld(!showOld)}
                 className="absolute right-3 top-9 text-[#3E2723]"
+                aria-label={showOld ? 'Hide password' : 'Show password'}
               >
                 {showOld ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -289,11 +390,13 @@ const OwnerSettings = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
+                aria-label="New password"
               />
               <button
                 type="button"
                 onClick={() => setShowNew(!showNew)}
                 className="absolute right-3 top-9 text-[#3E2723]"
+                aria-label={showNew ? 'Hide new password' : 'Show new password'}
               >
                 {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -305,11 +408,13 @@ const OwnerSettings = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                aria-label="Confirm new password"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
                 className="absolute right-3 top-9 text-[#3E2723]"
+                aria-label={showConfirm ? 'Hide confirmation' : 'Show confirmation'}
               >
                 {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>

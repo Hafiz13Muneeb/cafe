@@ -16,6 +16,22 @@ const extractPublicId = (imageUrl) => {
   return publicIdWithExt.replace(/\.[^/.]+$/, '');
 };
 
+// Helper: generate a unique slug from a base string
+const generateUniqueSlug = async (baseSlug, excludeId) => {
+  let newSlug = baseSlug;
+  let counter = 1;
+  const query = { slug: newSlug };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+  while (await User.findOne(query)) {
+    newSlug = `${baseSlug}-${counter}`;
+    counter++;
+    query.slug = newSlug;
+  }
+  return newSlug;
+};
+
 // ============================================================
 // OWNER SETTINGS (per-cafe)
 // ============================================================
@@ -26,7 +42,7 @@ const extractPublicId = (imageUrl) => {
 const getSettings = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select(
-      'cafeName whatsappNumber logoUrl faviconUrl tables'
+      'cafeName whatsappNumber logoUrl faviconUrl tables slug'
     );
     if (!user) {
       res.status(404);
@@ -41,6 +57,7 @@ const getSettings = async (req, res, next) => {
         logoUrl: user.logoUrl || '',
         faviconUrl: user.faviconUrl || '',
         tables: user.tables || [],
+        slug: user.slug || '',
       },
     });
   } catch (error) {
@@ -48,12 +65,12 @@ const getSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Update the logged-in owner's settings (cafeName, whatsapp, tables, logo, favicon)
+// @desc    Update the logged-in owner's settings (cafeName, whatsapp, tables, logo, favicon, slug)
 // @route   PUT /api/settings
 // @access  Private (Owner)
 const updateSettings = async (req, res, next) => {
   try {
-    const { cafeName, whatsappNumber, tables } = req.body;
+    const { cafeName, whatsappNumber, tables, slug } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -61,7 +78,10 @@ const updateSettings = async (req, res, next) => {
       throw new Error('User not found');
     }
 
-    // --- Update cafeName (also regenerates slug) ---
+    // Track what changed for the response
+    const changes = {};
+
+    // --- Update cafeName ---
     if (cafeName !== undefined) {
       const trimmed = cafeName.trim();
       if (!trimmed || trimmed.length === 0) {
@@ -72,23 +92,53 @@ const updateSettings = async (req, res, next) => {
         res.status(400);
         throw new Error('Cafe name must be 100 characters or less');
       }
-      user.cafeName = trimmed;
+      if (trimmed !== user.cafeName) {
+        user.cafeName = trimmed;
+        changes.cafeName = trimmed;
+        // Slug will be regenerated only if not explicitly provided
+      }
+    }
 
-      // Regenerate slug
-      const baseSlug = trimmed
+    // --- Update slug (explicitly provided by the owner) ---
+    if (slug !== undefined) {
+      const trimmedSlug = slug.trim().toLowerCase();
+      if (!trimmedSlug || trimmedSlug.length === 0) {
+        res.status(400);
+        throw new Error('Slug cannot be empty');
+      }
+      // Validate slug format: only lowercase letters, numbers, and hyphens
+      if (!/^[a-z0-9-]+$/.test(trimmedSlug)) {
+        res.status(400);
+        throw new Error('Slug can only contain lowercase letters, numbers, and hyphens');
+      }
+      if (trimmedSlug !== user.slug) {
+        // Check uniqueness
+        const existing = await User.findOne({
+          slug: trimmedSlug,
+          _id: { $ne: user._id },
+        });
+        if (existing) {
+          res.status(400);
+          throw new Error('This slug is already taken. Please choose another.');
+        }
+        user.slug = trimmedSlug;
+        changes.slug = trimmedSlug;
+      }
+    } else if (cafeName !== undefined && cafeName.trim() !== user.cafeName) {
+      // If cafeName changed but slug was NOT explicitly provided,
+      // regenerate slug from the new cafeName (this is the existing behavior)
+      // BUT we show a warning that QR codes will change.
+      const baseSlug = user.cafeName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
-      let newSlug = baseSlug;
-      const existing = await User.findOne({ slug: newSlug, _id: { $ne: user._id } });
-      if (existing) {
-        const randomSuffix = Math.random().toString(36).substring(2, 8);
-        newSlug = `${baseSlug}-${randomSuffix}`;
-        while (await User.findOne({ slug: newSlug, _id: { $ne: user._id } })) {
-          newSlug = `${baseSlug}-${Math.random().toString(36).substring(2, 8)}`;
-        }
+      const newSlug = await generateUniqueSlug(baseSlug, user._id);
+      if (newSlug !== user.slug) {
+        user.slug = newSlug;
+        changes.slug = newSlug;
+        changes.slugWarning =
+          'Your cafe URL has changed. Existing QR codes will no longer work. Please regenerate them.';
       }
-      user.slug = newSlug;
     }
 
     // --- Update WhatsApp number ---
@@ -98,7 +148,10 @@ const updateSettings = async (req, res, next) => {
         res.status(400);
         throw new Error('WhatsApp number must be 10-15 digits, no special chars');
       }
-      user.whatsappNumber = trimmed;
+      if (trimmed !== user.whatsappNumber) {
+        user.whatsappNumber = trimmed;
+        changes.whatsappNumber = trimmed;
+      }
     }
 
     // --- Update tables ---
@@ -107,7 +160,7 @@ const updateSettings = async (req, res, next) => {
       if (Array.isArray(tables)) {
         tableArray = tables;
       } else if (typeof tables === 'string') {
-        tableArray = tables.split(',').map(t => t.trim()).filter(t => t.length > 0);
+        tableArray = tables.split(',').map((t) => t.trim()).filter((t) => t.length > 0);
       } else {
         res.status(400);
         throw new Error('Tables must be an array or comma-separated string');
@@ -117,53 +170,86 @@ const updateSettings = async (req, res, next) => {
         throw new Error('Please provide at least one table number/name');
       }
       user.tables = tableArray;
+      changes.tables = tableArray;
     }
 
-    // --- Handle logo upload ---
+    // --- Handle logo upload with rollback ---
     if (req.files) {
+      // Logo
       if (req.files.logo && req.files.logo[0]) {
         const logoFile = req.files.logo[0];
-        if (user.logoUrl) {
-          const publicId = extractPublicId(user.logoUrl);
-          if (publicId) {
-            try {
-              await cloudinary.uploader.destroy(publicId);
-            } catch (cloudinaryError) {
-              console.error('Failed to delete old logo from Cloudinary:', cloudinaryError);
+        const oldLogoUrl = user.logoUrl;
+        try {
+          // Upload new logo first
+          user.logoUrl = logoFile.path;
+          // If upload succeeded and there was an old logo, delete it
+          if (oldLogoUrl) {
+            const publicId = extractPublicId(oldLogoUrl);
+            if (publicId) {
+              try {
+                await cloudinary.uploader.destroy(publicId);
+              } catch (cloudinaryError) {
+                console.error('Failed to delete old logo from Cloudinary:', cloudinaryError);
+                // Don't fail the request; the new logo is already saved
+              }
             }
           }
+          changes.logoUrl = logoFile.path;
+        } catch (uploadError) {
+          // If new upload fails, revert to old logo
+          user.logoUrl = oldLogoUrl;
+          console.error('Failed to upload new logo:', uploadError);
+          res.status(400);
+          throw new Error('Failed to upload logo. Please try again.');
         }
-        user.logoUrl = logoFile.path;
       }
 
+      // Favicon
       if (req.files.favicon && req.files.favicon[0]) {
         const faviconFile = req.files.favicon[0];
-        if (user.faviconUrl) {
-          const publicId = extractPublicId(user.faviconUrl);
-          if (publicId) {
-            try {
-              await cloudinary.uploader.destroy(publicId);
-            } catch (cloudinaryError) {
-              console.error('Failed to delete old favicon from Cloudinary:', cloudinaryError);
+        const oldFaviconUrl = user.faviconUrl;
+        try {
+          user.faviconUrl = faviconFile.path;
+          if (oldFaviconUrl) {
+            const publicId = extractPublicId(oldFaviconUrl);
+            if (publicId) {
+              try {
+                await cloudinary.uploader.destroy(publicId);
+              } catch (cloudinaryError) {
+                console.error('Failed to delete old favicon from Cloudinary:', cloudinaryError);
+              }
             }
           }
+          changes.faviconUrl = faviconFile.path;
+        } catch (uploadError) {
+          user.faviconUrl = oldFaviconUrl;
+          console.error('Failed to upload new favicon:', uploadError);
+          res.status(400);
+          throw new Error('Failed to upload favicon. Please try again.');
         }
-        user.faviconUrl = faviconFile.path;
       }
     }
 
     await user.save();
 
+    // Build response
+    const responseData = {
+      cafeName: user.cafeName,
+      slug: user.slug,
+      whatsappNumber: user.whatsappNumber,
+      logoUrl: user.logoUrl || '',
+      faviconUrl: user.faviconUrl || '',
+      tables: user.tables || [],
+    };
+
+    // Add warning if slug changed without explicit request
+    if (changes.slugWarning) {
+      responseData.warning = changes.slugWarning;
+    }
+
     res.status(200).json({
       success: true,
-      data: {
-        cafeName: user.cafeName,
-        slug: user.slug,
-        whatsappNumber: user.whatsappNumber,
-        logoUrl: user.logoUrl || '',
-        faviconUrl: user.faviconUrl || '',
-        tables: user.tables || [],
-      },
+      data: responseData,
     });
   } catch (error) {
     next(error);
@@ -245,19 +331,31 @@ const updateGlobalFavicon = async (req, res, next) => {
       throw new Error('Please upload a favicon image');
     }
 
-    // Delete old favicon from Cloudinary (if exists)
-    if (settings.faviconUrl) {
-      const publicId = extractPublicId(settings.faviconUrl);
-      if (publicId) {
-        try {
-          await cloudinary.uploader.destroy(publicId);
-        } catch (cloudinaryError) {
-          console.error('Failed to delete old favicon from Cloudinary:', cloudinaryError);
+    const oldFaviconUrl = settings.faviconUrl;
+
+    try {
+      // Upload new favicon first
+      settings.faviconUrl = req.file.path;
+
+      // If upload succeeded and there was an old favicon, delete it
+      if (oldFaviconUrl) {
+        const publicId = extractPublicId(oldFaviconUrl);
+        if (publicId) {
+          try {
+            await cloudinary.uploader.destroy(publicId);
+          } catch (cloudinaryError) {
+            console.error('Failed to delete old favicon from Cloudinary:', cloudinaryError);
+          }
         }
       }
+    } catch (uploadError) {
+      // If new upload fails, revert to old favicon
+      settings.faviconUrl = oldFaviconUrl;
+      console.error('Failed to upload new favicon:', uploadError);
+      res.status(400);
+      throw new Error('Failed to upload favicon. Please try again.');
     }
 
-    settings.faviconUrl = req.file.path;
     await settings.save();
 
     res.status(200).json({

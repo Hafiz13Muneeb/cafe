@@ -1,10 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const { loginUser, getProfile, createOwner, changePassword, updateProfile } = require('../controllers/authController');
+const {
+  loginUser,
+  logoutUser, // 🆕 imported
+  getProfile,
+  createOwner,
+  changePassword,
+  updateProfile,
+} = require('../controllers/authController');
 const { protect, restrictTo } = require('../middleware/auth');
 
 // Public routes
 router.post('/login', loginUser);
+// 🆕 Logout route (public because it just clears the cookie)
+router.post('/logout', logoutUser);
 
 // Protected routes (any logged-in user)
 router.get('/me', protect, getProfile);

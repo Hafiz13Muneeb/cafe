@@ -7,15 +7,13 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // 🆕 Send cookies (httpOnly JWT) with every request
 });
 
-// Request interceptor to add admin token (for protected endpoints)
+// 🆕 Request interceptor – no need to add token manually; cookie is sent automatically
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('adminToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // We no longer inject Authorization header; the cookie is sent by the browser
     return config;
   },
   (error) => {
@@ -27,33 +25,45 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const { response, config } = error;
+    const status = response?.status;
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+
+    // Helper: check if a request is public (no auth required)
+    const isPublicRequest = config?.url?.startsWith('/menu/') || config?.url === '/settings/global';
+
     // Handle 401 Unauthorized (token expired or invalid)
-    if (error.response?.status === 401) {
-      // Clear token if expired
+    if (status === 401) {
+      // Clear any leftover user data from localStorage (if still present)
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminData');
-      
-      // Avoid redirect loop: only redirect if we're on a protected admin page
+
+      // Only redirect if we're on a protected admin page (not login, not public)
       if (typeof window !== 'undefined') {
-        const currentPath = window.location.pathname;
-        // Only redirect to /admin if we're on a dashboard or admin route
-        if (currentPath.startsWith('/admin/dashboard') || currentPath.startsWith('/admin/settings')) {
-          sessionStorage.setItem('redirectAfterLogin', currentPath + window.location.search);
+        const isAdminRoute = currentPath.startsWith('/admin');
+        const isLoginPage = currentPath === '/admin';
+        const isPublicRoute = currentPath.startsWith('/menu/') || currentPath === '/';
+
+        // If on a protected admin page (not login and not public), redirect to login
+        if (isAdminRoute && !isLoginPage && !isPublicRoute) {
+          // Store the attempted URL for redirect after login
+          sessionStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
           window.location.href = '/admin';
         }
+        // If already on login page, just stay there (no redirect loop)
+        // If on public route, do nothing – let the component handle it
       }
     }
 
     // Handle 403 Forbidden (account blocked)
-    if (error.response?.status === 403) {
-      // Check if this is a public menu request (no auth required)
-      const isPublicMenu = error.config?.url?.startsWith('/menu/') && !error.config?.url?.includes('?');
-      if (isPublicMenu) {
-        // Do NOT redirect – let the component handle it
+    if (status === 403) {
+      // If it's a public request, just reject and let component handle
+      if (isPublicRequest) {
         return Promise.reject(error);
       }
+
       // For all other 403 errors, treat as account blocked (admin panel)
-      const message = error.response?.data?.message || 'Your account has been blocked. Please contact support.';
+      const message = response?.data?.message || 'Your account has been blocked. Please contact support.';
       if (typeof window !== 'undefined') {
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminData');

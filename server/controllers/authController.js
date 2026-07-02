@@ -32,6 +32,20 @@ const loginUser = async (req, res, next) => {
       throw new Error('Invalid credentials');
     }
 
+    // Generate JWT token
+    const token = generateToken(user._id);
+
+    // 🆕 Set token as httpOnly cookie
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('token', token, {
+      httpOnly: true, // Cannot be accessed by JavaScript
+      secure: isProduction, // Only sent over HTTPS in production
+      sameSite: 'strict', // CSRF protection
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days (matches token expiry)
+      path: '/',
+    });
+
+    // Prepare user response (without token in body)
     const userResponse = {
       id: user._id,
       username: user.username,
@@ -51,8 +65,31 @@ const loginUser = async (req, res, next) => {
       success: true,
       data: {
         user: userResponse,
-        token: generateToken(user._id),
+        // 🆕 No token in response body – it's in the cookie!
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 🆕 @desc    Logout user (clear cookie)
+// @route   POST /api/auth/logout
+// @access  Public
+const logoutUser = async (req, res, next) => {
+  try {
+    // Clear the token cookie
+    res.cookie('token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      expires: new Date(0), // Set expiry to past
+      path: '/',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Logged out successfully',
     });
   } catch (error) {
     next(error);
@@ -137,7 +174,6 @@ const createOwner = async (req, res, next) => {
       message: 'Cafe owner created successfully',
       data: {
         user: userResponse,
-        // Do NOT return the password
       },
     });
   } catch (error) {
@@ -248,6 +284,7 @@ const updateProfile = async (req, res, next) => {
 
 module.exports = {
   loginUser,
+  logoutUser, // 🆕 exported
   getProfile,
   createOwner,
   changePassword,

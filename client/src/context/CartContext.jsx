@@ -1,4 +1,4 @@
-// src/context/CartContext.jsx - Cart state management
+// src/context/CartContext.jsx - Cart state management with cross-tab sync
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const CartContext = createContext();
@@ -18,10 +18,46 @@ export const CartProvider = ({ children }) => {
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
-  // Save cart to localStorage whenever it changes
+  // Save cart to localStorage whenever it changes (only in this tab)
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
+
+  // 🆕 Cross-tab synchronization: listen for storage events from other tabs
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      // Only react to changes to the 'cart' key
+      if (e.key === 'cart') {
+        // The new value is in e.newValue (string or null if removed)
+        if (e.newValue) {
+          try {
+            const newCart = JSON.parse(e.newValue);
+            // Update the state only if the new cart is different (prevents unnecessary re-renders)
+            setCart((prevCart) => {
+              // Simple comparison: stringify both and compare
+              if (JSON.stringify(prevCart) !== JSON.stringify(newCart)) {
+                return newCart;
+              }
+              return prevCart;
+            });
+          } catch (err) {
+            console.error('Failed to parse cart from storage event:', err);
+          }
+        } else {
+          // If the cart was removed from storage, clear the state
+          setCart([]);
+        }
+      }
+    };
+
+    // Add event listener for storage changes
+    window.addEventListener('storage', handleStorageChange);
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []); // Empty dependency array: run only once on mount
 
   // Add item to cart
   const addToCart = (item) => {
@@ -73,18 +109,18 @@ export const CartProvider = ({ children }) => {
   // Generate order text for WhatsApp – supports dynamic cafe name
   const getOrderText = (tableNumber, cafeName) => {
     if (cart.length === 0) return '';
-    
+
     let text = `New Order - ${cafeName || 'Cafe'}\n`;
     text += `Table: ${tableNumber}\n`;
     text += `---\n`;
-    
+
     cart.forEach((item) => {
       text += `${item.quantity}x ${item.title} - Rs.${item.price}\n`;
     });
-    
+
     text += `---\n`;
     text += `Total: Rs.${getTotalPrice()}`;
-    
+
     return encodeURIComponent(text);
   };
 
