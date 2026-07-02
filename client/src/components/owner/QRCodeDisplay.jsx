@@ -82,9 +82,15 @@ const QRCodeDisplay = ({ cafeName, slug, qrValue }) => {
             {copied ? 'Copied!' : 'Copy Link'}
           </Button>
         </div>
-        <p className="text-[10px] sm:text-xs text-[#3E2723]/50 mt-2 break-all">
+        {/* Converted to clickable link */}
+        <a
+          href={qrValue}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] sm:text-xs text-[#8A9A5B] hover:underline mt-2 break-all inline-block"
+        >
           {qrValue}
-        </p>
+        </a>
       </div>
     </div>
   );

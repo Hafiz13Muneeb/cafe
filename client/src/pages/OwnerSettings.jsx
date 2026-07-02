@@ -1,17 +1,16 @@
+// src/pages/OwnerSettings.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../api/axios';
 import { Settings, Lock, Palette, Upload, Save, Eye, EyeOff } from 'lucide-react';
-import SettingsLayout from '../components/layout/SettingsLayout';
+import DashboardLayout from '../components/layout/DashboardLayout';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 
 const OwnerSettings = () => {
   const { user, updateUserData } = useAuth();
   const { theme, updateTheme } = useTheme();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('cafe');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
@@ -68,7 +67,6 @@ const OwnerSettings = () => {
     setLoading(true);
     setMessage({ text: '', type: '' });
     try {
-      // 🆕 Trim and validate tables before sending
       const trimmedTables = tables
         .split(',')
         .map(t => t.trim())
@@ -155,7 +153,6 @@ const OwnerSettings = () => {
     }
   };
 
-  // 🆕 Helper to trim tables input on blur for better UX
   const handleTablesBlur = () => {
     const trimmed = tables
       .split(',')
@@ -165,27 +162,48 @@ const OwnerSettings = () => {
     setTables(trimmed);
   };
 
-  const navItems = [
+  // Tab items for the in‑content tab bar
+  const tabItems = [
     { id: 'cafe', label: 'Cafe Settings', icon: Settings },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'security', label: 'Security', icon: Lock },
   ];
 
   return (
-    <SettingsLayout title="Settings" subtitle="Owner" navItems={navItems} activeTab={activeTab} setActiveTab={setActiveTab}>
-      <div className="bg-[#F5F5DC] p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]">
-        {message.text && (
-          <div
-            className={`mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base ${
-              message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'
-            }`}
-            role="alert"
-            aria-live="polite"
-          >
-            {message.text}
-          </div>
-        )}
+    <DashboardLayout title="Settings" subtitle={user?.cafeName}>
+      {/* Message banner */}
+      {message.text && (
+        <div
+          className={`mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base ${
+            message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'
+          }`}
+          role="alert"
+          aria-live="polite"
+        >
+          {message.text}
+        </div>
+      )}
 
+      {/* Tab bar */}
+      <div className="flex flex-wrap gap-1 bg-[#EAE0C8] border-2 border-[#3E2723] p-1 mb-6">
+        {tabItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm sm:text-base font-bold transition-all ${
+              activeTab === item.id
+                ? 'bg-[#8A9A5B] text-white border-2 border-[#3E2723]'
+                : 'text-[#3E2723] hover:bg-[#3E2723]/10'
+            }`}
+          >
+            <item.icon size={16} />
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Content area */}
+      <div className="bg-[#F5F5DC] p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]">
         {activeTab === 'cafe' && (
           <form onSubmit={handleCafeSubmit} className="space-y-4">
             <Input
@@ -207,7 +225,7 @@ const OwnerSettings = () => {
               label="Table Numbers / Names"
               value={tables}
               onChange={(e) => setTables(e.target.value)}
-              onBlur={handleTablesBlur} // 🆕 trim on blur
+              onBlur={handleTablesBlur}
               placeholder="1, 2, 3, 4, 5 (comma separated)"
               required
               aria-label="Table numbers or names"
@@ -425,7 +443,7 @@ const OwnerSettings = () => {
           </form>
         )}
       </div>
-    </SettingsLayout>
+    </DashboardLayout>
   );
 };
 

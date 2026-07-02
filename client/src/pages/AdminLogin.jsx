@@ -1,8 +1,17 @@
 // src/pages/AdminLogin.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Lock, User, AlertCircle } from 'lucide-react';
+import {
+  Lock,
+  User,
+  Users,
+  AlertCircle,
+  Coffee,
+  CheckCircle,
+  ChevronRight,
+  ChevronLeft,
+} from 'lucide-react';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 
@@ -14,7 +23,33 @@ const AdminLogin = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
+  // Tour state
+  const [showTour, setShowTour] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
+
+  // Refs for spotlight elements
+  const usernameRef = useRef(null);
+  const passwordRef = useRef(null);
+  const loginBtnRef = useRef(null);
+  const demoBtnRef = useRef(null);
+  const createAccountRef = useRef(null);
+
+  // Check if we should show the tour
+  useEffect(() => {
+    const hasToken = localStorage.getItem('adminToken');
+    const hasUserData = localStorage.getItem('adminData');
+    const hasCookie = document.cookie.split(';').some((c) => c.trim().startsWith('token='));
+    const tourShown = localStorage.getItem('tourShown');
+
+    if (hasToken || hasUserData || hasCookie || tourShown) {
+      setShowTour(false);
+    } else {
+      setShowTour(true);
+      setTourStep(0);
+    }
+  }, []);
+
+  useEffect(() => {
     const authError = sessionStorage.getItem('authError');
     if (authError) {
       setError(authError);
@@ -50,8 +85,188 @@ const AdminLogin = () => {
     }
   };
 
+  const fillDemoCredentials = () => {
+    setUsername('Demo');
+    setPassword('demo123');
+    setError('');
+  };
+
+  // ---------- TOUR CONFIG ----------
+  const tourSteps = [
+    {
+      target: usernameRef,
+      icon: User,
+      title: 'Enter Your Username',
+      description: 'Type your cafe username. Use the demo credentials or your own.',
+    },
+    {
+      target: passwordRef,
+      icon: Lock,
+      title: 'Enter Your Password',
+      description: 'Your password is securely stored. Try the demo password: "demo123".',
+    },
+    {
+      target: loginBtnRef,
+      icon: CheckCircle,
+      title: 'Login to Dashboard',
+      description: 'Click here to access your admin panel and start managing your menu.',
+    },
+    {
+      target: demoBtnRef,
+      icon: Coffee,
+      title: 'Quick Demo',
+      description: 'Click here to auto‑fill the demo credentials and test the app instantly.',
+    },
+    {
+      target: createAccountRef,
+      icon: Users,
+      title: 'New to CafeFlow?',
+      description: 'Create your own cafe account and start your digital menu today.',
+    },
+  ];
+
+  const totalSteps = tourSteps.length;
+  const currentStepData = tourSteps[tourStep];
+
+  const handleNext = () => {
+    if (tourStep < totalSteps - 1) {
+      setTourStep(tourStep + 1);
+    } else {
+      localStorage.setItem('tourShown', 'true');
+      setShowTour(false);
+    }
+  };
+
+  const handleSkip = () => {
+    localStorage.setItem('tourShown', 'true');
+    setShowTour(false);
+  };
+
+  const handlePrev = () => {
+    if (tourStep > 0) {
+      setTourStep(tourStep - 1);
+    }
+  };
+
+  // Get position of the target element
+  const getTargetRect = () => {
+    const ref = currentStepData?.target?.current;
+    if (!ref) return null;
+    return ref.getBoundingClientRect();
+  };
+
+  const targetRect = getTargetRect();
+
+  // Decide tooltip position (top or bottom) based on viewport space
+  const getTooltipPosition = () => {
+    if (!targetRect) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - targetRect.bottom;
+    const spaceAbove = targetRect.top;
+    const tooltipHeight = 240; // approximate
+    let top, left;
+    const leftPos = Math.max(20, Math.min(targetRect.left + targetRect.width / 2 - 160, window.innerWidth - 360));
+    if (spaceBelow > tooltipHeight + 20) {
+      top = targetRect.bottom + 16;
+    } else if (spaceAbove > tooltipHeight + 20) {
+      top = targetRect.top - tooltipHeight - 16;
+    } else {
+      // fallback: center of viewport
+      top = (viewportHeight - tooltipHeight) / 2;
+      return { top: `${top}px`, left: '50%', transform: 'translateX(-50%)' };
+    }
+    return { top: `${top}px`, left: `${leftPos}px`, transform: 'none' };
+  };
+
+  const tooltipStyle = getTooltipPosition();
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F5DC]">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F5DC] relative">
+      {/* ===================== TOUR OVERLAY (CLEAR BACKGROUND) ===================== */}
+      {showTour && targetRect && (
+        <div className="fixed inset-0 z-50 pointer-events-none">
+          {/* No dimming overlay – background is fully clear */}
+
+          {/* Highlight ring around target */}
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              top: targetRect.top - 8,
+              left: targetRect.left - 8,
+              width: targetRect.width + 16,
+              height: targetRect.height + 16,
+              borderRadius: '6px',
+              boxShadow: '0 0 0 4px #8A9A5B, 0 0 20px rgba(138, 154, 91, 0.6)',
+              transition: 'all 0.3s ease',
+            }}
+          />
+
+          {/* Tooltip – pointer-events auto for interactivity */}
+          <div
+            className="absolute bg-white border-4 border-[#3E2723] shadow-[8px_8px_0px_0px_#8A9A5B] p-5 max-w-xs w-72 pointer-events-auto"
+            style={{
+              top: tooltipStyle.top,
+              left: tooltipStyle.left,
+              transform: tooltipStyle.transform || 'none',
+            }}
+          >
+            {/* Step indicator */}
+            <div className="flex items-center gap-1.5 mb-3">
+              {Array.from({ length: totalSteps }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`h-1 flex-1 rounded-full transition ${
+                    idx === tourStep ? 'bg-[#8A9A5B]' : 'bg-[#EAE0C8]'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Icon & Title */}
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-1.5 bg-[#8A9A5B] rounded-full border-2 border-[#3E2723]">
+                <currentStepData.icon size={18} className="text-white" />
+              </div>
+              <h3 className="font-bold text-[#3E2723] text-base">{currentStepData.title}</h3>
+            </div>
+
+            <p className="text-sm text-[#3E2723]/70 mb-4">{currentStepData.description}</p>
+
+            {/* Navigation */}
+            <div className="flex justify-between items-center">
+              <button
+                onClick={handlePrev}
+                disabled={tourStep === 0}
+                className={`text-sm font-bold transition ${
+                  tourStep === 0
+                    ? 'text-[#3E2723]/30 cursor-not-allowed'
+                    : 'text-[#3E2723] hover:text-[#8A9A5B]'
+                }`}
+              >
+                Back
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSkip}
+                  className="text-xs font-bold text-[#3E2723]/50 hover:text-[#3E2723] transition"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="px-4 py-1.5 bg-[#8A9A5B] text-white font-bold border-2 border-[#3E2723] shadow-[3px_3px_0px_0px_#3E2723] hover:shadow-none transition text-xs"
+                >
+                  {tourStep === totalSteps - 1 ? 'Finish' : 'Next'}
+                  {tourStep < totalSteps - 1 && <ChevronRight size={14} className="inline ml-0.5" />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== LOGIN FORM ===================== */}
       <div className="w-full max-w-md bg-white border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8">
         <div className="text-center mb-6">
           <div className="inline-block p-4 rounded-full bg-[#8A9A5B] border-2 border-[#3E2723] mb-4">
@@ -71,41 +286,75 @@ const AdminLogin = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            leftIcon={User}
-            required
-            disabled={loading}
-            autoComplete="username"
-          />
-          <Input
-            label="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            leftIcon={Lock}
-            required
-            disabled={loading}
-            autoComplete="current-password"
-          />
-          <Button
-            type="submit"
-            fullWidth
-            disabled={loading}
-            className="bg-[#8A9A5B] border-2 border-[#3E2723] text-white hover:bg-[#78884d]"
-          >
-            {loading ? (
-              <>
-                <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                Logging in...
-              </>
-            ) : (
-              'Login'
-            )}
-          </Button>
+          <div ref={usernameRef}>
+            <Input
+              label="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              leftIcon={User}
+              required
+              disabled={loading}
+              autoComplete="username"
+            />
+          </div>
+
+          <div ref={passwordRef}>
+            <Input
+              label="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              leftIcon={Lock}
+              required
+              disabled={loading}
+              autoComplete="current-password"
+            />
+          </div>
+
+          <div ref={loginBtnRef}>
+            <Button
+              type="submit"
+              fullWidth
+              disabled={loading}
+              className="bg-[#8A9A5B] border-2 border-[#3E2723] text-white hover:bg-[#78884d]"
+            >
+              {loading ? (
+                <>
+                  <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                  Logging in...
+                </>
+              ) : (
+                'Login'
+              )}
+            </Button>
+          </div>
         </form>
+
+        {/* Demo credentials with click-to-fill */}
+        <div className="mt-6 border-t border-[#3E2723]/20 pt-4">
+          <p className="text-xs text-center text-[#3E2723]/40">
+            Demo credentials:{' '}
+            <button
+              ref={demoBtnRef}
+              type="button"
+              onClick={fillDemoCredentials}
+              className="font-mono font-medium text-[#3E2723]/60 hover:text-[#8A9A5B] underline-offset-2 hover:underline transition cursor-pointer"
+            >
+              demo / demo123
+            </button>
+            <span className="text-[#3E2723]/30 ml-1">(click to auto‑fill)</span>
+          </p>
+        </div>
+
+        <p ref={createAccountRef} className="text-xs text-center text-[#3E2723]/40 mt-3">
+          Don't have an account?{' '}
+          <a
+            href="/blog#howCreateAccount"
+            className="text-[#8A9A5B] hover:underline font-medium"
+          >
+            Create one here
+          </a>
+        </p>
       </div>
     </div>
   );

@@ -1,10 +1,17 @@
 // src/components/layout/Header.jsx
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LogOut, Settings } from 'lucide-react';
 import Button from '../common/Button';
 
 const Header = ({ title, subtitle, onLogout, user }) => {
+  const navigate = useNavigate();
+  
   const settingsPath = user?.role === 'superadmin' ? '/admin/settings' : '/admin/dashboard/settings';
+
+  const handleSettingsClick = () => {
+    navigate(settingsPath);
+  };
 
   return (
     <header className="bg-white border-b-4 border-[#3E2723] sticky top-0 z-20">
@@ -22,7 +29,7 @@ const Header = ({ title, subtitle, onLogout, user }) => {
         <div className="flex items-center gap-1 sm:gap-2">
           <Button
             variant="secondary"
-            onClick={() => window.location.href = settingsPath}
+            onClick={handleSettingsClick}
             className="p-1.5 sm:p-2"
           >
             <Settings size={16} className="sm:w-5 sm:h-5" />

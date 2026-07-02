@@ -1,18 +1,16 @@
-// src/pages/SuperAdminSettings.jsx - Complete superadmin settings with profile, security, and global theme
+// src/pages/SuperAdminSettings.jsx - Superadmin settings with profile, security, and global theme
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../api/axios';
 import { User, Lock, Palette, Save, Upload, Eye, EyeOff } from 'lucide-react';
-import SettingsLayout from '../components/layout/SettingsLayout';
+import DashboardLayout from '../components/layout/DashboardLayout';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 
 const SuperAdminSettings = () => {
   const { user, updateUserData } = useAuth();
   const { theme, updateTheme } = useTheme();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
@@ -145,21 +143,48 @@ const SuperAdminSettings = () => {
     }
   };
 
-  const navItems = [
+  // Tab items for in-content tab bar
+  const tabItems = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'security', label: 'Security', icon: Lock },
     { id: 'appearance', label: 'Appearance', icon: Palette },
   ];
 
   return (
-    <SettingsLayout title="Settings" subtitle="SuperAdmin" navItems={navItems} activeTab={activeTab} setActiveTab={setActiveTab}>
-      <div className="bg-[#F5F5DC] p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]">
-        {message.text && (
-          <div className={`mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base ${message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'}`}>
-            {message.text}
-          </div>
-        )}
+    <DashboardLayout title="Settings" subtitle="SuperAdmin">
+      {/* Message banner */}
+      {message.text && (
+        <div
+          className={`mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base ${
+            message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'
+          }`}
+          role="alert"
+          aria-live="polite"
+        >
+          {message.text}
+        </div>
+      )}
 
+      {/* Tab bar */}
+      <div className="flex flex-wrap gap-1 bg-[#EAE0C8] border-2 border-[#3E2723] p-1 mb-6">
+        {tabItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm sm:text-base font-bold transition-all ${
+              activeTab === item.id
+                ? 'bg-[#8A9A5B] text-white border-2 border-[#3E2723]'
+                : 'text-[#3E2723] hover:bg-[#3E2723]/10'
+            }`}
+          >
+            <item.icon size={16} />
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Content area */}
+      <div className="bg-[#F5F5DC] p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]">
         {activeTab === 'profile' && (
           <form onSubmit={handleProfileSubmit} className="space-y-4">
             <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
@@ -299,7 +324,7 @@ const SuperAdminSettings = () => {
           </form>
         )}
       </div>
-    </SettingsLayout>
+    </DashboardLayout>
   );
 };
 

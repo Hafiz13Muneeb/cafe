@@ -1,11 +1,13 @@
 import React, { useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, Zap, Smartphone } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 const Hero = () => {
   const containerRef = useRef(null);
   const { theme } = useTheme();
+  const navigate = useNavigate();
 
   const colors = {
     bg: theme === 'dark' ? '#2c2621' : '#F5F5DC',
@@ -18,6 +20,15 @@ const Hero = () => {
     { name: 'Iced Tea', price: 'Rs.200' },
     { name: 'French Fries', price: 'Rs.300' },
   ], []);
+
+  const handleDemoClick = () => {
+    navigate('/admin');
+  };
+
+  // 🆕 handler for "Blog" button
+  const handleBlogClick = () => {
+    navigate('/blog');
+  };
 
   return (
     <section 
@@ -43,9 +54,19 @@ const Hero = () => {
             No commissions, just pure profit.
           </p>
 
-          <div className="flex gap-4 justify-center lg:justify-start">
-            <button className="px-6 sm:px-8 py-2.5 sm:py-3 bg-[#3E2723] text-white rounded-none shadow-[8px_8px_0px_0px_rgba(138,154,91,1)] hover:shadow-none transition-all text-sm sm:text-base">
+          <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+            <button 
+              onClick={handleDemoClick}
+              className="px-6 sm:px-8 py-2.5 sm:py-3 bg-[#3E2723] text-white rounded-none shadow-[8px_8px_0px_0px_rgba(138,154,91,1)] hover:shadow-none transition-all text-sm sm:text-base"
+            >
               See Demo
+            </button>
+            {/* 🆕 Blog button */}
+            <button 
+              onClick={handleBlogClick}
+              className="px-6 sm:px-8 py-2.5 sm:py-3 bg-white text-[#3E2723] border-2 border-[#3E2723] rounded-none shadow-[8px_8px_0px_0px_#8A9A5B] hover:shadow-none transition-all text-sm sm:text-base font-bold"
+            >
+              Read Blog
             </button>
           </div>
         </div>

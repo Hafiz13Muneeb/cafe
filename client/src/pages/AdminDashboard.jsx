@@ -1,17 +1,18 @@
 // src/pages/AdminDashboard.jsx - Complete menu management with CRUD operations
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom'; // 🆕 added
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { Plus, Menu, Upload, X, Save } from 'lucide-react';
+import { Plus, Menu, Upload, X, Save, QrCode } from 'lucide-react'; // added QrCode
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import TextArea from '../components/common/TextArea';
-import QRCodeDisplay from '../components/owner/QRCodeDisplay';
 import MenuItemTable from '../components/owner/MenuItemTable';
 import DashboardLayout from '../components/layout/DashboardLayout';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate(); // 🆕 for navigation
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -94,7 +95,7 @@ const AdminDashboard = () => {
 
   const handleFormChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
@@ -114,7 +115,7 @@ const AdminDashboard = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim()) {
       setError('Title is required');
       return;
@@ -174,7 +175,7 @@ const AdminDashboard = () => {
 
   const handleDelete = async (itemId) => {
     if (!window.confirm('Are you sure you want to delete this menu item? This action cannot be undone.')) return;
-    
+
     try {
       setLoading(true);
       await api.delete(`/menu/${itemId}`);
@@ -186,6 +187,11 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 🆕 Navigate to QR Code page
+  const goToQRPage = () => {
+    navigate('/admin/qr');
   };
 
   return (
@@ -201,13 +207,23 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      <QRCodeDisplay 
-        cafeName={user?.cafeName} 
-        slug={user?.slug} 
-        qrValue={`${window.location.origin}/menu/${user?.slug}`} 
-      />
+      {/* 🆕 QR Code Banner / Call-to-Action */}
+      <div className="bg-white border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] p-4 sm:p-6 mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-[#3E2723] flex items-center gap-2">
+            <QrCode size={24} className="text-[#8A9A5B]" /> Your QR Code
+          </h2>
+          <p className="text-sm text-[#3E2723]/70">
+            Download or copy your cafe menu QR code to place on tables.
+          </p>
+        </div>
+        <Button variant="primary" onClick={goToQRPage} className="text-sm sm:text-base">
+          <QrCode size={16} className="inline mr-1" /> View QR Code
+        </Button>
+      </div>
 
-      <div className="bg-white border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] overflow-hidden mt-6">
+      {/* Menu Items Table */}
+      <div className="bg-white border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] overflow-hidden">
         <div className="p-3 sm:p-4 border-b-2 border-[#3E2723] flex flex-wrap justify-between items-center gap-3">
           <h2 className="text-base sm:text-lg font-bold text-[#3E2723] flex items-center gap-2">
             <Menu size={20} /> Menu Items ({menuItems.length})
@@ -217,13 +233,12 @@ const AdminDashboard = () => {
           </Button>
         </div>
 
-        {/* Wrapper with horizontal scroll for table on small screens */}
         <div className="overflow-x-auto">
-          <MenuItemTable 
-            items={menuItems} 
-            loading={loading} 
-            onEdit={openEditForm} 
-            onDelete={handleDelete} 
+          <MenuItemTable
+            items={menuItems}
+            loading={loading}
+            onEdit={openEditForm}
+            onDelete={handleDelete}
           />
         </div>
       </div>
@@ -327,7 +342,7 @@ const AdminDashboard = () => {
               <label className="text-sm font-bold text-[#3E2723]">Available:</label>
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, isAvailable: !prev.isAvailable }))}
+                onClick={() => setFormData((prev) => ({ ...prev, isAvailable: !prev.isAvailable }))}
                 className={`relative w-12 h-6 rounded-full transition-colors ${
                   formData.isAvailable ? 'bg-[#8A9A5B]' : 'bg-gray-300'
                 }`}

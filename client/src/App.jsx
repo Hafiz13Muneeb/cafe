@@ -11,6 +11,20 @@ import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import SuperAdminSettings from './pages/SuperAdminSettings';
 import OwnerSettings from './pages/OwnerSettings';
 import SuperAdminCafeDetails from './pages/SuperAdminCafeDetails';
+import Blog from './pages/Blog';
+import Contact from './pages/Contact';
+import OwnerAnalytics from './pages/OwnerAnalytics';
+import QRCodePage from './pages/QRCodePage'; // 🆕 import
+import ChatWidget from './components/common/ChatWidget';
+
+const PublicLayout = ({ children }) => {
+  return (
+    <>
+      {children}
+      <ChatWidget />
+    </>
+  );
+};
 
 const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
   const { user, isAuthenticated, isSuperAdmin, loading } = useAuth();
@@ -62,15 +76,40 @@ function App() {
     <Router>
       <FaviconManager>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/menu/:slug" element={<CustomerMenu />} />
+          {/* Public routes with ChatWidget */}
+          <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
+          <Route path="/menu/:slug" element={<PublicLayout><CustomerMenu /></PublicLayout>} />
+          <Route path="/blog" element={<PublicLayout><Blog /></PublicLayout>} />
+          <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
+
+          {/* Login (no ChatWidget) */}
           <Route path="/admin" element={<AdminLogin />} />
 
+          {/* Protected admin routes */}
           <Route
             path="/admin/dashboard"
             element={
               <ProtectedRoute>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/analytics"
+            element={
+              <ProtectedRoute>
+                <OwnerAnalytics />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 🆕 QR Code page */}
+          <Route
+            path="/admin/qr"
+            element={
+              <ProtectedRoute>
+                <QRCodePage />
               </ProtectedRoute>
             }
           />
