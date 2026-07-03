@@ -14,7 +14,8 @@ import SuperAdminCafeDetails from './pages/SuperAdminCafeDetails';
 import Blog from './pages/Blog';
 import Contact from './pages/Contact';
 import OwnerAnalytics from './pages/OwnerAnalytics';
-import QRCodePage from './pages/QRCodePage'; // 🆕 import
+import QRCodePage from './pages/QRCodePage';
+import SubscriptionPage from './pages/SubscriptionPage'; // 🆕 import
 import ChatWidget from './components/common/ChatWidget';
 
 const PublicLayout = ({ children }) => {
@@ -104,12 +105,21 @@ function App() {
             }
           />
 
-          {/* 🆕 QR Code page */}
           <Route
             path="/admin/qr"
             element={
               <ProtectedRoute>
                 <QRCodePage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 🆕 Subscription page */}
+          <Route
+            path="/admin/subscription"
+            element={
+              <ProtectedRoute>
+                <SubscriptionPage />
               </ProtectedRoute>
             }
           />

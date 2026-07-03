@@ -24,7 +24,7 @@ const MenuItemTable = ({ items, loading, onEdit, onDelete }) => {
               </td>
               <td className="px-2 sm:px-4 py-2 font-bold text-[#3E2723] text-xs sm:text-sm truncate max-w-[80px] sm:max-w-none">{item.title}</td>
               <td className="px-2 sm:px-4 py-2 text-[#3E2723] text-xs sm:text-sm truncate max-w-[60px] sm:max-w-none">{item.category}</td>
-              <td className="px-2 sm:px-4 py-2 font-bold text-[#3E2723] text-xs sm:text-sm">Rs. {item.price}</td>
+              <td className="px-2 sm:px-4 py-2 font-bold text-[#3E2723] text-xs sm:text-sm">${item.price}</td>
               <td className="px-2 sm:px-4 py-2">
                 <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 font-bold border-2 border-[#3E2723] text-[10px] sm:text-xs whitespace-nowrap ${
                   item.isAvailable ? 'bg-[#8A9A5B] text-white' : 'bg-red-300'

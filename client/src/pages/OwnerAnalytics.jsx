@@ -22,7 +22,6 @@ const OwnerAnalytics = () => {
   ];
 
   const fetchAnalytics = async () => {
-    // 🆕 If no user, stop loading and return
     if (!user?._id) {
       setLoading(false);
       return;
@@ -51,7 +50,7 @@ const OwnerAnalytics = () => {
 
   useEffect(() => {
     fetchAnalytics();
-  }, [period, user]); // will re-run when user becomes available
+  }, [period, user]);
 
   const prepareChartData = () => {
     if (!analytics || !analytics.charts) return null;
@@ -127,7 +126,7 @@ const OwnerAnalytics = () => {
               icon={DollarSign}
               label="Revenue"
               value={analytics.summary.totalRevenue || 0}
-              prefix="Rs. "
+              prefix="$"
             />
             <StatCard
               icon={TrendingDown}
@@ -175,7 +174,7 @@ const OwnerAnalytics = () => {
                   <LineChart
                     labels={chartData.labels}
                     data={chartData.revenueData}
-                    label="Revenue (Rs.)"
+                    label="Revenue ($)"
                     color="#3b82f6"
                     height={200}
                   />

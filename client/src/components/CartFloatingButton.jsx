@@ -23,7 +23,7 @@ const CartFloatingButton = ({ totalItems, totalPrice, onClick }) => {
       </div>
       <span className="font-medium hidden xs:inline">View Cart</span>
       <span className="text-sm opacity-90 hidden xs:inline">•</span>
-      <span className="font-semibold">Rs. {totalPrice}</span>
+      <span className="font-semibold">${totalPrice}</span>
     </button>
   );
 };

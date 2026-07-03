@@ -1,3 +1,4 @@
+// models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -81,6 +82,45 @@ const UserSchema = new mongoose.Schema(
         default: 'light',
       },
     },
+
+    // ----------------------------------------------------
+    // 🆕 Subscription & Payment (Lemon Squeezy)
+    // ----------------------------------------------------
+    subscription: {
+      plan: {
+        type: String,
+        enum: ['free', 'pro', 'premium'],
+        default: 'free',
+      },
+      status: {
+        type: String,
+        enum: ['active', 'cancelled', 'expired', 'past_due'],
+        default: 'active',
+      },
+      // Lemon Squeezy customer ID (for webhook mapping)
+      lemonSqueezyId: {
+        type: String,
+        unique: true,
+        sparse: true,
+      },
+      // The variant ID (product) the user subscribed to
+      variantId: {
+        type: Number,
+      },
+      // When the current subscription period ends
+      currentPeriodEnd: {
+        type: Date,
+      },
+      // If cancellation is scheduled at period end
+      cancelAtPeriodEnd: {
+        type: Boolean,
+        default: false,
+      },
+      // Trial end date (if applicable)
+      trialEndsAt: {
+        type: Date,
+      },
+    },
   },
   {
     timestamps: true,
@@ -90,9 +130,9 @@ const UserSchema = new mongoose.Schema(
 // ------------------------------------------------
 // Indexes for performance
 // ------------------------------------------------
-// Only keep the compound index for role + isBlocked.
-// The unique fields (username, email, slug) are already indexed automatically.
 UserSchema.index({ role: 1, isBlocked: 1 });
+// 🆕 Index for subscription queries (e.g., find all active subscribers)
+UserSchema.index({ 'subscription.status': 1, 'subscription.plan': 1 });
 
 // ------------------------------------------------
 // Pre-save: hash password and auto-generate slug
@@ -114,7 +154,6 @@ UserSchema.pre('save', async function (next) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
-    // This will be set as base; uniqueness will be handled in the controller
     this.slug = baseSlug;
   }
 

@@ -1,7 +1,7 @@
 // src/components/layout/Sidebar.jsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Menu, Users, Settings, BarChart3, QrCode } from 'lucide-react'; // added QrCode
+import { Menu, Users, Settings, BarChart3, QrCode, CreditCard } from 'lucide-react';
 
 const Sidebar = ({ user }) => {
   const isSuperAdmin = user?.role === 'superadmin';
@@ -14,14 +14,16 @@ const Sidebar = ({ user }) => {
     : [
         { to: '/admin/dashboard', label: 'Menu', icon: Menu },
         { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-        { to: '/admin/qr', label: 'QR Code', icon: QrCode }, // 🆕 QR Code link
+        { to: '/admin/qr', label: 'QR Code', icon: QrCode },
+        { to: '/admin/subscription', label: 'Subscription', icon: CreditCard }, // 🆕
         { to: '/admin/dashboard/settings', label: 'Settings', icon: Settings },
       ];
 
   return (
     <nav className="p-2 sm:p-4 space-y-1 sm:space-y-2">
       {navItems.map((item) => {
-        const shouldEnd = item.to === '/admin/dashboard' || item.to === '/admin/qr';
+        // For pages that should not highlight sub‑routes, set `end` to true
+        const shouldEnd = ['/admin/dashboard', '/admin/qr', '/admin/subscription'].includes(item.to);
         return (
           <NavLink
             key={item.to}

@@ -5,7 +5,7 @@ import { useCart } from '../context/CartContext';
 import api from '../api/axios';
 
 const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slug }) => {
-  const { cart, addToCart, removeFromCart, clearCart, getTotalItems, getTotalPrice, formatPrice, getOrderText } = useCart();
+  const { cart, addToCart, removeFromCart, clearCart, getTotalItems, getTotalPrice, getOrderText } = useCart();
   const [selectedTable, setSelectedTable] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,7 +111,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
                   {item.title}
                 </h4>
                 <p className="text-sm font-semibold" style={{ color: 'var(--primary-color)' }}>
-                  {formatPrice(item.price)}
+                  ${item.price}
                 </p>
               </div>
               <div className="flex items-center gap-1 sm:gap-2">
@@ -186,7 +186,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
           <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
             <span style={{ color: 'var(--text-secondary, #64748b)' }}>Total:</span>
             <span className="text-lg font-bold" style={{ color: 'var(--primary-color)' }}>
-              {formatPrice(getTotalPrice())}
+              ${getTotalPrice()}
             </span>
           </div>
 

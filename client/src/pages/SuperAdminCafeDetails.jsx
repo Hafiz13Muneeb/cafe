@@ -255,7 +255,7 @@ const SuperAdminCafeDetails = () => {
               icon={DollarSign}
               label="Revenue"
               value={analytics.summary.totalRevenue}
-              prefix="Rs. "
+              prefix="$"
             />
             <StatCard
               icon={TrendingDown}
@@ -292,7 +292,7 @@ const SuperAdminCafeDetails = () => {
                 <LineChart
                   labels={chartData.labels}
                   data={chartData.revenueData}
-                  label="Revenue (Rs.)"
+                  label="Revenue ($)"
                   color="#3b82f6"
                   height={200}
                 />

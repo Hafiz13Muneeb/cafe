@@ -7,18 +7,18 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
-const cookieParser = require('cookie-parser'); // 🆕 added
+const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const { errorHandler } = require('./utils/errorHandler');
 const User = require('./models/User');
 const mongoose = require('mongoose');
 
-// Load .env from parent directory if not found in current
+// Load .env
 const envPath = path.resolve(__dirname, '../.env');
 if (require('fs').existsSync(envPath)) {
   dotenv.config({ path: envPath });
 } else {
-  dotenv.config(); // fallback to current dir
+  dotenv.config();
 }
 
 const app = express();
@@ -33,8 +33,6 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-        // Add other directives if needed, e.g., scriptSrc, styleSrc, etc.
-        // For simplicity, we keep the default for others.
       },
     },
   })
@@ -48,7 +46,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(morgan('dev'));
 }
 
-// Rate limiting
+// Rate limiting (global)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: process.env.RATE_LIMIT_MAX || 100,
@@ -58,19 +56,29 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-// Body parsers
+// 🆕 WEBHOOK MUST BE RAW BEFORE JSON PARSER
+const { webhookHandler } = require('./controllers/paymentController');
+app.post(
+  '/api/payments/webhooks/lemon-squeezy',
+  express.raw({ type: 'application/json' }),
+  webhookHandler
+);
+
+// ----------------------------
+// 2. Body parsers (JSON & URL‑encoded)
+// ----------------------------
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// 🆕 Cookie parser (for reading/writing httpOnly cookies)
+// Cookie parser
 app.use(cookieParser());
 
-// CORS configuration – allow credentials
+// CORS configuration
 const allowedOrigins = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(
   cors({
     origin: allowedOrigins,
-    credentials: true, // required for cookies
+    credentials: true,
   })
 );
 
@@ -84,13 +92,15 @@ const cacheControl = (req, res, next) => {
 app.use(cacheControl);
 
 // ----------------------------
-// 2. Routes
+// 3. Routes
 // ----------------------------
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/menu', require('./routes/menuRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
+// 🆕 Payment routes (excluding webhook, which was registered separately)
+app.use('/api/payments', require('./routes/paymentRoutes'));
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -106,14 +116,14 @@ app.get('/api/health', async (req, res) => {
 });
 
 // ----------------------------
-// 3. Favicon handler
+// 4. Favicon handler
 // ----------------------------
 app.get('/favicon.ico', (req, res) => {
   res.status(204).end();
 });
 
 // ----------------------------
-// 4. Serve Frontend (Production)
+// 5. Serve Frontend (Production)
 // ----------------------------
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../client/dist');
@@ -126,12 +136,12 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // ----------------------------
-// 5. Error Handler
+// 6. Error Handler
 // ----------------------------
 app.use(errorHandler);
 
 // ----------------------------
-// 6. Start Server
+// 7. Start Server
 // ----------------------------
 const startServer = async () => {
   try {
