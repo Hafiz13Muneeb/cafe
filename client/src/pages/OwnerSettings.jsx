@@ -18,6 +18,7 @@ const OwnerSettings = () => {
   const [cafeName, setCafeName] = useState(user?.cafeName || '');
   const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || '');
   const [tables, setTables] = useState((user?.tables || []).join(', '));
+  const [currency, setCurrency] = useState(user?.currency || 'Rs'); // ✅ NEW currency state
 
   const [primaryColor, setPrimaryColor] = useState(user?.theme?.primaryColor || '#d4a843');
   const [secondaryColor, setSecondaryColor] = useState(user?.theme?.secondaryColor || '#b8860b');
@@ -46,6 +47,7 @@ const OwnerSettings = () => {
           setTables((data.tables || []).join(', '));
           setLogoPreview(data.logoUrl || '');
           setFaviconPreview(data.faviconUrl || '');
+          setCurrency(data.currency || 'Rs'); // ✅ set currency from API
         }
       } catch (err) {
         console.error('Failed to fetch settings:', err);
@@ -59,6 +61,9 @@ const OwnerSettings = () => {
       setPrimaryColor(user.theme.primaryColor || '#d4a843');
       setSecondaryColor(user.theme.secondaryColor || '#b8860b');
       setMode(user.theme.mode || 'light');
+    }
+    if (user?.currency) {
+      setCurrency(user.currency);
     }
   }, [user]);
 
@@ -78,10 +83,24 @@ const OwnerSettings = () => {
         return;
       }
 
+      // Validate currency: non-empty, max 10 characters
+      const trimmedCurrency = currency.trim();
+      if (!trimmedCurrency || trimmedCurrency.length === 0) {
+        setMessage({ text: 'Currency symbol cannot be empty.', type: 'error' });
+        setLoading(false);
+        return;
+      }
+      if (trimmedCurrency.length > 10) {
+        setMessage({ text: 'Currency symbol must be 10 characters or less.', type: 'error' });
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         cafeName,
         whatsappNumber,
         tables: trimmedTables,
+        currency: trimmedCurrency, // ✅ include currency
         primaryColor,
         secondaryColor,
         mode,
@@ -92,6 +111,7 @@ const OwnerSettings = () => {
           cafeName,
           whatsappNumber,
           tables: trimmedTables,
+          currency: trimmedCurrency,
           theme: { primaryColor, secondaryColor, mode },
         };
         updateUserData(updatedData);
@@ -229,6 +249,17 @@ const OwnerSettings = () => {
               placeholder="1, 2, 3, 4, 5 (comma separated)"
               required
               aria-label="Table numbers or names"
+            />
+
+            {/* ✅ NEW Currency Input */}
+            <Input
+              label="Currency Symbol"
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              placeholder="e.g. Rs, $, €"
+              required
+              aria-label="Currency symbol"
+              helpText="This currency will be used for displaying prices on your public menu."
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

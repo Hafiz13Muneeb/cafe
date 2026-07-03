@@ -31,6 +31,10 @@ const fetchOwnerNotes = async (ownerId) => {
 
 /**
  * Process an array of promises with a concurrency limit
+ * 🔧 Reduced from 5 to 2 to be gentler on the server when 500+ owners exist.
+ * 🚀 For production with many owners, consider a backend endpoint that
+ *    returns owners with pre‑aggregated activeReminders (e.g., /users/owners?includeReminderCount=true)
+ *    to eliminate these per‑owner requests entirely.
  */
 const promiseAllWithLimit = async (tasks, limit) => {
   const results = [];
@@ -110,11 +114,12 @@ const SuperAdminDashboard = () => {
             activeReminders: reminderCache.current[owner._id] ?? 0,
           }));
         } else {
-          // Fetch notes for each owner with concurrency limit (5 at a time)
+          // Fetch notes for each owner with a lower concurrency limit (2)
+          // to avoid overwhelming the server when many owners exist.
           const noteTasks = ownersData.map(
             (owner) => () => fetchOwnerNotes(owner._id)
           );
-          const noteResults = await promiseAllWithLimit(noteTasks, 5);
+          const noteResults = await promiseAllWithLimit(noteTasks, 2); // 🔧 reduced from 5
 
           // Build map of ownerId -> activeReminders
           const reminderMap = {};

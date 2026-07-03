@@ -147,6 +147,7 @@ const webhookHandler = async (req, res, next) => {
     try {
       const { data } = event;
       const customerId = data?.attributes?.customer_id?.toString();
+      const subscriptionId = data?.id?.toString();
       const variantId = data?.attributes?.variant_id;
       const status = data?.attributes?.status;
       const endsAt = data?.attributes?.ends_at;
@@ -167,17 +168,18 @@ const webhookHandler = async (req, res, next) => {
         else if (status === 'cancelled') ourStatus = 'cancelled';
         else if (status === 'past_due') ourStatus = 'past_due';
 
+        // ✅ Determine plan: if variant matches the single variant ID, set to 'paid'
+        const singleVariantId = parseInt(process.env.LEMON_SQUEEZY_VARIANT_ID);
         let plan = 'free';
-        const proVariantId = parseInt(process.env.LEMON_SQUEEZY_PRO_VARIANT_ID);
-        const premiumVariantId = parseInt(process.env.LEMON_SQUEEZY_PREMIUM_VARIANT_ID);
-
-        if (variantId === proVariantId) plan = 'pro';
-        else if (variantId === premiumVariantId) plan = 'premium';
+        if (variantId === singleVariantId) {
+          plan = 'paid';
+        }
 
         user.subscription = {
           plan,
           status: ourStatus,
           lemonSqueezyId: customerId,
+          lemonSqueezySubscriptionId: subscriptionId,
           variantId: variantId,
           currentPeriodEnd: endsAt ? new Date(endsAt) : undefined,
           cancelAtPeriodEnd: status === 'cancelled',
@@ -257,13 +259,13 @@ const cancelSubscription = async (req, res, next) => {
       throw new Error('User not found');
     }
 
-    if (!user.subscription?.lemonSqueezyId || user.subscription?.status !== 'active') {
+    if (!user.subscription?.lemonSqueezySubscriptionId || user.subscription?.status !== 'active') {
       res.status(400);
       throw new Error('No active subscription to cancel');
     }
 
-    const customerId = user.subscription.lemonSqueezyId;
-    const apiUrl = `https://api.lemonsqueezy.com/v1/customers/${customerId}/subscriptions`;
+    const subscriptionId = user.subscription.lemonSqueezySubscriptionId;
+    const apiUrl = `https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`;
 
     const response = await fetch(apiUrl, {
       method: 'PATCH',
@@ -275,6 +277,7 @@ const cancelSubscription = async (req, res, next) => {
       body: JSON.stringify({
         data: {
           type: 'subscriptions',
+          id: subscriptionId,
           attributes: {
             cancel_at_period_end: true,
           },
@@ -314,13 +317,13 @@ const resumeSubscription = async (req, res, next) => {
       throw new Error('User not found');
     }
 
-    if (!user.subscription?.lemonSqueezyId) {
+    if (!user.subscription?.lemonSqueezySubscriptionId) {
       res.status(400);
       throw new Error('No subscription found');
     }
 
-    const customerId = user.subscription.lemonSqueezyId;
-    const apiUrl = `https://api.lemonsqueezy.com/v1/customers/${customerId}/subscriptions`;
+    const subscriptionId = user.subscription.lemonSqueezySubscriptionId;
+    const apiUrl = `https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`;
 
     const response = await fetch(apiUrl, {
       method: 'PATCH',
@@ -332,6 +335,7 @@ const resumeSubscription = async (req, res, next) => {
       body: JSON.stringify({
         data: {
           type: 'subscriptions',
+          id: subscriptionId,
           attributes: {
             cancel_at_period_end: false,
           },

@@ -82,6 +82,12 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
       alert('Title and content are required');
       return;
     }
+    // ✅ Validation: if reminder is active, a date must be provided
+    if (addFormData.isReminderActive && !addFormData.reminderDate) {
+      alert('Please select a reminder date and time when the reminder is active.');
+      return;
+    }
+
     setAddLoading(true);
     try {
       await onAdd({
@@ -89,7 +95,8 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
         title: addFormData.title.trim(),
         content: addFormData.content.trim(),
         reminderDate: addFormData.reminderDate || null,
-        isReminderActive: !!addFormData.reminderDate,
+        // ✅ Fix: use the checkbox value directly
+        isReminderActive: addFormData.isReminderActive,
       });
       setIsAddModalOpen(false);
     } catch (err) {
@@ -106,13 +113,20 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
       alert('Title and content are required');
       return;
     }
+    // ✅ Validation: if reminder is active, a date must be provided
+    if (editFormData.isReminderActive && !editFormData.reminderDate) {
+      alert('Please select a reminder date and time when the reminder is active.');
+      return;
+    }
+
     setEditLoading(true);
     try {
       await onEdit(editingNote._id, {
         title: editFormData.title.trim(),
         content: editFormData.content.trim(),
         reminderDate: editFormData.reminderDate || null,
-        isReminderActive: !!editFormData.reminderDate,
+        // ✅ Fix: use the checkbox value directly
+        isReminderActive: editFormData.isReminderActive,
       });
       setIsEditModalOpen(false);
     } catch (err) {

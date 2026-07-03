@@ -4,7 +4,7 @@ import { X, Minus, Plus, Trash2, Send } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import api from '../api/axios';
 
-const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slug }) => {
+const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slug, currency = 'Rs' }) => {
   const { cart, addToCart, removeFromCart, clearCart, getTotalItems, getTotalPrice, getOrderText } = useCart();
   const [selectedTable, setSelectedTable] = useState('');
   const [error, setError] = useState('');
@@ -14,6 +14,24 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
 
   const getSessionId = () => {
     return sessionStorage.getItem('analyticsSessionId') || '';
+  };
+
+  // ✅ Local function to generate order text with the provided currency
+  const getOrderTextWithCurrency = (tableNumber, cafeName) => {
+    if (cart.length === 0) return '';
+
+    let text = `New Order - ${cafeName || 'Cafe'}\n`;
+    text += `Table: ${tableNumber}\n`;
+    text += `---\n`;
+
+    cart.forEach((item) => {
+      text += `${item.quantity}x ${item.title} - ${currency}${item.price}\n`;
+    });
+
+    text += `---\n`;
+    text += `Total: ${currency}${getTotalPrice()}`;
+
+    return encodeURIComponent(text);
   };
 
   const handlePlaceOrder = async () => {
@@ -43,7 +61,8 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
         }
       }
 
-      const orderText = getOrderText(selectedTable, cafeName);
+      // ✅ Use the local function with currency
+      const orderText = getOrderTextWithCurrency(selectedTable, cafeName);
       const url = `https://wa.me/${whatsappNumber}?text=${orderText}`;
       window.open(url, '_blank');
 
@@ -111,7 +130,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
                   {item.title}
                 </h4>
                 <p className="text-sm font-semibold" style={{ color: 'var(--primary-color)' }}>
-                  ${item.price}
+                  {currency}{item.price}
                 </p>
               </div>
               <div className="flex items-center gap-1 sm:gap-2">
@@ -186,7 +205,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
           <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
             <span style={{ color: 'var(--text-secondary, #64748b)' }}>Total:</span>
             <span className="text-lg font-bold" style={{ color: 'var(--primary-color)' }}>
-              ${getTotalPrice()}
+              {currency}{getTotalPrice()}
             </span>
           </div>
 

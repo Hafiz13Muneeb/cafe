@@ -42,7 +42,7 @@ const generateUniqueSlug = async (baseSlug, excludeId) => {
 const getSettings = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select(
-      'cafeName whatsappNumber logoUrl faviconUrl tables slug'
+      'cafeName whatsappNumber logoUrl faviconUrl tables slug currency' // ✅ added currency
     );
     if (!user) {
       res.status(404);
@@ -58,6 +58,7 @@ const getSettings = async (req, res, next) => {
         faviconUrl: user.faviconUrl || '',
         tables: user.tables || [],
         slug: user.slug || '',
+        currency: user.currency || 'Rs', // ✅ include currency
       },
     });
   } catch (error) {
@@ -65,12 +66,12 @@ const getSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Update the logged-in owner's settings (cafeName, whatsapp, tables, logo, favicon, slug)
+// @desc    Update the logged-in owner's settings (cafeName, whatsapp, tables, logo, favicon, slug, currency)
 // @route   PUT /api/settings
 // @access  Private (Owner)
 const updateSettings = async (req, res, next) => {
   try {
-    const { cafeName, whatsappNumber, tables, slug } = req.body;
+    const { cafeName, whatsappNumber, tables, slug, currency } = req.body; // ✅ added currency
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -173,6 +174,23 @@ const updateSettings = async (req, res, next) => {
       changes.tables = tableArray;
     }
 
+    // ✅ Update currency
+    if (currency !== undefined) {
+      const trimmed = currency.trim();
+      if (!trimmed || trimmed.length === 0) {
+        res.status(400);
+        throw new Error('Currency symbol cannot be empty');
+      }
+      if (trimmed.length > 10) {
+        res.status(400);
+        throw new Error('Currency symbol must be 10 characters or less');
+      }
+      if (trimmed !== user.currency) {
+        user.currency = trimmed;
+        changes.currency = trimmed;
+      }
+    }
+
     // --- Handle logo upload with rollback ---
     if (req.files) {
       // Logo
@@ -240,6 +258,7 @@ const updateSettings = async (req, res, next) => {
       logoUrl: user.logoUrl || '',
       faviconUrl: user.faviconUrl || '',
       tables: user.tables || [],
+      currency: user.currency || 'Rs', // ✅ include currency
     };
 
     // Add warning if slug changed without explicit request
@@ -257,10 +276,10 @@ const updateSettings = async (req, res, next) => {
 };
 
 // ============================================================
-// GLOBAL SETTINGS (App-wide theme)
+// GLOBAL SETTINGS (App-wide theme + pricing)
 // ============================================================
 
-// @desc    Get global app settings (theme + favicon)
+// @desc    Get global app settings (theme + favicon + pricing)
 // @route   GET /api/settings/global
 // @access  Public (anyone can read)
 const getGlobalSettings = async (req, res, next) => {
@@ -275,12 +294,12 @@ const getGlobalSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Update global app settings (SuperAdmin only) – JSON only (colors, mode)
+// @desc    Update global app settings (SuperAdmin only) – JSON only (colors, mode, pricing)
 // @route   PUT /api/settings/global
 // @access  Private (SuperAdmin)
 const updateGlobalSettings = async (req, res, next) => {
   try {
-    const { primaryColor, secondaryColor, mode } = req.body;
+    const { primaryColor, secondaryColor, mode, monthlyPrice, trialPeriodDays } = req.body;
 
     const settings = await AppSettings.getSingleton();
 
@@ -306,6 +325,23 @@ const updateGlobalSettings = async (req, res, next) => {
         throw new Error('Mode must be either "light" or "dark"');
       }
       settings.mode = mode;
+    }
+
+    // ✅ Update pricing (superadmin only)
+    if (monthlyPrice !== undefined) {
+      if (typeof monthlyPrice !== 'number' || monthlyPrice < 0) {
+        res.status(400);
+        throw new Error('Monthly price must be a positive number');
+      }
+      settings.monthlyPrice = monthlyPrice;
+    }
+
+    if (trialPeriodDays !== undefined) {
+      if (typeof trialPeriodDays !== 'number' || trialPeriodDays < 0) {
+        res.status(400);
+        throw new Error('Trial period days must be a positive number');
+      }
+      settings.trialPeriodDays = trialPeriodDays;
     }
 
     await settings.save();
@@ -367,10 +403,79 @@ const updateGlobalFavicon = async (req, res, next) => {
   }
 };
 
+// ============================================================
+// PUBLIC PRICING ENDPOINT (no auth required)
+// ============================================================
+
+// @desc    Get current pricing (monthly price & trial days)
+// @route   GET /api/settings/pricing
+// @access  Public
+const getPricing = async (req, res, next) => {
+  try {
+    const settings = await AppSettings.getSingleton();
+    res.status(200).json({
+      success: true,
+      data: {
+        monthlyPrice: settings.monthlyPrice || 39,
+        trialPeriodDays: settings.trialPeriodDays || 30,
+        currency: 'USD',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================
+// UPDATE PRICING (SuperAdmin only)
+// ============================================================
+
+// @desc    Update monthly price (SuperAdmin only)
+// @route   PUT /api/settings/pricing
+// @access  Private (SuperAdmin)
+const updatePricing = async (req, res, next) => {
+  try {
+    const { monthlyPrice, trialPeriodDays } = req.body;
+
+    const settings = await AppSettings.getSingleton();
+
+    if (monthlyPrice !== undefined) {
+      if (typeof monthlyPrice !== 'number' || monthlyPrice < 0) {
+        res.status(400);
+        throw new Error('Monthly price must be a positive number');
+      }
+      settings.monthlyPrice = monthlyPrice;
+    }
+
+    if (trialPeriodDays !== undefined) {
+      if (typeof trialPeriodDays !== 'number' || trialPeriodDays < 0) {
+        res.status(400);
+        throw new Error('Trial period days must be a positive number');
+      }
+      settings.trialPeriodDays = trialPeriodDays;
+    }
+
+    await settings.save();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        monthlyPrice: settings.monthlyPrice,
+        trialPeriodDays: settings.trialPeriodDays,
+        currency: 'USD',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getSettings,
   updateSettings,
   getGlobalSettings,
   updateGlobalSettings,
   updateGlobalFavicon,
+  getPricing,
+  updatePricing,
 };

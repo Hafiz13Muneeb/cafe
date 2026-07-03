@@ -12,20 +12,21 @@ const presetPalettes = [
 ];
 
 const ThemeCustomizationPanel = ({ onThemeChange }) => {
-  const { admin } = useAuth();
-  const [primaryColor, setPrimaryColor] = useState(admin?.theme?.primaryColor || '#d4a843');
-  const [secondaryColor, setSecondaryColor] = useState(admin?.theme?.secondaryColor || '#b8860b');
-  const [mode, setMode] = useState(admin?.theme?.mode || 'light');
+  // ✅ FIX: use 'user' instead of 'admin'
+  const { user } = useAuth();
+  const [primaryColor, setPrimaryColor] = useState(user?.theme?.primaryColor || '#d4a843');
+  const [secondaryColor, setSecondaryColor] = useState(user?.theme?.secondaryColor || '#b8860b');
+  const [mode, setMode] = useState(user?.theme?.mode || 'light');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    if (admin?.theme) {
-      setPrimaryColor(admin.theme.primaryColor || '#d4a843');
-      setSecondaryColor(admin.theme.secondaryColor || '#b8860b');
-      setMode(admin.theme.mode || 'light');
+    if (user?.theme) {
+      setPrimaryColor(user.theme.primaryColor || '#d4a843');
+      setSecondaryColor(user.theme.secondaryColor || '#b8860b');
+      setMode(user.theme.mode || 'light');
     }
-  }, [admin]);
+  }, [user]);
 
   const handlePresetClick = (preset) => {
     setPrimaryColor(preset.primary);

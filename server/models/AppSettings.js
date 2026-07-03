@@ -21,6 +21,18 @@ const AppSettingsSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    // ✅ NEW: Single monthly subscription price (in USD)
+    monthlyPrice: {
+      type: Number,
+      default: 39,
+      min: [0, 'Price must be a positive number'],
+    },
+    // ✅ NEW: Trial period in days (for frontend display; actual trial is set on Lemon Squeezy variant)
+    trialPeriodDays: {
+      type: Number,
+      default: 30,
+      min: [0, 'Trial period must be a positive number'],
+    },
   },
   {
     timestamps: true,

@@ -2,7 +2,7 @@
 import React from 'react';
 import { ShoppingCart } from 'lucide-react';
 
-const CartFloatingButton = ({ totalItems, totalPrice, onClick }) => {
+const CartFloatingButton = ({ totalItems, totalPrice, onClick, currency = 'Rs' }) => {
   return (
     <button
       onClick={onClick}
@@ -23,7 +23,7 @@ const CartFloatingButton = ({ totalItems, totalPrice, onClick }) => {
       </div>
       <span className="font-medium hidden xs:inline">View Cart</span>
       <span className="text-sm opacity-90 hidden xs:inline">•</span>
-      <span className="font-semibold">${totalPrice}</span>
+      <span className="font-semibold">{currency}{totalPrice}</span>
     </button>
   );
 };

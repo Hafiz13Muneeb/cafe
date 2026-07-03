@@ -4,44 +4,31 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/common/Button';
-import { Check, Crown, Star, Zap, AlertCircle, Loader2 } from 'lucide-react';
+import { Check, Crown, AlertCircle, Loader2 } from 'lucide-react';
 
 const SubscriptionPage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [subscription, setSubscription] = useState(null);
-  
-  // ✅ Use import.meta.env instead of process.env
-  const PRO_VARIANT_ID = import.meta.env.VITE_LEMON_SQUEEZY_PRO_VARIANT_ID || 12345;
-  const PREMIUM_VARIANT_ID = import.meta.env.VITE_LEMON_SQUEEZY_PREMIUM_VARIANT_ID || 12346;
+  const [pricing, setPricing] = useState({ monthlyPrice: 39, trialPeriodDays: 30, currency: 'USD' });
+  const [pricingLoading, setPricingLoading] = useState(true);
 
-  const [plans] = useState([
-    {
-      id: 'free',
-      name: 'Free',
-      price: 'Rs. 0',
-      description: 'Basic features for small cafes',
-      features: ['Up to 50 menu items', 'Basic QR code', 'WhatsApp orders', 'Standard theme'],
-      variantId: null,
-    },
-    {
-      id: 'pro',
-      name: 'Pro',
-      price: 'Rs. 999/mo',
-      description: 'Perfect for growing cafes',
-      features: ['Up to 200 menu items', 'Premium QR codes', 'Advanced analytics', 'Custom theme colors', 'Priority support'],
-      variantId: PRO_VARIANT_ID,
-      popular: true,
-    },
-    {
-      id: 'premium',
-      name: 'Premium',
-      price: 'Rs. 1,999/mo',
-      description: 'For high-volume cafes',
-      features: ['Unlimited menu items', 'Multiple QR codes', 'Full analytics dashboard', 'White-label branding', 'Dedicated support', 'Early access to new features'],
-      variantId: PREMIUM_VARIANT_ID,
-    },
-  ]);
+  // Fetch pricing from backend
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const res = await api.get('/settings/pricing');
+        if (res.data.success) {
+          setPricing(res.data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch pricing:', err);
+      } finally {
+        setPricingLoading(false);
+      }
+    };
+    fetchPricing();
+  }, []);
 
   const fetchSubscription = async () => {
     try {
@@ -58,13 +45,17 @@ const SubscriptionPage = () => {
     fetchSubscription();
   }, []);
 
-  const handleUpgrade = async (plan) => {
-    if (!plan.variantId) return;
+  const handleUpgrade = async () => {
+    const variantId = import.meta.env.VITE_LEMON_SQUEEZY_VARIANT_ID;
+    if (!variantId) {
+      alert('Payment configuration is incomplete. Please contact support.');
+      return;
+    }
 
     setLoading(true);
     try {
       const res = await api.post('/payments/create-checkout', {
-        variantId: plan.variantId,
+        variantId: variantId,
         returnUrl: `${window.location.origin}/admin/dashboard`,
       });
 
@@ -117,8 +108,8 @@ const SubscriptionPage = () => {
 
   const isActive = subscription?.status === 'active';
   const isCancelled = subscription?.status === 'cancelled';
-  const planName = subscription?.plan || 'free';
-  const currentPlan = plans.find(p => p.id === planName);
+  const isPaid = subscription?.plan === 'paid';
+  const isTrial = subscription?.trialEndsAt && new Date(subscription.trialEndsAt) > new Date();
 
   return (
     <DashboardLayout title="Subscription" subtitle="Manage Your Plan">
@@ -128,18 +119,28 @@ const SubscriptionPage = () => {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <span className="text-2xl font-bold font-['Permanent_Marker'] text-[#8A9A5B] capitalize">
-              {planName}
+              {isPaid ? 'Paid' : 'Free'}
             </span>
             <span className="ml-2 inline-block px-2 py-0.5 text-xs font-bold bg-[#EAE0C8] border border-[#3E2723] capitalize">
               {subscription?.status || 'active'}
             </span>
+            {isTrial && (
+              <span className="ml-2 inline-block px-2 py-0.5 text-xs font-bold bg-green-500 text-white border border-[#3E2723]">
+                Trial
+              </span>
+            )}
             {subscription?.currentPeriodEnd && (
               <p className="text-sm text-[#3E2723]/60 mt-1">
                 Next billing date: {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
               </p>
             )}
+            {subscription?.trialEndsAt && (
+              <p className="text-sm text-[#3E2723]/60 mt-1">
+                Trial ends: {new Date(subscription.trialEndsAt).toLocaleDateString()}
+              </p>
+            )}
           </div>
-          {isActive && (
+          {isActive && isPaid && (
             <div className="flex gap-2">
               {!subscription?.cancelAtPeriodEnd ? (
                 <Button variant="secondary" onClick={handleCancel} disabled={loading}>
@@ -160,90 +161,81 @@ const SubscriptionPage = () => {
         </div>
       </div>
 
-      {/* Plan Selection */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        {plans.map((plan) => {
-          const isCurrentPlan = plan.id === planName;
-          const isPopular = plan.popular;
+      {/* Single Plan Card */}
+      <div className="bg-white border-4 border-[#3E2723] p-6 sm:p-8 shadow-[8px_8px_0px_0px_#8A9A5B] max-w-md mx-auto">
+        <div className="text-center">
+          <Crown size={48} className="mx-auto text-[#8A9A5B] mb-3" />
+          <h2 className="text-2xl font-bold font-['Permanent_Marker'] text-[#3E2723]">
+            {pricingLoading ? 'Loading...' : `$${pricing.monthlyPrice}/month`}
+          </h2>
+          <p className="text-sm text-[#3E2723]/70 mt-1">
+            {pricingLoading ? '' : `${pricing.trialPeriodDays}-day free trial`}
+          </p>
+        </div>
 
-          return (
-            <div
-              key={plan.id}
-              className={`
-                bg-white border-4 border-[#3E2723] p-4 sm:p-6 relative
-                ${isCurrentPlan ? 'shadow-[8px_8px_0px_0px_#8A9A5B]' : 'shadow-[4px_4px_0px_0px_#EAE0C8]'}
-                ${isPopular ? 'border-[#8A9A5B]' : ''}
-              `}
-            >
-              {isPopular && (
-                <span className="absolute -top-3 right-4 px-3 py-0.5 bg-[#8A9A5B] text-white text-xs font-bold border-2 border-[#3E2723]">
-                  Popular
-                </span>
-              )}
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xl font-bold font-['Permanent_Marker'] text-[#3E2723]">
-                  {plan.name}
-                </h3>
-                {isCurrentPlan && (
-                  <span className="px-2 py-0.5 text-xs font-bold bg-[#8A9A5B] text-white border-2 border-[#3E2723]">
-                    Current
-                  </span>
-                )}
-              </div>
-              <p className="text-2xl font-bold text-[#3E2723]">{plan.price}</p>
-              <p className="text-sm text-[#3E2723]/70 mt-1">{plan.description}</p>
-              <ul className="mt-4 space-y-1.5">
-                {plan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-sm text-[#3E2723]/80">
-                    <Check size={16} className="text-[#8A9A5B] mt-0.5 flex-shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-4">
-                {plan.id === 'free' ? (
-                  <div className="w-full py-2 text-center text-sm font-bold text-[#3E2723]/50 bg-[#EAE0C8] border-2 border-[#3E2723]">
-                    {isCurrentPlan ? 'Current Plan' : 'Free'}
-                  </div>
-                ) : isCurrentPlan ? (
-                  <div className="w-full py-2 text-center text-sm font-bold text-white bg-[#8A9A5B] border-2 border-[#3E2723]">
-                    Active
-                  </div>
-                ) : (
-                  <Button
-                    variant="primary"
-                    onClick={() => handleUpgrade(plan)}
-                    disabled={loading}
-                    className="w-full justify-center text-sm"
-                  >
-                    {loading ? (
-                      <Loader2 size={16} className="animate-spin mr-1" />
-                    ) : (
-                      `Upgrade to ${plan.name}`
-                    )}
-                  </Button>
-                )}
-              </div>
+        <ul className="mt-6 space-y-3">
+          <li className="flex items-start gap-3 text-sm text-[#3E2723]/80">
+            <Check size={18} className="text-[#8A9A5B] mt-0.5 flex-shrink-0" />
+            <span>Unlimited menu items</span>
+          </li>
+          <li className="flex items-start gap-3 text-sm text-[#3E2723]/80">
+            <Check size={18} className="text-[#8A9A5B] mt-0.5 flex-shrink-0" />
+            <span>Premium QR codes</span>
+          </li>
+          <li className="flex items-start gap-3 text-sm text-[#3E2723]/80">
+            <Check size={18} className="text-[#8A9A5B] mt-0.5 flex-shrink-0" />
+            <span>Advanced analytics</span>
+          </li>
+          <li className="flex items-start gap-3 text-sm text-[#3E2723]/80">
+            <Check size={18} className="text-[#8A9A5B] mt-0.5 flex-shrink-0" />
+            <span>Custom theme colors</span>
+          </li>
+          <li className="flex items-start gap-3 text-sm text-[#3E2723]/80">
+            <Check size={18} className="text-[#8A9A5B] mt-0.5 flex-shrink-0" />
+            <span>Priority support</span>
+          </li>
+        </ul>
+
+        <div className="mt-6">
+          {isPaid && isActive ? (
+            <div className="w-full py-2 text-center text-sm font-bold text-white bg-[#8A9A5B] border-2 border-[#3E2723]">
+              Active Plan
             </div>
-          );
-        })}
+          ) : (
+            <Button
+              variant="primary"
+              onClick={handleUpgrade}
+              disabled={loading || !import.meta.env.VITE_LEMON_SQUEEZY_VARIANT_ID}
+              className="w-full justify-center"
+            >
+              {loading ? (
+                <Loader2 size={16} className="animate-spin mr-1" />
+              ) : !import.meta.env.VITE_LEMON_SQUEEZY_VARIANT_ID ? (
+                'Unavailable'
+              ) : (
+                'Start Free Trial'
+              )}
+            </Button>
+          )}
+          {!import.meta.env.VITE_LEMON_SQUEEZY_VARIANT_ID && (
+            <p className="text-xs text-red-500 mt-2 text-center">
+              ⚠️ Payment not configured
+            </p>
+          )}
+        </div>
       </div>
 
-      {/* Payment Info */}
+      {/* Payment Info – Updated text */}
       <div className="mt-6 p-4 bg-[#F5F5DC] border-2 border-[#3E2723]">
         <div className="flex items-start gap-2 text-sm text-[#3E2723]/70">
           <AlertCircle size={16} className="text-[#8A9A5B] mt-0.5 flex-shrink-0" />
           <p>
-            Payments are securely processed by{' '}
-            <a
-              href="https://lemonsqueezy.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#8A9A5B] hover:underline font-medium"
-            >
-              Lemon Squeezy
-            </a>
-            . We don't store your payment details. Subscriptions auto-renew unless cancelled.
+            Payments are securely processed through our integrated payment system. 
+            Your billing information is handled with the highest security standards. 
+            Subscriptions automatically renew unless you cancel before the renewal date. 
+            {pricing.trialPeriodDays > 0 && (
+              <> You will not be charged until after your {pricing.trialPeriodDays}-day free trial ends.</>
+            )}
           </p>
         </div>
       </div>

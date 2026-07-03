@@ -45,7 +45,8 @@ const BLOG_POSTS = [
             {
               step: 1,
               title: 'Contact Us',
-              desc: `Reach out via our <Link to="/contact" className="text-[#8A9A5B] underline">contact form</Link> or email us at <a href="mailto:${CONTACT_EMAIL}" className="text-[#8A9A5B] underline">${CONTACT_EMAIL}</a>. We'll set up your account within 24 hours.`,
+              // ✅ FIX: Replace <Link> with <a> because it's inside dangerouslySetInnerHTML
+              desc: `Reach out via our <a href="/contact" className="text-[#8A9A5B] underline">contact form</a> or email us at <a href="mailto:${CONTACT_EMAIL}" className="text-[#8A9A5B] underline">${CONTACT_EMAIL}</a>. We'll set up your account within 24 hours.`,
             },
             {
               step: 2,

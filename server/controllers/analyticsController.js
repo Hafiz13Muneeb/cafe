@@ -277,7 +277,7 @@ const getCafeNotes = async (req, res, next) => {
 // @access  Private (SuperAdmin)
 const createNote = async (req, res, next) => {
   try {
-    const { cafeId, title, content, reminderDate } = req.body;
+    const { cafeId, title, content, reminderDate, isReminderActive } = req.body;
 
     if (!cafeId || !title || !content) {
       res.status(400);
@@ -289,12 +289,22 @@ const createNote = async (req, res, next) => {
       throw new Error('Invalid cafe ID');
     }
 
+    // ✅ Determine isReminderActive:
+    // - Use the provided checkbox value if present (boolean)
+    // - Otherwise fallback to whether a reminderDate was provided
+    let active = false;
+    if (isReminderActive !== undefined) {
+      active = Boolean(isReminderActive);
+    } else {
+      active = !!reminderDate;
+    }
+
     const note = await Note.create({
       cafeId,
       title: title.trim(),
       content: content.trim(),
       reminderDate: reminderDate ? new Date(reminderDate) : null,
-      isReminderActive: !!reminderDate,
+      isReminderActive: active,
       createdBy: req.user.id,
     });
 
@@ -322,14 +332,22 @@ const updateNote = async (req, res, next) => {
       throw new Error('Note not found');
     }
 
+    // Update simple fields
     if (title !== undefined) note.title = title.trim();
     if (content !== undefined) note.content = content.trim();
+
+    // Handle reminderDate and isReminderActive together
     if (reminderDate !== undefined) {
       note.reminderDate = reminderDate ? new Date(reminderDate) : null;
-      note.isReminderActive = !!reminderDate;
+      // If isReminderActive is not explicitly provided, derive from reminderDate presence
+      if (isReminderActive === undefined) {
+        note.isReminderActive = !!reminderDate;
+      }
     }
+
+    // If isReminderActive is explicitly provided, it overrides the derived value
     if (isReminderActive !== undefined) {
-      note.isReminderActive = isReminderActive;
+      note.isReminderActive = Boolean(isReminderActive);
     }
 
     await note.save();

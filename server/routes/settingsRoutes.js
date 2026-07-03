@@ -6,17 +6,25 @@ const {
   getGlobalSettings,
   updateGlobalSettings,
   updateGlobalFavicon,
+  // 🆕 Import new pricing controllers
+  getPricing,
+  updatePricing,
 } = require('../controllers/settingsController');
 const { protect, restrictTo } = require('../middleware/auth');
 const upload = require('../config/multer');
 
 // ============================================================
-// PUBLIC ROUTE – Global settings (no auth required)
+// PUBLIC ROUTES – No authentication required
 // ============================================================
+
+// Global settings (theme, favicon, pricing)
 router.get('/global', getGlobalSettings);
 
+// 🆕 Public pricing endpoint – fetch current monthly price and trial days
+router.get('/pricing', getPricing);
+
 // ============================================================
-// PROTECTED ROUTES – Owner settings
+// PROTECTED ROUTES – Owner settings (require login)
 // ============================================================
 router.use(protect);
 
@@ -34,7 +42,7 @@ router.put(
 );
 
 // ============================================================
-// SUPERADMIN ONLY – Global settings
+// SUPERADMIN ONLY – Global settings and pricing
 // ============================================================
 
 // Update global colors & mode (JSON)
@@ -47,5 +55,8 @@ router.put(
   upload.single('favicon'),
   updateGlobalFavicon
 );
+
+// 🆕 Update pricing (monthlyPrice, trialPeriodDays) – SuperAdmin only
+router.put('/pricing', protect, restrictTo('superadmin'), updatePricing);
 
 module.exports = router;

@@ -21,6 +21,37 @@ if (require('fs').existsSync(envPath)) {
   dotenv.config();
 }
 
+// ============================================================
+// ✅ ENVIRONMENT VARIABLE VALIDATION (Lemon Squeezy)
+// ============================================================
+const validateEnv = () => {
+  const required = [
+    'LEMON_SQUEEZY_API_KEY',
+    'LEMON_SQUEEZY_STORE_ID',
+    'LEMON_SQUEEZY_WEBHOOK_SECRET',
+    'LEMON_SQUEEZY_VARIANT_ID',   // ✅ Single variant ID
+  ];
+  const missing = required.filter(key => !process.env[key]);
+
+  if (missing.length > 0) {
+    console.warn(`⚠️ Missing Lemon Squeezy env vars: ${missing.join(', ')}`);
+    if (process.env.NODE_ENV === 'production') {
+      console.error('❌ Fatal: Missing required Lemon Squeezy configuration. Exiting.');
+      process.exit(1);
+    }
+  } else {
+    console.log('✅ Lemon Squeezy environment variables validated.');
+  }
+
+  // Also check if the return URL is set
+  if (!process.env.LEMON_SQUEEZY_RETURN_URL) {
+    console.warn('⚠️ LEMON_SQUEEZY_RETURN_URL is not set. Using fallback.');
+  }
+};
+
+// Run validation
+validateEnv();
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -99,7 +130,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/menu', require('./routes/menuRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
-// 🆕 Payment routes (excluding webhook, which was registered separately)
+// Payment routes (excluding webhook, which was registered separately)
 app.use('/api/payments', require('./routes/paymentRoutes'));
 
 app.get('/api/health', async (req, res) => {
@@ -169,10 +200,17 @@ const seedSuperAdminIfNeeded = async () => {
         role: 'superadmin',
         isBlocked: false,
       });
-      console.log('✅ Superadmin created successfully:');
-      console.log(`   Username: superadmin`);
-      console.log(`   Password: ${generatedPassword}`);
-      console.log('   ⚠️ Please change these credentials after first login.');
+      console.log('✅ Superadmin created successfully.');
+      // ✅ In production, do NOT log the password.
+      // Instead, log a hint to check the environment or a secure location.
+      if (process.env.NODE_ENV === 'production') {
+        console.log('   🔒 Password has been generated. Please set it via your secure process.');
+        console.log('   ⚠️  Change this password immediately after first login.');
+      } else {
+        console.log(`   Username: superadmin`);
+        console.log(`   Password: ${generatedPassword}`);
+        console.log('   ⚠️  Please change these credentials after first login.');
+      }
     } else {
       console.log('✅ Superadmin already exists. Skipping seed.');
     }

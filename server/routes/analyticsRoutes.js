@@ -23,24 +23,24 @@ router.post('/:slug/order-completed', trackOrderCompleted);
 // ============================================================
 // PROTECTED ROUTES – Must be logged in
 // ============================================================
-// Superadmin can access any cafe analytics without subscription check
-router.get('/cafe/:cafeId', protect, async (req, res, next) => {
-  // If user is superadmin, allow access
-  if (req.user.role === 'superadmin') {
-    return getCafeAnalytics(req, res, next);
-  }
-  // For owners, we need to check subscription
-  // We'll use the subscriptionGuard middleware
-  // But since we need to pass the guard before getCafeAnalytics, we'll compose it
-  // We'll apply the guard inside the route
-  const guard = subscriptionGuard('pro');
-  guard(req, res, (err) => {
-    if (err) return next(err);
-    getCafeAnalytics(req, res, next);
-  });
-});
 
-// Notes endpoints – only superadmin (already protected by restrictTo)
+// ✅ Refactored: clean middleware chain for cafe analytics
+// Superadmin bypasses subscription check; owners must have 'pro' or higher
+router.get(
+  '/cafe/:cafeId',
+  protect,
+  (req, res, next) => {
+    // If superadmin, skip subscription guard
+    if (req.user.role === 'superadmin') {
+      return next();
+    }
+    // Apply subscription guard for owners (requires 'pro' or higher)
+    return subscriptionGuard('pro')(req, res, next);
+  },
+  getCafeAnalytics
+);
+
+// Notes endpoints – only superadmin
 router.use(protect, restrictTo('superadmin'));
 router.get('/notes/:cafeId', getCafeNotes);
 router.post('/notes', createNote);

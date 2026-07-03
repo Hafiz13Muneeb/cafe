@@ -20,6 +20,8 @@ const CustomerMenu = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
+  // ✅ Currency from cafe data
+  const [currency, setCurrency] = useState('Rs');
 
   const getSessionId = () => {
     let sessionId = sessionStorage.getItem('analyticsSessionId');
@@ -58,6 +60,8 @@ const CustomerMenu = () => {
         setCafeData(cafe);
         setMenuItems(menu);
         setCategories(['all', ...(catList || [])]);
+        // ✅ Set currency from cafe data (fallback to 'Rs')
+        setCurrency(cafe?.currency || 'Rs');
       } catch (err) {
         console.error('Error loading menu:', err);
         setError(err.response?.data?.message || 'Failed to load menu');
@@ -168,7 +172,7 @@ const CustomerMenu = () => {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {filteredItems.map((item) => (
-              <MenuItemCard key={item._id} item={item} />
+              <MenuItemCard key={item._id} item={item} currency={currency} />
             ))}
           </div>
         )}
@@ -179,6 +183,7 @@ const CustomerMenu = () => {
         <CartFloatingButton
           totalItems={totalItems}
           totalPrice={totalPrice}
+          currency={currency}
           onClick={() => setIsCartOpen(true)}
         />
       )}
@@ -191,6 +196,7 @@ const CustomerMenu = () => {
         whatsappNumber={cafeData?.whatsappNumber || ''}
         tables={cafeData?.tables || []}
         slug={slug}
+        currency={currency}
       />
     </div>
   );

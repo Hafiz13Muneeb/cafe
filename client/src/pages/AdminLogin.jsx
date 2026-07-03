@@ -36,12 +36,12 @@ const AdminLogin = () => {
 
   // Check if we should show the tour
   useEffect(() => {
-    const hasToken = localStorage.getItem('adminToken');
+    // ✅ Removed redundant `adminToken` check – tokens are now httpOnly cookies
     const hasUserData = localStorage.getItem('adminData');
     const hasCookie = document.cookie.split(';').some((c) => c.trim().startsWith('token='));
     const tourShown = localStorage.getItem('tourShown');
 
-    if (hasToken || hasUserData || hasCookie || tourShown) {
+    if (hasUserData || hasCookie || tourShown) {
       setShowTour(false);
     } else {
       setShowTour(true);

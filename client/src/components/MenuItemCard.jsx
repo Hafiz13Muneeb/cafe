@@ -2,7 +2,7 @@ import React from 'react';
 import { useCart } from '../context/CartContext';
 import { Plus } from 'lucide-react';
 
-const MenuItemCard = ({ item }) => {
+const MenuItemCard = ({ item, currency = 'Rs' }) => {
   const { addToCart } = useCart();
 
   return (
@@ -34,7 +34,9 @@ const MenuItemCard = ({ item }) => {
           <p className="text-[10px] sm:text-xs text-[#3E2723]/60 line-clamp-2">{item.description}</p>
         )}
         <div className="flex items-center justify-between pt-1">
-          <span className="text-sm sm:text-base font-bold text-[#8A9A5B]">${item.price}</span>
+          <span className="text-sm sm:text-base font-bold text-[#8A9A5B]">
+            {currency}{item.price}
+          </span>
           <button
             onClick={() => addToCart(item)}
             disabled={!item.isAvailable}

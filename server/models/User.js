@@ -45,7 +45,7 @@ const UserSchema = new mongoose.Schema(
     slug: {
       type: String,
       unique: true,
-      sparse: true, // allows multiple nulls (superadmins don't have a slug)
+      sparse: true,
       trim: true,
       lowercase: true,
     },
@@ -64,6 +64,13 @@ const UserSchema = new mongoose.Schema(
     tables: {
       type: [String],
       default: ['1', '2', '3', '4', '5'],
+    },
+    // ✅ NEW: Currency used for selling items (e.g., 'Rs', '$', '€')
+    currency: {
+      type: String,
+      default: 'Rs',
+      trim: true,
+      maxlength: 10,
     },
 
     // Theme settings for the public menu
@@ -84,12 +91,12 @@ const UserSchema = new mongoose.Schema(
     },
 
     // ----------------------------------------------------
-    // 🆕 Subscription & Payment (Lemon Squeezy)
+    // Subscription & Payment (Lemon Squeezy)
     // ----------------------------------------------------
     subscription: {
       plan: {
         type: String,
-        enum: ['free', 'pro', 'premium'],
+        enum: ['free', 'paid'],
         default: 'free',
       },
       status: {
@@ -97,26 +104,26 @@ const UserSchema = new mongoose.Schema(
         enum: ['active', 'cancelled', 'expired', 'past_due'],
         default: 'active',
       },
-      // Lemon Squeezy customer ID (for webhook mapping)
       lemonSqueezyId: {
         type: String,
         unique: true,
         sparse: true,
       },
-      // The variant ID (product) the user subscribed to
+      lemonSqueezySubscriptionId: {
+        type: String,
+        unique: true,
+        sparse: true,
+      },
       variantId: {
         type: Number,
       },
-      // When the current subscription period ends
       currentPeriodEnd: {
         type: Date,
       },
-      // If cancellation is scheduled at period end
       cancelAtPeriodEnd: {
         type: Boolean,
         default: false,
       },
-      // Trial end date (if applicable)
       trialEndsAt: {
         type: Date,
       },
@@ -131,14 +138,14 @@ const UserSchema = new mongoose.Schema(
 // Indexes for performance
 // ------------------------------------------------
 UserSchema.index({ role: 1, isBlocked: 1 });
-// 🆕 Index for subscription queries (e.g., find all active subscribers)
 UserSchema.index({ 'subscription.status': 1, 'subscription.plan': 1 });
+// ✅ Optional: index for currency if you plan to query by it
+// UserSchema.index({ currency: 1 });
 
 // ------------------------------------------------
 // Pre-save: hash password and auto-generate slug
 // ------------------------------------------------
 UserSchema.pre('save', async function (next) {
-  // Hash password if modified
   if (this.isModified('password')) {
     try {
       const salt = await bcrypt.genSalt(10);
@@ -148,7 +155,6 @@ UserSchema.pre('save', async function (next) {
     }
   }
 
-  // Auto-generate slug from cafeName for owners if not provided
   if (this.role === 'owner' && this.isModified('cafeName') && !this.slug) {
     const baseSlug = this.cafeName
       .toLowerCase()
@@ -160,21 +166,14 @@ UserSchema.pre('save', async function (next) {
   next();
 });
 
-// ------------------------------------------------
-// Method to compare entered password with hashed
-// ------------------------------------------------
 UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// ------------------------------------------------
-// Virtual: check if user is a superadmin
-// ------------------------------------------------
 UserSchema.virtual('isSuperAdmin').get(function () {
   return this.role === 'superadmin';
 });
 
-// Ensure virtuals are included in JSON output
 UserSchema.set('toJSON', { virtuals: true });
 UserSchema.set('toObject', { virtuals: true });
 

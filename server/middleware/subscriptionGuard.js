@@ -1,20 +1,12 @@
 // server/middleware/subscriptionGuard.js
 /**
- * Middleware to restrict access based on subscription plan
- * Usage: subscriptionGuard('pro') – allows Pro and Premium users
- *        subscriptionGuard('premium') – allows only Premium users
+ * Middleware to restrict access based on subscription plan.
+ * Usage: subscriptionGuard() – requires 'paid' plan.
  *        subscriptionGuard('free') – allows everyone (no restriction)
  */
 
-const PLAN_PRIORITY = {
-  free: 0,
-  pro: 1,
-  premium: 2,
-};
-
-const subscriptionGuard = (requiredPlan = 'free') => {
+const subscriptionGuard = (requiredPlan = 'paid') => {
   return (req, res, next) => {
-    // 1. Ensure user is authenticated (this middleware should be used after 'protect')
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -22,38 +14,22 @@ const subscriptionGuard = (requiredPlan = 'free') => {
       });
     }
 
-    // 2. Get subscription details (with fallbacks)
-    const userPlan = req.user.subscription?.plan || 'free';
-    const userStatus = req.user.subscription?.status || 'active';
-    const userPlanPriority = PLAN_PRIORITY[userPlan] || 0;
-    const requiredPriority = PLAN_PRIORITY[requiredPlan] || 0;
-
-    // 3. If required is 'free', allow all (no restriction)
+    // If no restriction (free), allow all
     if (requiredPlan === 'free') {
       return next();
     }
 
-    // 4. Check if subscription is active
-    if (userStatus !== 'active') {
+    const userPlan = req.user.subscription?.plan || 'free';
+    const userStatus = req.user.subscription?.status || 'active';
+
+    // Only 'paid' plan with 'active' status grants access
+    if (userPlan !== 'paid' || userStatus !== 'active') {
       return res.status(403).json({
         success: false,
-        error: `Your subscription is ${userStatus}. Please renew to access this feature.`,
+        error: 'This feature requires an active subscription. Please upgrade.',
       });
     }
 
-    // 5. Check if user's plan meets the requirement
-    if (userPlanPriority < requiredPriority) {
-      const planNames = {
-        pro: 'Pro',
-        premium: 'Premium',
-      };
-      return res.status(403).json({
-        success: false,
-        error: `This feature requires a ${planNames[requiredPlan] || requiredPlan} subscription. Please upgrade.`,
-      });
-    }
-
-    // 6. Access granted
     next();
   };
 };
