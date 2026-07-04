@@ -95,20 +95,28 @@ const createCheckout = async (req, res, next) => {
 };
 
 // ------------------------------------------------
-// 2. WEBHOOK HANDLER
+// 2. WEBHOOK HANDLER (FIXED)
 // ------------------------------------------------
 const webhookHandler = async (req, res, next) => {
   try {
     const signature = req.headers['x-signature'];
     if (!signature) {
+      console.error('Missing x-signature header');
       return res.status(401).json({ error: 'Missing signature' });
     }
 
+    const rawPayload = req.body.toString('utf8');
+    console.log('📦 Raw webhook payload received (first 200 chars):', rawPayload.substring(0, 200));
+
     const secret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET;
-    const payload = JSON.stringify(req.body);
+    if (!secret) {
+      console.error('LEMON_SQUEEZY_WEBHOOK_SECRET is not set');
+      return res.status(500).json({ error: 'Webhook secret not configured' });
+    }
+
     const expectedSignature = crypto
       .createHmac('sha256', secret)
-      .update(payload)
+      .update(rawPayload)
       .digest('hex');
 
     const isValid = crypto.timingSafeEqual(
@@ -121,16 +129,25 @@ const webhookHandler = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid signature' });
     }
 
-    const event = req.body;
-    const eventId = event.meta?.event_id;
+    let event;
+    try {
+      event = JSON.parse(rawPayload);
+      console.log('✅ Parsed event:', JSON.stringify(event, null, 2));
+    } catch (parseError) {
+      console.error('Failed to parse JSON payload:', parseError);
+      return res.status(400).json({ error: 'Invalid JSON payload' });
+    }
+
+    const eventId = event.meta?.webhook_id;
     const eventType = event.meta?.event_name;
 
     if (!eventId || !eventType) {
-      console.error('Missing event ID or type');
+      console.error('Missing webhook_id or event_name in payload. Payload keys:', Object.keys(event));
       return res.status(400).json({ error: 'Invalid webhook structure' });
     }
 
-    // Idempotency check
+    console.log(`🔔 Received webhook: ${eventType} (${eventId})`);
+
     const existingLog = await WebhookLog.findOne({ eventId });
     if (existingLog) {
       console.log(`Event ${eventId} already processed, skipping.`);
@@ -151,13 +168,41 @@ const webhookHandler = async (req, res, next) => {
       const variantId = data?.attributes?.variant_id;
       const status = data?.attributes?.status;
       const endsAt = data?.attributes?.ends_at;
+      const trialEndsAt = data?.attributes?.trial_ends_at;
+      const userEmail = data?.attributes?.user_email;
+      const userName = data?.attributes?.user_name;
 
       let userId = null;
-      let user = await User.findOne({ 'subscription.lemonSqueezyId': customerId });
+      let user = null;
 
+      // Strategy 1: Find by customer_id (if already stored)
+      if (customerId) {
+        user = await User.findOne({ 'subscription.lemonSqueezyId': customerId });
+        if (user) console.log(`✅ Found user by customer_id: ${customerId}`);
+      }
+
+      // Strategy 2: Find by email (case-insensitive)
+      if (!user && userEmail) {
+        const emailLower = userEmail.toLowerCase();
+        user = await User.findOne({ email: emailLower });
+        if (user) {
+          console.log(`✅ Found user by email: ${emailLower}`);
+        } else {
+          console.log(`ℹ️ No user found for email: ${emailLower}`);
+        }
+      }
+
+      // Strategy 3: Find by username (fallback)
+      if (!user && userName) {
+        user = await User.findOne({ username: userName });
+        if (user) console.log(`✅ Found user by username: ${userName}`);
+      }
+
+      // Strategy 4: Find by custom user_id (if present)
       if (!user && data?.attributes?.checkout_data?.custom?.user_id) {
         const customUserId = data.attributes.checkout_data.custom.user_id;
         user = await User.findById(customUserId);
+        if (user) console.log(`✅ Found user by custom user_id: ${customUserId}`);
       }
 
       if (user) {
@@ -168,7 +213,6 @@ const webhookHandler = async (req, res, next) => {
         else if (status === 'cancelled') ourStatus = 'cancelled';
         else if (status === 'past_due') ourStatus = 'past_due';
 
-        // ✅ Determine plan: if variant matches the single variant ID, set to 'paid'
         const singleVariantId = parseInt(process.env.LEMON_SQUEEZY_VARIANT_ID);
         let plan = 'free';
         if (variantId === singleVariantId) {
@@ -183,15 +227,18 @@ const webhookHandler = async (req, res, next) => {
           variantId: variantId,
           currentPeriodEnd: endsAt ? new Date(endsAt) : undefined,
           cancelAtPeriodEnd: status === 'cancelled',
+          trialEndsAt: trialEndsAt ? new Date(trialEndsAt) : undefined,
         };
 
         await user.save();
         log.userId = user._id;
         log.status = 'processed';
         log.processedAt = new Date();
+        console.log(`✅ User ${user._id} (${user.email}) subscription updated to ${plan} (${ourStatus})`);
       } else {
         log.status = 'failed';
-        log.error = 'No matching user found for this subscription';
+        log.error = `No matching user found for customer: ${customerId}, email: ${userEmail}, username: ${userName}`;
+        console.warn('⚠️ No user found. Searched by:', { customerId, userEmail, userName });
       }
 
       await log.save();

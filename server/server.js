@@ -29,7 +29,7 @@ const validateEnv = () => {
     'LEMON_SQUEEZY_API_KEY',
     'LEMON_SQUEEZY_STORE_ID',
     'LEMON_SQUEEZY_WEBHOOK_SECRET',
-    'LEMON_SQUEEZY_VARIANT_ID',   // ✅ Single variant ID
+    'LEMON_SQUEEZY_VARIANT_ID',
   ];
   const missing = required.filter(key => !process.env[key]);
 
@@ -43,13 +43,11 @@ const validateEnv = () => {
     console.log('✅ Lemon Squeezy environment variables validated.');
   }
 
-  // Also check if the return URL is set
   if (!process.env.LEMON_SQUEEZY_RETURN_URL) {
     console.warn('⚠️ LEMON_SQUEEZY_RETURN_URL is not set. Using fallback.');
   }
 };
 
-// Run validation
 validateEnv();
 
 const app = express();
@@ -87,11 +85,12 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-// 🆕 WEBHOOK MUST BE RAW BEFORE JSON PARSER
+// ✅ WEBHOOK MUST BE RAW BEFORE JSON PARSER
+//    Accept any content type so Lemon Squeezy's 'application/vnd.api+json' is captured.
 const { webhookHandler } = require('./controllers/paymentController');
 app.post(
   '/api/payments/webhooks/lemon-squeezy',
-  express.raw({ type: 'application/json' }),
+  express.raw({ type: '*/*' }),   // ✅ Accept any content type
   webhookHandler
 );
 
@@ -130,7 +129,6 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/menu', require('./routes/menuRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
-// Payment routes (excluding webhook, which was registered separately)
 app.use('/api/payments', require('./routes/paymentRoutes'));
 
 app.get('/api/health', async (req, res) => {
@@ -201,8 +199,6 @@ const seedSuperAdminIfNeeded = async () => {
         isBlocked: false,
       });
       console.log('✅ Superadmin created successfully.');
-      // ✅ In production, do NOT log the password.
-      // Instead, log a hint to check the environment or a secure location.
       if (process.env.NODE_ENV === 'production') {
         console.log('   🔒 Password has been generated. Please set it via your secure process.');
         console.log('   ⚠️  Change this password immediately after first login.');
