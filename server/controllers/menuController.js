@@ -64,9 +64,9 @@ const getPublicMenu = async (req, res, next) => {
   try {
     const { slug } = req.params;
 
-    // Find the cafe owner by slug
+    // ✅ Find the cafe owner by slug, including currency
     const cafe = await User.findOne({ slug, role: 'owner' }).select(
-      'cafeName whatsappNumber logoUrl faviconUrl tables theme isBlocked'
+      'cafeName whatsappNumber logoUrl faviconUrl tables theme isBlocked currency' // ✅ added currency
     );
 
     if (!cafe) {
@@ -86,7 +86,7 @@ const getPublicMenu = async (req, res, next) => {
       isAvailable: true,
     }).sort({ createdAt: -1 });
 
-    // Extract categories for filtering (optional, but useful for frontend)
+    // Extract categories for filtering
     const categories = [...new Set(menuItems.map(item => item.category))];
 
     res.status(200).json({
@@ -99,6 +99,8 @@ const getPublicMenu = async (req, res, next) => {
           faviconUrl: cafe.faviconUrl || '',
           tables: cafe.tables || [],
           theme: cafe.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
+          // ✅ Include currency (fallback to 'Rs')
+          currency: cafe.currency || 'Rs',
         },
         menu: menuItems,
         categories,
@@ -156,7 +158,7 @@ const createMenuItem = async (req, res, next) => {
     const imageUrl = req.file.path;
 
     const menuItem = await MenuItem.create({
-      ownerId: req.user.id, // 🔐 Multi-tenant: associate with logged-in owner
+      ownerId: req.user.id, // Multi-tenant: associate with logged-in owner
       title: title.trim(),
       description: description ? description.trim() : '',
       price,

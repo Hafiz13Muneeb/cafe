@@ -72,7 +72,7 @@ const toggleBlockOwner = async (req, res, next) => {
 // @access  Private (Superadmin)
 const updateOwner = async (req, res, next) => {
   try {
-    const { cafeName, whatsappNumber, tables, theme, logoUrl, faviconUrl } = req.body;
+    const { cafeName, whatsappNumber, tables, theme, logoUrl, faviconUrl, currency } = req.body; // ✅ added currency
 
     const owner = await User.findOne({ _id: req.params.id, role: 'owner' });
     if (!owner) {
@@ -130,6 +130,20 @@ const updateOwner = async (req, res, next) => {
         throw new Error('Please provide at least one table number/name');
       }
       owner.tables = tables.map(t => t.trim()).filter(t => t.length > 0);
+    }
+
+    // ✅ Update currency
+    if (currency !== undefined) {
+      const trimmed = currency.trim();
+      if (!trimmed || trimmed.length === 0) {
+        res.status(400);
+        throw new Error('Currency symbol cannot be empty');
+      }
+      if (trimmed.length > 10) {
+        res.status(400);
+        throw new Error('Currency symbol must be 10 characters or less');
+      }
+      owner.currency = trimmed;
     }
 
     if (theme !== undefined) {
