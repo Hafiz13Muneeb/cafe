@@ -1,9 +1,10 @@
 // src/pages/AdminDashboard.jsx - Complete menu management with CRUD operations
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom'; // 🆕 added
-import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectUser } from '../store/slices/authSlice';
 import api from '../api/axios';
-import { Plus, Menu, Upload, X, Save, QrCode } from 'lucide-react'; // added QrCode
+import { Plus, Menu, Upload, X, Save, QrCode } from 'lucide-react';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import TextArea from '../components/common/TextArea';
@@ -11,8 +12,8 @@ import MenuItemTable from '../components/owner/MenuItemTable';
 import DashboardLayout from '../components/layout/DashboardLayout';
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate(); // 🆕 for navigation
+  const user = useSelector(selectUser);
+  const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -189,7 +190,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // 🆕 Navigate to QR Code page
   const goToQRPage = () => {
     navigate('/admin/qr');
   };
@@ -207,7 +207,7 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* 🆕 QR Code Banner / Call-to-Action */}
+      {/* QR Code Banner / Call-to-Action */}
       <div className="bg-white border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] p-4 sm:p-6 mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-[#3E2723] flex items-center gap-2">

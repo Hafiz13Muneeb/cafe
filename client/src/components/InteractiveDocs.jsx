@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Settings, QrCode, MessageCircle } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
 
 const steps = [
   {
@@ -29,7 +28,6 @@ const steps = [
 
 const InteractiveDocs = () => {
   const [activeStep, setActiveStep] = useState(0);
-  const { theme } = useTheme();
 
   return (
     <section className="py-16 sm:py-20 md:py-24 px-4 bg-[#FAF9F6] transition-colors duration-500">

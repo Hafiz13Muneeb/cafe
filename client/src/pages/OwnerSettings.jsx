@@ -1,7 +1,8 @@
 // src/pages/OwnerSettings.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectUser, updateUser } from '../store/slices/authSlice';
+import { selectTheme, updateTheme as updateThemeAction } from '../store/slices/themeSlice';
 import api from '../api/axios';
 import { Settings, Lock, Palette, Upload, Save, Eye, EyeOff } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -9,8 +10,10 @@ import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 
 const OwnerSettings = () => {
-  const { user, updateUserData } = useAuth();
-  const { theme, updateTheme } = useTheme();
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
+  const theme = useSelector(selectTheme);
+
   const [activeTab, setActiveTab] = useState('cafe');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
@@ -18,11 +21,11 @@ const OwnerSettings = () => {
   const [cafeName, setCafeName] = useState(user?.cafeName || '');
   const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || '');
   const [tables, setTables] = useState((user?.tables || []).join(', '));
-  const [currency, setCurrency] = useState(user?.currency || 'Rs'); // ✅ NEW currency state
+  const [currency, setCurrency] = useState(user?.currency || 'Rs');
 
-  const [primaryColor, setPrimaryColor] = useState(user?.theme?.primaryColor || '#d4a843');
-  const [secondaryColor, setSecondaryColor] = useState(user?.theme?.secondaryColor || '#b8860b');
-  const [mode, setMode] = useState(user?.theme?.mode || 'light');
+  const [primaryColor, setPrimaryColor] = useState(theme?.primaryColor || '#d4a843');
+  const [secondaryColor, setSecondaryColor] = useState(theme?.secondaryColor || '#b8860b');
+  const [mode, setMode] = useState(theme?.mode || 'light');
 
   const [logoPreview, setLogoPreview] = useState(user?.logoUrl || '');
   const [faviconPreview, setFaviconPreview] = useState(user?.faviconUrl || '');
@@ -47,7 +50,7 @@ const OwnerSettings = () => {
           setTables((data.tables || []).join(', '));
           setLogoPreview(data.logoUrl || '');
           setFaviconPreview(data.faviconUrl || '');
-          setCurrency(data.currency || 'Rs'); // ✅ set currency from API
+          setCurrency(data.currency || 'Rs');
         }
       } catch (err) {
         console.error('Failed to fetch settings:', err);
@@ -56,6 +59,7 @@ const OwnerSettings = () => {
     fetchSettings();
   }, []);
 
+  // Sync local state with Redux when user/theme changes
   useEffect(() => {
     if (user?.theme) {
       setPrimaryColor(user.theme.primaryColor || '#d4a843');
@@ -65,7 +69,31 @@ const OwnerSettings = () => {
     if (user?.currency) {
       setCurrency(user.currency);
     }
+    if (user?.cafeName) {
+      setCafeName(user.cafeName);
+    }
+    if (user?.whatsappNumber !== undefined) {
+      setWhatsappNumber(user.whatsappNumber);
+    }
+    if (user?.tables) {
+      setTables(user.tables.join(', '));
+    }
+    if (user?.logoUrl !== undefined) {
+      setLogoPreview(user.logoUrl);
+    }
+    if (user?.faviconUrl !== undefined) {
+      setFaviconPreview(user.faviconUrl);
+    }
   }, [user]);
+
+  // Also sync theme from Redux
+  useEffect(() => {
+    if (theme) {
+      setPrimaryColor(theme.primaryColor || '#d4a843');
+      setSecondaryColor(theme.secondaryColor || '#b8860b');
+      setMode(theme.mode || 'light');
+    }
+  }, [theme]);
 
   const handleCafeSubmit = async (e) => {
     e.preventDefault();
@@ -83,7 +111,6 @@ const OwnerSettings = () => {
         return;
       }
 
-      // Validate currency: non-empty, max 10 characters
       const trimmedCurrency = currency.trim();
       if (!trimmedCurrency || trimmedCurrency.length === 0) {
         setMessage({ text: 'Currency symbol cannot be empty.', type: 'error' });
@@ -100,7 +127,7 @@ const OwnerSettings = () => {
         cafeName,
         whatsappNumber,
         tables: trimmedTables,
-        currency: trimmedCurrency, // ✅ include currency
+        currency: trimmedCurrency,
         primaryColor,
         secondaryColor,
         mode,
@@ -114,8 +141,9 @@ const OwnerSettings = () => {
           currency: trimmedCurrency,
           theme: { primaryColor, secondaryColor, mode },
         };
-        updateUserData(updatedData);
-        updateTheme({ primaryColor, secondaryColor, mode });
+        // ✅ Dispatch Redux actions instead of context functions
+        dispatch(updateUser(updatedData));
+        dispatch(updateThemeAction({ primaryColor, secondaryColor, mode }));
         setMessage({ text: 'Settings saved successfully!', type: 'success' });
       }
     } catch (err) {
@@ -138,7 +166,7 @@ const OwnerSettings = () => {
         const data = res.data.data;
         if (type === 'logo') setLogoPreview(data.logoUrl || '');
         if (type === 'favicon') setFaviconPreview(data.faviconUrl || '');
-        updateUserData({ logoUrl: data.logoUrl, faviconUrl: data.faviconUrl });
+        dispatch(updateUser({ logoUrl: data.logoUrl, faviconUrl: data.faviconUrl }));
         setMessage({ text: `${type} updated successfully!`, type: 'success' });
       }
     } catch (err) {
@@ -182,7 +210,6 @@ const OwnerSettings = () => {
     setTables(trimmed);
   };
 
-  // Tab items for the in‑content tab bar
   const tabItems = [
     { id: 'cafe', label: 'Cafe Settings', icon: Settings },
     { id: 'appearance', label: 'Appearance', icon: Palette },
@@ -191,7 +218,6 @@ const OwnerSettings = () => {
 
   return (
     <DashboardLayout title="Settings" subtitle={user?.cafeName}>
-      {/* Message banner */}
       {message.text && (
         <div
           className={`mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base ${
@@ -204,7 +230,6 @@ const OwnerSettings = () => {
         </div>
       )}
 
-      {/* Tab bar */}
       <div className="flex flex-wrap gap-1 bg-[#EAE0C8] border-2 border-[#3E2723] p-1 mb-6">
         {tabItems.map((item) => (
           <button
@@ -222,7 +247,6 @@ const OwnerSettings = () => {
         ))}
       </div>
 
-      {/* Content area */}
       <div className="bg-[#F5F5DC] p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]">
         {activeTab === 'cafe' && (
           <form onSubmit={handleCafeSubmit} className="space-y-4">
@@ -250,8 +274,6 @@ const OwnerSettings = () => {
               required
               aria-label="Table numbers or names"
             />
-
-            {/* ✅ NEW Currency Input */}
             <Input
               label="Currency Symbol"
               value={currency}

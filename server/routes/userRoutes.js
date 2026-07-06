@@ -9,22 +9,34 @@ const {
 } = require('../controllers/userController');
 const { protect, restrictTo } = require('../middleware/auth');
 
-// All routes in this file are super-admin only
+// ============================================================
+// ALL ROUTES ARE SUPER-ADMIN ONLY
+// ============================================================
 router.use(protect, restrictTo('superadmin'));
 
-// Get all cafe owners
+// -----------------------------------------------------------------
+// 1. GET ALL CAFE OWNERS
+// -----------------------------------------------------------------
 router.get('/owners', getAllOwners);
 
-// Get a single owner by ID
+// -----------------------------------------------------------------
+// 2. GET SINGLE OWNER BY ID
+// -----------------------------------------------------------------
 router.get('/owners/:id', getOwnerById);
 
-// Toggle block status of an owner
+// -----------------------------------------------------------------
+// 3. TOGGLE BLOCK STATUS
+// -----------------------------------------------------------------
 router.put('/owners/:id/toggle-block', toggleBlockOwner);
 
-// Update owner details (cafeName, whatsapp, tables, theme, etc.)
+// -----------------------------------------------------------------
+// 4. UPDATE OWNER DETAILS (cafeName, whatsapp, tables, theme, currency, etc.)
+// -----------------------------------------------------------------
 router.put('/owners/:id', updateOwner);
 
-// Delete an owner
+// -----------------------------------------------------------------
+// 5. DELETE AN OWNER
+// -----------------------------------------------------------------
 router.delete('/owners/:id', deleteOwner);
 
 module.exports = router;

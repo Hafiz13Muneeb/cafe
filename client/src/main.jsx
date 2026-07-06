@@ -1,18 +1,16 @@
-// src/main.jsx - React entry point with providers
+// src/main.jsx - React entry point with Redux
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
 import App from './App';
 import './index.css';
-import { CartProvider } from './context/CartContext';
-import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
+import { store, persistor } from './store';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-    <AuthProvider>
-      <CartProvider>
-        <ThemeProvider>
-          <App />
-        </ThemeProvider>
-      </CartProvider>
-    </AuthProvider>
+  <Provider store={store}>
+    <PersistGate loading={null} persistor={persistor}>
+      <App />
+    </PersistGate>
+  </Provider>
 );

@@ -1,6 +1,7 @@
 // src/pages/OwnerAnalytics.jsx
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useSelector } from 'react-redux';
+import { selectUser } from '../store/slices/authSlice';
 import api from '../api/axios';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import StatCard from '../components/common/StatCard';
@@ -9,7 +10,7 @@ import LineChart from '../components/common/LineChart';
 import { Eye, ShoppingBag, DollarSign, TrendingDown, BarChart3, AlertCircle } from 'lucide-react';
 
 const OwnerAnalytics = () => {
-  const { user } = useAuth();
+  const user = useSelector(selectUser);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -22,7 +23,11 @@ const OwnerAnalytics = () => {
   ];
 
   const fetchAnalytics = async () => {
-    if (!user?._id) {
+    // ✅ Use either _id or id (MongoDB may serialize as id)
+    const userId = user?._id || user?.id;
+
+    if (!userId) {
+      console.warn('⚠️ No user ID found, skipping analytics fetch');
       setLoading(false);
       return;
     }
@@ -30,7 +35,7 @@ const OwnerAnalytics = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await api.get(`/analytics/cafe/${user._id}?period=${period}`);
+      const response = await api.get(`/analytics/cafe/${userId}?period=${period}`);
       if (response.data.success) {
         setAnalytics(response.data.data);
       } else {
@@ -110,6 +115,17 @@ const OwnerAnalytics = () => {
     );
   }
 
+  if (!analytics) {
+    return (
+      <DashboardLayout title="Analytics" subtitle={user?.cafeName}>
+        <div className="bg-white border-2 border-[#3E2723] p-8 text-center shadow-[6px_6px_0px_0px_#EAE0C8]">
+          <BarChart3 size={48} className="mx-auto text-[#3E2723]/30 mb-2" />
+          <p className="text-[#3E2723]/60 font-bold">No analytics data available.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout title="Analytics" subtitle={user?.cafeName}>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -117,7 +133,7 @@ const OwnerAnalytics = () => {
         <PeriodFilter periods={periods} selected={period} onSelect={setPeriod} />
       </div>
 
-      {analytics ? (
+      {analytics.summary ? (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <StatCard icon={Eye} label="Total Views" value={analytics.summary.totalViews || 0} />

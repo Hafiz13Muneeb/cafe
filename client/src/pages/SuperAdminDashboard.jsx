@@ -1,7 +1,8 @@
 // src/pages/SuperAdminDashboard.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useSelector } from 'react-redux';
+import { selectUser } from '../store/slices/authSlice';
 import api from '../api/axios';
 import { Plus, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
 import Button from '../components/common/Button';
@@ -54,7 +55,8 @@ const promiseAllWithLimit = async (tasks, limit) => {
 };
 
 const SuperAdminDashboard = () => {
-  const { isSuperAdmin } = useAuth();
+  const user = useSelector(selectUser);
+  const isSuperAdmin = user?.role === 'superadmin';
   const navigate = useNavigate();
 
   // Redirect if not superadmin
@@ -119,7 +121,7 @@ const SuperAdminDashboard = () => {
           const noteTasks = ownersData.map(
             (owner) => () => fetchOwnerNotes(owner._id)
           );
-          const noteResults = await promiseAllWithLimit(noteTasks, 2); // 🔧 reduced from 5
+          const noteResults = await promiseAllWithLimit(noteTasks, 2);
 
           // Build map of ownerId -> activeReminders
           const reminderMap = {};

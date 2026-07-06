@@ -24,8 +24,8 @@ router.post('/:slug/order-completed', trackOrderCompleted);
 // PROTECTED ROUTES – Must be logged in
 // ============================================================
 
-// ✅ Clean middleware chain for cafe analytics
-// Superadmin bypasses subscription check; owners must have 'paid' plan
+// ✅ Analytics for owners – no subscription restriction (all owners can view)
+// Superadmin bypasses entirely; owners pass through with 'free' guard (no check)
 router.get(
   '/cafe/:cafeId',
   protect,
@@ -34,8 +34,9 @@ router.get(
     if (req.user.role === 'superadmin') {
       return next();
     }
-    // Apply subscription guard for owners – requires 'paid' plan
-    return subscriptionGuard('paid')(req, res, next);
+    // Apply subscription guard with 'free' – this allows all authenticated owners
+    // (no subscription requirement)
+    return subscriptionGuard('free')(req, res, next);
   },
   getCafeAnalytics
 );

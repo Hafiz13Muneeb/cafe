@@ -1,11 +1,23 @@
 // src/components/CartModal.jsx - Cart modal with dynamic theming and analytics tracking
 import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { X, Minus, Plus, Trash2, Send } from 'lucide-react';
-import { useCart } from '../context/CartContext';
+import {
+  addToCart,
+  removeFromCart,
+  clearCart,
+  selectCartItems,
+  selectTotalItems,
+  selectTotalPrice,
+} from '../store/slices/cartSlice';
 import api from '../api/axios';
 
 const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slug, currency = 'Rs' }) => {
-  const { cart, addToCart, removeFromCart, clearCart, getTotalItems, getTotalPrice, getOrderText } = useCart();
+  const dispatch = useDispatch();
+  const cart = useSelector(selectCartItems);
+  const totalItems = useSelector(selectTotalItems);
+  const totalPrice = useSelector(selectTotalPrice);
+
   const [selectedTable, setSelectedTable] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,7 +41,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
     });
 
     text += `---\n`;
-    text += `Total: ${currency}${getTotalPrice()}`;
+    text += `Total: ${currency}${totalPrice}`;
 
     return encodeURIComponent(text);
   };
@@ -70,14 +82,14 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
         try {
           await api.post(`/analytics/${slug}/order-completed`, {
             sessionId: getSessionId(),
-            orderAmount: getTotalPrice(),
+            orderAmount: totalPrice,
           });
         } catch (trackErr) {
           console.debug('Order completed tracking failed:', trackErr.message);
         }
       }
 
-      clearCart();
+      dispatch(clearCart());
       onClose();
       setSelectedTable('');
     } catch (err) {
@@ -102,7 +114,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
       >
         <div className="flex items-center justify-between p-3 sm:p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
           <h2 className="text-base sm:text-lg font-semibold" style={{ color: 'var(--text-color)' }}>
-            Your Order ({getTotalItems()} items)
+            Your Order ({totalItems} items)
           </h2>
           <button
             onClick={onClose}
@@ -135,7 +147,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
               </div>
               <div className="flex items-center gap-1 sm:gap-2">
                 <button
-                  onClick={() => removeFromCart(item._id)}
+                  onClick={() => dispatch(removeFromCart(item._id))}
                   className="p-1 rounded-full transition hover:opacity-70"
                   style={{ backgroundColor: 'var(--border-color)' }}
                 >
@@ -149,7 +161,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
                   {item.quantity}
                 </span>
                 <button
-                  onClick={() => addToCart(item)}
+                  onClick={() => dispatch(addToCart(item))}
                   className="p-1 rounded-full transition hover:opacity-70"
                   style={{ backgroundColor: 'var(--border-color)' }}
                   disabled={!item.isAvailable}
@@ -164,7 +176,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
           ))}
           {cart.length > 0 && (
             <button
-              onClick={clearCart}
+              onClick={() => dispatch(clearCart())}
               className="text-sm font-medium hover:underline"
               style={{ color: '#ef4444' }}
             >
@@ -205,7 +217,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
           <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
             <span style={{ color: 'var(--text-secondary, #64748b)' }}>Total:</span>
             <span className="text-lg font-bold" style={{ color: 'var(--primary-color)' }}>
-              {currency}{getTotalPrice()}
+              {currency}{totalPrice}
             </span>
           </div>
 

@@ -1,11 +1,12 @@
 // src/pages/QRCodePage.jsx
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useSelector } from 'react-redux';
+import { selectUser } from '../store/slices/authSlice';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import QRCodeDisplay from '../components/owner/QRCodeDisplay';
 
 const QRCodePage = () => {
-  const { user } = useAuth();
+  const user = useSelector(selectUser);
 
   return (
     <DashboardLayout title="QR Code" subtitle={user?.cafeName}>

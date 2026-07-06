@@ -1,8 +1,82 @@
 // controllers/authController.js
 const User = require('../models/User');
+const OTP = require('../models/OTP');
+const { sendOTPEmail } = require('../utils/email');
 const generateToken = require('../utils/generateToken');
 
-// @desc    Login user (both superadmin and cafe owners)
+// ============================================================
+// OTP RATE LIMITING (in-memory)
+// ============================================================
+
+// Map: email -> array of timestamps (in ms)
+const otpRequestLogs = new Map();
+
+// Limits
+const OTP_MAX_REQUESTS = 3;               // per window
+const OTP_WINDOW_MS = 15 * 60 * 1000;    // 15 minutes
+const OTP_MIN_INTERVAL_MS = 60 * 1000;   // 60 seconds between requests
+
+// Periodically clean up expired entries (every 5 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [email, timestamps] of otpRequestLogs.entries()) {
+    // Filter timestamps that are within the window
+    const valid = timestamps.filter(ts => now - ts < OTP_WINDOW_MS);
+    if (valid.length === 0) {
+      otpRequestLogs.delete(email);
+    } else {
+      otpRequestLogs.set(email, valid);
+    }
+  }
+}, 5 * 60 * 1000);
+
+/**
+ * Check if an email is allowed to request a new OTP.
+ * Throws an error with the appropriate message if not allowed.
+ */
+const checkOTPRateLimit = (email) => {
+  const now = Date.now();
+  const timestamps = otpRequestLogs.get(email) || [];
+
+  // Clean old entries for this email
+  const recent = timestamps.filter(ts => now - ts < OTP_WINDOW_MS);
+
+  // Check max requests
+  if (recent.length >= OTP_MAX_REQUESTS) {
+    const oldest = recent[0];
+    const resetTime = new Date(oldest + OTP_WINDOW_MS);
+    throw new Error(`Too many OTP requests. Please try again after ${resetTime.toLocaleTimeString()}.`);
+  }
+
+  // Check cooldown (last request)
+  if (recent.length > 0) {
+    const last = recent[recent.length - 1];
+    const elapsed = now - last;
+    if (elapsed < OTP_MIN_INTERVAL_MS) {
+      const remaining = Math.ceil((OTP_MIN_INTERVAL_MS - elapsed) / 1000);
+      throw new Error(`Please wait ${remaining} seconds before requesting a new code.`);
+    }
+  }
+
+  // Allowed – update the log
+  recent.push(now);
+  otpRequestLogs.set(email, recent);
+};
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+// Generate a 6‑digit numeric OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// ============================================================
+// AUTHENTICATION
+// ============================================================
+
+// @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res, next) => {
@@ -32,20 +106,17 @@ const loginUser = async (req, res, next) => {
       throw new Error('Invalid credentials');
     }
 
-    // Generate JWT token
     const token = generateToken(user._id);
 
-    // 🆕 Set token as httpOnly cookie
     const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('token', token, {
-      httpOnly: true, // Cannot be accessed by JavaScript
-      secure: isProduction, // Only sent over HTTPS in production
-      sameSite: 'strict', // CSRF protection
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days (matches token expiry)
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       path: '/',
     });
 
-    // Prepare user response (without token in body)
     const userResponse = {
       id: user._id,
       username: user.username,
@@ -63,27 +134,23 @@ const loginUser = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      data: {
-        user: userResponse,
-        // 🆕 No token in response body – it's in the cookie!
-      },
+      data: { user: userResponse },
     });
   } catch (error) {
     next(error);
   }
 };
 
-// 🆕 @desc    Logout user (clear cookie)
+// @desc    Logout user
 // @route   POST /api/auth/logout
 // @access  Public
 const logoutUser = async (req, res, next) => {
   try {
-    // Clear the token cookie
     res.cookie('token', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      expires: new Date(0), // Set expiry to past
+      expires: new Date(0),
       path: '/',
     });
 
@@ -115,6 +182,115 @@ const getProfile = async (req, res, next) => {
     next(error);
   }
 };
+
+// ============================================================
+// OTP (One-Time Password) VERIFICATION
+// ============================================================
+
+// @desc    Send OTP to the provided email
+// @route   POST /api/auth/send-otp
+// @access  Public
+const sendOTP = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400);
+      throw new Error('Email is required');
+    }
+
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(email)) {
+      res.status(400);
+      throw new Error('Please provide a valid email address');
+    }
+
+    const emailLower = email.trim().toLowerCase();
+
+    // ✅ Apply rate limiting
+    try {
+      checkOTPRateLimit(emailLower);
+    } catch (rateError) {
+      res.status(429); // Too Many Requests
+      throw new Error(rateError.message);
+    }
+
+    // Invalidate any existing unverified OTP for this email
+    await OTP.deleteMany({ email: emailLower, verified: false });
+
+    // Generate a new OTP
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await OTP.create({
+      email: emailLower,
+      otp,
+      expiresAt,
+    });
+
+    // Send OTP via email
+    const result = await sendOTPEmail(emailLower, otp, {
+      brandName: process.env.BRAND_NAME || 'CafeFlow',
+    });
+
+    if (!result.success) {
+      console.error('Failed to send OTP email:', result.error);
+      res.status(500);
+      throw new Error('Failed to send OTP. Please try again later.');
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'OTP sent successfully',
+      // Optional: for debugging in development
+      // otp: process.env.NODE_ENV === 'development' ? otp : undefined,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Verify OTP
+// @route   POST /api/auth/verify-otp
+// @access  Public
+const verifyOTP = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      res.status(400);
+      throw new Error('Email and OTP are required');
+    }
+
+    const emailLower = email.trim().toLowerCase();
+
+    const otpRecord = await OTP.findOne({
+      email: emailLower,
+      otp: otp.trim(),
+      verified: false,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!otpRecord) {
+      res.status(400);
+      throw new Error('Invalid or expired OTP. Please request a new one.');
+    }
+
+    otpRecord.verified = true;
+    await otpRecord.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'OTP verified successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================
+// OWNER CREATION (SuperAdmin only)
+// ============================================================
 
 // @desc    Create a new cafe owner (Super-admin only)
 // @route   POST /api/auth/create-owner
@@ -172,14 +348,87 @@ const createOwner = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: 'Cafe owner created successfully',
-      data: {
-        user: userResponse,
-      },
+      data: { user: userResponse },
     });
   } catch (error) {
     next(error);
   }
 };
+
+// ============================================================
+// PUBLIC REGISTRATION (with optional OTP verification)
+// ============================================================
+
+// @desc    Public registration for new cafe owners
+// @route   POST /api/auth/register
+// @access  Public
+const registerOwner = async (req, res, next) => {
+  try {
+    const { username, email, cafeName, password } = req.body;
+
+    if (!username || !email || !cafeName || !password) {
+      res.status(400);
+      throw new Error('All fields are required');
+    }
+    if (password.length < 6) {
+      res.status(400);
+      throw new Error('Password must be at least 6 characters');
+    }
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(email)) {
+      res.status(400);
+      throw new Error('Please provide a valid email address');
+    }
+    if (username.length < 3 || username.length > 30) {
+      res.status(400);
+      throw new Error('Username must be between 3 and 30 characters');
+    }
+
+    const existing = await User.findOne({
+      $or: [{ username: username.trim() }, { email: email.trim().toLowerCase() }],
+    });
+    if (existing) {
+      res.status(400);
+      throw new Error('Username or email already taken');
+    }
+
+    const baseSlug = cafeName
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    let slug = baseSlug;
+    let counter = 1;
+    while (await User.findOne({ slug })) {
+      slug = `${baseSlug}-${counter++}`;
+    }
+
+    const newUser = await User.create({
+      username: username.trim(),
+      email: email.trim().toLowerCase(),
+      password: password.trim(),
+      role: 'owner',
+      isBlocked: false,
+      cafeName: cafeName.trim(),
+      slug,
+    });
+
+    const userResponse = newUser.toObject();
+    delete userResponse.password;
+
+    res.status(201).json({
+      success: true,
+      message: 'Account created successfully',
+      data: { user: userResponse },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ============================================================
+// PASSWORD & PROFILE UPDATES
+// ============================================================
 
 // @desc    Change password (for logged-in user)
 // @route   PUT /api/auth/change-password
@@ -284,9 +533,12 @@ const updateProfile = async (req, res, next) => {
 
 module.exports = {
   loginUser,
-  logoutUser, // 🆕 exported
+  logoutUser,
   getProfile,
+  sendOTP,
+  verifyOTP,
   createOwner,
+  registerOwner,
   changePassword,
   updateProfile,
 };

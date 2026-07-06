@@ -1,7 +1,8 @@
 // src/components/common/ChatWidget.jsx
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { selectUser } from '../../store/slices/authSlice';
 import { MessageCircle, X, ChevronDown, ChevronUp, Send } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
 
 // Brand name and support email from .env
 const BRAND_NAME = import.meta.env.VITE_BRAND_NAME || 'CafeFlow';
@@ -42,7 +43,7 @@ const FAQS = [
 ];
 
 const ChatWidget = () => {
-  const { user } = useAuth();
+  const user = useSelector(selectUser);
   const [isOpen, setIsOpen] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [userQuestion, setUserQuestion] = useState('');

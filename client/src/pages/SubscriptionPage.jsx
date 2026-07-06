@@ -1,13 +1,11 @@
 // src/pages/SubscriptionPage.jsx
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/common/Button';
 import { Check, Crown, AlertCircle, Loader2 } from 'lucide-react';
 
 const SubscriptionPage = () => {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [subscription, setSubscription] = useState(null);
   const [pricing, setPricing] = useState({ monthlyPrice: 39, trialPeriodDays: 30, currency: 'USD' });

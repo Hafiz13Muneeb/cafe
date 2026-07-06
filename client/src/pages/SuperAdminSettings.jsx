@@ -1,7 +1,8 @@
 // src/pages/SuperAdminSettings.jsx - Superadmin settings with profile, security, and global theme
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectUser, updateUser } from '../store/slices/authSlice';
+import { selectTheme, updateTheme as updateThemeAction } from '../store/slices/themeSlice';
 import api from '../api/axios';
 import { User, Lock, Palette, Save, Upload, Eye, EyeOff } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -9,8 +10,10 @@ import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 
 const SuperAdminSettings = () => {
-  const { user, updateUserData } = useAuth();
-  const { theme, updateTheme } = useTheme();
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
+  const theme = useSelector(selectTheme);
+
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
@@ -26,13 +29,33 @@ const SuperAdminSettings = () => {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [globalTheme, setGlobalTheme] = useState({
-    primaryColor: '#d4a843',
-    secondaryColor: '#b8860b',
-    mode: 'light',
-    faviconUrl: '',
+    primaryColor: theme?.primaryColor || '#d4a843',
+    secondaryColor: theme?.secondaryColor || '#b8860b',
+    mode: theme?.mode || 'light',
+    faviconUrl: theme?.faviconUrl || '',
   });
   const faviconInputRef = useRef(null);
-  const [faviconPreview, setFaviconPreview] = useState('');
+  const [faviconPreview, setFaviconPreview] = useState(theme?.faviconUrl || '');
+
+  // Sync local state with Redux when user/theme changes
+  useEffect(() => {
+    if (user) {
+      setUsername(user.username || '');
+      setEmail(user.email || '');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (theme) {
+      setGlobalTheme({
+        primaryColor: theme.primaryColor || '#d4a843',
+        secondaryColor: theme.secondaryColor || '#b8860b',
+        mode: theme.mode || 'light',
+        faviconUrl: theme.faviconUrl || '',
+      });
+      setFaviconPreview(theme.faviconUrl || '');
+    }
+  }, [theme]);
 
   useEffect(() => {
     const fetchGlobalSettings = async () => {
@@ -62,7 +85,7 @@ const SuperAdminSettings = () => {
     try {
       const res = await api.put('/auth/update-profile', { username, email });
       if (res.data.success) {
-        updateUserData({ username, email });
+        dispatch(updateUser({ username, email }));
         setMessage({ text: 'Profile updated successfully!', type: 'success' });
       }
     } catch (err) {
@@ -109,7 +132,12 @@ const SuperAdminSettings = () => {
       };
       const res = await api.put('/settings/global', payload);
       if (res.data.success) {
-        updateTheme({ primaryColor: payload.primaryColor, secondaryColor: payload.secondaryColor, mode: payload.mode });
+        // ✅ Dispatch Redux action instead of context
+        dispatch(updateThemeAction({
+          primaryColor: payload.primaryColor,
+          secondaryColor: payload.secondaryColor,
+          mode: payload.mode,
+        }));
         setMessage({ text: 'Theme updated successfully!', type: 'success' });
       }
     } catch (err) {
@@ -133,7 +161,7 @@ const SuperAdminSettings = () => {
         const url = res.data.data.faviconUrl;
         setFaviconPreview(url);
         setGlobalTheme(prev => ({ ...prev, faviconUrl: url }));
-        updateTheme({ faviconUrl: url });
+        dispatch(updateThemeAction({ faviconUrl: url }));
         setMessage({ text: 'Favicon updated successfully!', type: 'success' });
       }
     } catch (err) {

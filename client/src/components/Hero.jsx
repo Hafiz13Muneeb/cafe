@@ -2,16 +2,17 @@ import React, { useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, Zap, Smartphone } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
+import { useSelector } from 'react-redux';
+import { selectTheme } from '../store/slices/themeSlice';
 
 const Hero = () => {
   const containerRef = useRef(null);
-  const { theme } = useTheme();
+  const theme = useSelector(selectTheme);
   const navigate = useNavigate();
 
   const colors = {
-    bg: theme === 'dark' ? '#2c2621' : '#F5F5DC',
-    text: theme === 'dark' ? '#EAE0C8' : '#3E2723',
+    bg: theme.mode === 'dark' ? '#2c2621' : '#F5F5DC',
+    text: theme.mode === 'dark' ? '#EAE0C8' : '#3E2723',
     accent: '#8A9A5B',
   };
 

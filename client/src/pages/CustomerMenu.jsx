@@ -1,8 +1,9 @@
 // src/pages/CustomerMenu.jsx - Public menu with analytics tracking
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { fetchPublicMenu } from '../api/axios';
-import { useCart } from '../context/CartContext';
+import { selectTotalItems, selectTotalPrice } from '../store/slices/cartSlice';
 import MenuItemCard from '../components/MenuItemCard';
 import CartFloatingButton from '../components/CartFloatingButton';
 import CartModal from '../components/CartModal';
@@ -11,7 +12,8 @@ import api from '../api/axios';
 
 const CustomerMenu = () => {
   const { slug } = useParams();
-  const { getTotalItems, getTotalPrice } = useCart();
+  const totalItems = useSelector(selectTotalItems);
+  const totalPrice = useSelector(selectTotalPrice);
 
   const [cafeData, setCafeData] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
@@ -115,9 +117,6 @@ const CustomerMenu = () => {
     );
   }
 
-  const totalItems = getTotalItems();
-  const totalPrice = getTotalPrice();
-
   return (
     <div className="min-h-screen bg-[#F5F5DC] text-[#3E2723] pb-28">
       {/* Header */}
@@ -178,11 +177,9 @@ const CustomerMenu = () => {
         )}
       </div>
 
-      {/* Floating Cart */}
+      {/* Floating Cart – now only passes currency and onClick; totals read from Redux internally */}
       {totalItems > 0 && (
         <CartFloatingButton
-          totalItems={totalItems}
-          totalPrice={totalPrice}
           currency={currency}
           onClick={() => setIsCartOpen(true)}
         />

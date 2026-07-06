@@ -2,25 +2,54 @@ const express = require('express');
 const router = express.Router();
 const {
   loginUser,
-  logoutUser, // 🆕 imported
+  logoutUser,
   getProfile,
   createOwner,
+  registerOwner,
+  sendOTP,       // 🆕
+  verifyOTP,     // 🆕
   changePassword,
   updateProfile,
 } = require('../controllers/authController');
 const { protect, restrictTo } = require('../middleware/auth');
 
-// Public routes
+// ============================================================
+// PUBLIC ROUTES (no authentication required)
+// ============================================================
+
+// Login
 router.post('/login', loginUser);
-// 🆕 Logout route (public because it just clears the cookie)
+
+// Logout (clears the httpOnly cookie)
 router.post('/logout', logoutUser);
 
-// Protected routes (any logged-in user)
+// Public registration for new cafe owners
+router.post('/register', registerOwner);
+
+// 🆕 Send OTP to email
+router.post('/send-otp', sendOTP);
+
+// 🆕 Verify OTP
+router.post('/verify-otp', verifyOTP);
+
+// ============================================================
+// PROTECTED ROUTES (any logged-in user)
+// ============================================================
+
+// Get current user profile
 router.get('/me', protect, getProfile);
+
+// Change password
 router.put('/change-password', protect, changePassword);
+
+// Update profile (username, email)
 router.put('/update-profile', protect, updateProfile);
 
-// Super-admin only route – create a new cafe owner
+// ============================================================
+// SUPER-ADMIN ONLY
+// ============================================================
+
+// Create a new cafe owner (superadmin only)
 router.post('/create-owner', protect, restrictTo('superadmin'), createOwner);
 
 module.exports = router;

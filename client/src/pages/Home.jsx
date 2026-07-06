@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useTheme } from '../context/ThemeContext';
 import Hero from '../components/Hero';
 import BentoShowcase from '../components/BentoShowcase';
 import InteractiveDocs from '../components/InteractiveDocs';
@@ -13,10 +12,7 @@ const sectionVariants = {
 };
 
 const Home = () => {
-  const { loading } = useTheme();
-
-  if (loading) return <div className="min-h-screen bg-[#F5F5DC] flex items-center justify-center font-bold text-[#3E2723]">Loading...</div>;
-
+  // No loading check needed – Redux-Persist ensures store is rehydrated before rendering.
   return (
     <div className="min-h-screen bg-[#F5F5DC] text-[#3E2723] overflow-x-hidden">
       <CursorGlow />

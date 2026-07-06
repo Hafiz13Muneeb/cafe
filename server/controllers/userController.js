@@ -1,11 +1,14 @@
 const User = require('../models/User');
 
-// @desc    Get all cafe owners (Super-admin only)
+// ============================================================
+// GET ALL OWNERS (SuperAdmin only)
+// ============================================================
+
+// @desc    Get all cafe owners
 // @route   GET /api/users/owners
-// @access  Private (Superadmin)
+// @access  Private (SuperAdmin)
 const getAllOwners = async (req, res, next) => {
   try {
-    // Only fetch users with role 'owner', exclude password
     const owners = await User.find({ role: 'owner' })
       .select('-password')
       .sort({ createdAt: -1 });
@@ -20,9 +23,13 @@ const getAllOwners = async (req, res, next) => {
   }
 };
 
-// @desc    Get a single owner by ID (Super-admin only)
+// ============================================================
+// GET SINGLE OWNER BY ID (SuperAdmin only)
+// ============================================================
+
+// @desc    Get a single owner by ID
 // @route   GET /api/users/owners/:id
-// @access  Private (Superadmin)
+// @access  Private (SuperAdmin)
 const getOwnerById = async (req, res, next) => {
   try {
     const owner = await User.findOne({ _id: req.params.id, role: 'owner' }).select('-password');
@@ -39,9 +46,13 @@ const getOwnerById = async (req, res, next) => {
   }
 };
 
-// @desc    Toggle block status of an owner (Super-admin only)
+// ============================================================
+// TOGGLE BLOCK STATUS (SuperAdmin only)
+// ============================================================
+
+// @desc    Toggle block status of an owner
 // @route   PUT /api/users/owners/:id/toggle-block
-// @access  Private (Superadmin)
+// @access  Private (SuperAdmin)
 const toggleBlockOwner = async (req, res, next) => {
   try {
     const owner = await User.findOne({ _id: req.params.id, role: 'owner' });
@@ -50,7 +61,6 @@ const toggleBlockOwner = async (req, res, next) => {
       throw new Error('Owner not found');
     }
 
-    // Toggle the isBlocked field
     owner.isBlocked = !owner.isBlocked;
     await owner.save();
 
@@ -67,20 +77,23 @@ const toggleBlockOwner = async (req, res, next) => {
   }
 };
 
-// @desc    Update owner details (Super-admin only)
+// ============================================================
+// UPDATE OWNER DETAILS (SuperAdmin only)
+// ============================================================
+
+// @desc    Update owner details (cafeName, whatsapp, tables, theme, logo, favicon, currency)
 // @route   PUT /api/users/owners/:id
-// @access  Private (Superadmin)
+// @access  Private (SuperAdmin)
 const updateOwner = async (req, res, next) => {
   try {
-    const { cafeName, whatsappNumber, tables, theme, logoUrl, faviconUrl, currency } = req.body; // ✅ added currency
-
+    const { cafeName, whatsappNumber, tables, theme, logoUrl, faviconUrl, currency } = req.body;
     const owner = await User.findOne({ _id: req.params.id, role: 'owner' });
     if (!owner) {
       res.status(404);
       throw new Error('Owner not found');
     }
 
-    // Update fields if provided
+    // --- cafeName & auto-slug regeneration ---
     if (cafeName !== undefined) {
       const trimmed = cafeName.trim();
       if (!trimmed || trimmed.length === 0) {
@@ -92,25 +105,26 @@ const updateOwner = async (req, res, next) => {
         throw new Error('Cafe name must be 100 characters or less');
       }
       owner.cafeName = trimmed;
-      // Regenerate slug if cafe name changes
+
+      // Regenerate slug from cafeName
       const baseSlug = trimmed
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
       let newSlug = baseSlug;
-      // Ensure uniqueness, but skip the current owner
       const existing = await User.findOne({ slug: newSlug, _id: { $ne: owner._id } });
       if (existing) {
-        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        let randomSuffix = Math.random().toString(36).substring(2, 8);
         newSlug = `${baseSlug}-${randomSuffix}`;
-        // In the rare case it still exists, loop
         while (await User.findOne({ slug: newSlug, _id: { $ne: owner._id } })) {
-          newSlug = `${baseSlug}-${Math.random().toString(36).substring(2, 8)}`;
+          randomSuffix = Math.random().toString(36).substring(2, 8);
+          newSlug = `${baseSlug}-${randomSuffix}`;
         }
       }
       owner.slug = newSlug;
     }
 
+    // --- whatsappNumber ---
     if (whatsappNumber !== undefined) {
       const trimmed = whatsappNumber.trim();
       if (!/^[0-9]{10,15}$/.test(trimmed)) {
@@ -120,6 +134,7 @@ const updateOwner = async (req, res, next) => {
       owner.whatsappNumber = trimmed;
     }
 
+    // --- tables ---
     if (tables !== undefined) {
       if (!Array.isArray(tables)) {
         res.status(400);
@@ -132,7 +147,7 @@ const updateOwner = async (req, res, next) => {
       owner.tables = tables.map(t => t.trim()).filter(t => t.length > 0);
     }
 
-    // ✅ Update currency
+    // --- currency ---
     if (currency !== undefined) {
       const trimmed = currency.trim();
       if (!trimmed || trimmed.length === 0) {
@@ -146,6 +161,7 @@ const updateOwner = async (req, res, next) => {
       owner.currency = trimmed;
     }
 
+    // --- theme ---
     if (theme !== undefined) {
       const { primaryColor, secondaryColor, mode } = theme;
       if (primaryColor && !/^#[0-9A-F]{6}$/i.test(primaryColor)) {
@@ -160,7 +176,6 @@ const updateOwner = async (req, res, next) => {
         res.status(400);
         throw new Error('Mode must be either "light" or "dark"');
       }
-      // Merge with existing theme
       owner.theme = {
         ...owner.theme,
         ...(primaryColor && { primaryColor }),
@@ -169,6 +184,7 @@ const updateOwner = async (req, res, next) => {
       };
     }
 
+    // --- logo & favicon (URLs, not file uploads) ---
     if (logoUrl !== undefined) {
       owner.logoUrl = logoUrl.trim();
     }
@@ -188,9 +204,13 @@ const updateOwner = async (req, res, next) => {
   }
 };
 
-// @desc    Delete an owner (Super-admin only)
+// ============================================================
+// DELETE OWNER (SuperAdmin only)
+// ============================================================
+
+// @desc    Delete an owner
 // @route   DELETE /api/users/owners/:id
-// @access  Private (Superadmin)
+// @access  Private (SuperAdmin)
 const deleteOwner = async (req, res, next) => {
   try {
     const owner = await User.findOne({ _id: req.params.id, role: 'owner' });
@@ -199,8 +219,7 @@ const deleteOwner = async (req, res, next) => {
       throw new Error('Owner not found');
     }
 
-    // You might want to also delete all their menu items, but we can keep them or cascade.
-    // For simplicity, we'll delete the user only.
+    // Note: You might want to delete all menu items too, but we keep them for simplicity.
     await owner.deleteOne();
 
     res.status(200).json({

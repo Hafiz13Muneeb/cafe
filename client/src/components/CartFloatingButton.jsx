@@ -1,8 +1,16 @@
 // src/components/CartFloatingButton.jsx - Floating cart button with dynamic theming
 import React from 'react';
+import { useSelector } from 'react-redux';
 import { ShoppingCart } from 'lucide-react';
+import { selectTotalItems, selectTotalPrice } from '../store/slices/cartSlice';
 
-const CartFloatingButton = ({ totalItems, totalPrice, onClick, currency = 'Rs' }) => {
+const CartFloatingButton = ({ onClick, currency = 'Rs' }) => {
+  const totalItems = useSelector(selectTotalItems);
+  const totalPrice = useSelector(selectTotalPrice);
+
+  // Don't render if cart is empty
+  if (totalItems === 0) return null;
+
   return (
     <button
       onClick={onClick}

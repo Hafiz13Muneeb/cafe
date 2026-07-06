@@ -1,7 +1,8 @@
 // src/pages/SuperAdminCafeDetails.jsx - Full analytics dashboard with notes
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useSelector } from 'react-redux';
+import { selectUser } from '../store/slices/authSlice';
 import api from '../api/axios';
 import NoteList from '../components/superadmin/NoteList';
 import StatCard from '../components/common/StatCard';
@@ -13,7 +14,8 @@ import { Eye, ShoppingBag, DollarSign, TrendingDown, BarChart3, AlertCircle } fr
 const SuperAdminCafeDetails = () => {
   const { cafeSlug } = useParams();
   const navigate = useNavigate();
-  const { isSuperAdmin } = useAuth();
+  const user = useSelector(selectUser);
+  const isSuperAdmin = user?.role === 'superadmin';
 
   const [cafeName, setCafeName] = useState('');
   const [cafeId, setCafeId] = useState(null);

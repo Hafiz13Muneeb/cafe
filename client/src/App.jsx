@@ -1,8 +1,10 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
-import { useAuth } from './context/AuthContext';
-import { useTheme } from './context/ThemeContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectUser, selectIsAuthenticated, selectAuthLoading, fetchMe } from './store/slices/authSlice';
+import { selectTheme } from './store/slices/themeSlice';
 import Home from './pages/Home';
 import CustomerMenu from './pages/CustomerMenu';
 import AdminLogin from './pages/AdminLogin';
@@ -15,7 +17,9 @@ import Blog from './pages/Blog';
 import Contact from './pages/Contact';
 import OwnerAnalytics from './pages/OwnerAnalytics';
 import QRCodePage from './pages/QRCodePage';
-import SubscriptionPage from './pages/SubscriptionPage'; // 🆕 import
+import SubscriptionPage from './pages/SubscriptionPage';
+import RegisterCafe from './pages/RegisterCafe';
+import Onboarding from './pages/Onboarding';
 import ChatWidget from './components/common/ChatWidget';
 
 const PublicLayout = ({ children }) => {
@@ -28,7 +32,10 @@ const PublicLayout = ({ children }) => {
 };
 
 const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
-  const { user, isAuthenticated, isSuperAdmin, loading } = useAuth();
+  const user = useSelector(selectUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const loading = useSelector(selectAuthLoading);
+  const isSuperAdmin = user?.role === 'superadmin';
 
   if (loading) {
     return (
@@ -52,9 +59,27 @@ const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
   return children;
 };
 
+const RootRedirect = () => {
+  const user = useSelector(selectUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const loading = useSelector(selectAuthLoading);
+
+  if (loading) return null;
+
+  if (isAuthenticated) {
+    return <Navigate to={user?.role === 'superadmin' ? '/admin/super' : '/admin/dashboard'} replace />;
+  }
+  return <Navigate to="/home" replace />;
+};
+
+// LoginRoute now simply renders AdminLogin – authentication state is handled inside.
+const LoginRoute = () => {
+  return <AdminLogin />;
+};
+
 const FaviconManager = ({ children }) => {
   const location = useLocation();
-  const { theme } = useTheme();
+  const theme = useSelector(selectTheme);
   const isMenuRoute = location.pathname.startsWith('/menu/');
 
   useEffect(() => {
@@ -73,18 +98,41 @@ const FaviconManager = ({ children }) => {
 };
 
 function App() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(fetchMe());
+  }, [dispatch]);
+
   return (
     <Router>
+      {/* ✅ Global toast container */}
+      <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
+      
       <FaviconManager>
         <Routes>
-          {/* Public routes with ChatWidget */}
-          <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
+          {/* Public routes */}
+          <Route path="/home" element={<PublicLayout><Home /></PublicLayout>} />
           <Route path="/menu/:slug" element={<PublicLayout><CustomerMenu /></PublicLayout>} />
           <Route path="/blog" element={<PublicLayout><Blog /></PublicLayout>} />
           <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
+          <Route path="/register" element={<PublicLayout><RegisterCafe /></PublicLayout>} />
 
-          {/* Login (no ChatWidget) */}
-          <Route path="/admin" element={<AdminLogin />} />
+          {/* Root redirect */}
+          <Route path="/" element={<RootRedirect />} />
+
+          {/* Login – now handles both logged-in and logged-out states */}
+          <Route path="/admin" element={<LoginRoute />} />
+
+          {/* Onboarding – protected */}
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <Onboarding />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Protected admin routes */}
           <Route
@@ -95,7 +143,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/admin/analytics"
             element={
@@ -104,7 +151,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/admin/qr"
             element={
@@ -113,8 +159,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
-          {/* 🆕 Subscription page */}
           <Route
             path="/admin/subscription"
             element={
@@ -123,7 +167,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/admin/dashboard/settings"
             element={
@@ -132,7 +175,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/admin/super"
             element={
@@ -141,7 +183,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/admin/settings"
             element={
@@ -150,7 +191,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/admin/super/:cafeSlug"
             element={
@@ -160,6 +200,7 @@ function App() {
             }
           />
 
+          {/* 404 */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </FaviconManager>

@@ -2,7 +2,11 @@ const User = require('../models/User');
 const AppSettings = require('../models/AppSettings');
 const cloudinary = require('../config/cloudinary');
 
-// Helper: extract Cloudinary public_id from URL
+// ============================================================
+// HELPERS
+// ============================================================
+
+// Extract Cloudinary public_id from URL
 const extractPublicId = (imageUrl) => {
   if (!imageUrl) return null;
   const uploadIndex = imageUrl.indexOf('/upload/');
@@ -16,7 +20,7 @@ const extractPublicId = (imageUrl) => {
   return publicIdWithExt.replace(/\.[^/.]+$/, '');
 };
 
-// Helper: generate a unique slug from a base string
+// Generate a unique slug from a base string
 const generateUniqueSlug = async (baseSlug, excludeId) => {
   let newSlug = baseSlug;
   let counter = 1;
@@ -33,7 +37,7 @@ const generateUniqueSlug = async (baseSlug, excludeId) => {
 };
 
 // ============================================================
-// OWNER SETTINGS (per-cafe)
+// OWNER SETTINGS
 // ============================================================
 
 // @desc    Get the logged-in owner's settings
@@ -42,7 +46,7 @@ const generateUniqueSlug = async (baseSlug, excludeId) => {
 const getSettings = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select(
-      'cafeName whatsappNumber logoUrl faviconUrl tables slug currency' // ✅ added currency
+      'cafeName whatsappNumber logoUrl faviconUrl tables slug currency'
     );
     if (!user) {
       res.status(404);
@@ -58,7 +62,7 @@ const getSettings = async (req, res, next) => {
         faviconUrl: user.faviconUrl || '',
         tables: user.tables || [],
         slug: user.slug || '',
-        currency: user.currency || 'Rs', // ✅ include currency
+        currency: user.currency || 'Rs',
       },
     });
   } catch (error) {
@@ -66,23 +70,21 @@ const getSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Update the logged-in owner's settings (cafeName, whatsapp, tables, logo, favicon, slug, currency)
+// @desc    Update the logged-in owner's settings
 // @route   PUT /api/settings
 // @access  Private (Owner)
 const updateSettings = async (req, res, next) => {
   try {
-    const { cafeName, whatsappNumber, tables, slug, currency } = req.body; // ✅ added currency
-
+    const { cafeName, whatsappNumber, tables, slug, currency } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) {
       res.status(404);
       throw new Error('User not found');
     }
 
-    // Track what changed for the response
     const changes = {};
 
-    // --- Update cafeName ---
+    // --- cafeName ---
     if (cafeName !== undefined) {
       const trimmed = cafeName.trim();
       if (!trimmed || trimmed.length === 0) {
@@ -96,24 +98,21 @@ const updateSettings = async (req, res, next) => {
       if (trimmed !== user.cafeName) {
         user.cafeName = trimmed;
         changes.cafeName = trimmed;
-        // Slug will be regenerated only if not explicitly provided
       }
     }
 
-    // --- Update slug (explicitly provided by the owner) ---
+    // --- slug (explicit) ---
     if (slug !== undefined) {
       const trimmedSlug = slug.trim().toLowerCase();
       if (!trimmedSlug || trimmedSlug.length === 0) {
         res.status(400);
         throw new Error('Slug cannot be empty');
       }
-      // Validate slug format: only lowercase letters, numbers, and hyphens
       if (!/^[a-z0-9-]+$/.test(trimmedSlug)) {
         res.status(400);
         throw new Error('Slug can only contain lowercase letters, numbers, and hyphens');
       }
       if (trimmedSlug !== user.slug) {
-        // Check uniqueness
         const existing = await User.findOne({
           slug: trimmedSlug,
           _id: { $ne: user._id },
@@ -126,9 +125,7 @@ const updateSettings = async (req, res, next) => {
         changes.slug = trimmedSlug;
       }
     } else if (cafeName !== undefined && cafeName.trim() !== user.cafeName) {
-      // If cafeName changed but slug was NOT explicitly provided,
-      // regenerate slug from the new cafeName (this is the existing behavior)
-      // BUT we show a warning that QR codes will change.
+      // Auto-regenerate slug from new cafeName
       const baseSlug = user.cafeName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -142,7 +139,7 @@ const updateSettings = async (req, res, next) => {
       }
     }
 
-    // --- Update WhatsApp number ---
+    // --- whatsappNumber ---
     if (whatsappNumber !== undefined) {
       const trimmed = whatsappNumber.trim();
       if (!/^[0-9]{10,15}$/.test(trimmed)) {
@@ -155,7 +152,7 @@ const updateSettings = async (req, res, next) => {
       }
     }
 
-    // --- Update tables ---
+    // --- tables ---
     if (tables !== undefined) {
       let tableArray;
       if (Array.isArray(tables)) {
@@ -174,7 +171,7 @@ const updateSettings = async (req, res, next) => {
       changes.tables = tableArray;
     }
 
-    // ✅ Update currency
+    // --- currency ---
     if (currency !== undefined) {
       const trimmed = currency.trim();
       if (!trimmed || trimmed.length === 0) {
@@ -191,16 +188,14 @@ const updateSettings = async (req, res, next) => {
       }
     }
 
-    // --- Handle logo upload with rollback ---
+    // --- logo & favicon uploads ---
     if (req.files) {
       // Logo
       if (req.files.logo && req.files.logo[0]) {
         const logoFile = req.files.logo[0];
         const oldLogoUrl = user.logoUrl;
         try {
-          // Upload new logo first
           user.logoUrl = logoFile.path;
-          // If upload succeeded and there was an old logo, delete it
           if (oldLogoUrl) {
             const publicId = extractPublicId(oldLogoUrl);
             if (publicId) {
@@ -208,13 +203,11 @@ const updateSettings = async (req, res, next) => {
                 await cloudinary.uploader.destroy(publicId);
               } catch (cloudinaryError) {
                 console.error('Failed to delete old logo from Cloudinary:', cloudinaryError);
-                // Don't fail the request; the new logo is already saved
               }
             }
           }
           changes.logoUrl = logoFile.path;
         } catch (uploadError) {
-          // If new upload fails, revert to old logo
           user.logoUrl = oldLogoUrl;
           console.error('Failed to upload new logo:', uploadError);
           res.status(400);
@@ -250,7 +243,6 @@ const updateSettings = async (req, res, next) => {
 
     await user.save();
 
-    // Build response
     const responseData = {
       cafeName: user.cafeName,
       slug: user.slug,
@@ -258,10 +250,9 @@ const updateSettings = async (req, res, next) => {
       logoUrl: user.logoUrl || '',
       faviconUrl: user.faviconUrl || '',
       tables: user.tables || [],
-      currency: user.currency || 'Rs', // ✅ include currency
+      currency: user.currency || 'Rs',
     };
 
-    // Add warning if slug changed without explicit request
     if (changes.slugWarning) {
       responseData.warning = changes.slugWarning;
     }
@@ -276,12 +267,12 @@ const updateSettings = async (req, res, next) => {
 };
 
 // ============================================================
-// GLOBAL SETTINGS (App-wide theme + pricing)
+// GLOBAL SETTINGS (App-wide)
 // ============================================================
 
 // @desc    Get global app settings (theme + favicon + pricing)
 // @route   GET /api/settings/global
-// @access  Public (anyone can read)
+// @access  Public
 const getGlobalSettings = async (req, res, next) => {
   try {
     const settings = await AppSettings.getSingleton();
@@ -294,13 +285,12 @@ const getGlobalSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Update global app settings (SuperAdmin only) – JSON only (colors, mode, pricing)
+// @desc    Update global app settings (SuperAdmin only)
 // @route   PUT /api/settings/global
 // @access  Private (SuperAdmin)
 const updateGlobalSettings = async (req, res, next) => {
   try {
     const { primaryColor, secondaryColor, mode, monthlyPrice, trialPeriodDays } = req.body;
-
     const settings = await AppSettings.getSingleton();
 
     if (primaryColor !== undefined) {
@@ -327,7 +317,6 @@ const updateGlobalSettings = async (req, res, next) => {
       settings.mode = mode;
     }
 
-    // ✅ Update pricing (superadmin only)
     if (monthlyPrice !== undefined) {
       if (typeof monthlyPrice !== 'number' || monthlyPrice < 0) {
         res.status(400);
@@ -355,25 +344,20 @@ const updateGlobalSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Update global favicon (SuperAdmin only) – file upload
+// @desc    Update global favicon (SuperAdmin only)
 // @route   PUT /api/settings/global/favicon
 // @access  Private (SuperAdmin)
 const updateGlobalFavicon = async (req, res, next) => {
   try {
     const settings = await AppSettings.getSingleton();
-
     if (!req.file) {
       res.status(400);
       throw new Error('Please upload a favicon image');
     }
 
     const oldFaviconUrl = settings.faviconUrl;
-
     try {
-      // Upload new favicon first
       settings.faviconUrl = req.file.path;
-
-      // If upload succeeded and there was an old favicon, delete it
       if (oldFaviconUrl) {
         const publicId = extractPublicId(oldFaviconUrl);
         if (publicId) {
@@ -385,7 +369,6 @@ const updateGlobalFavicon = async (req, res, next) => {
         }
       }
     } catch (uploadError) {
-      // If new upload fails, revert to old favicon
       settings.faviconUrl = oldFaviconUrl;
       console.error('Failed to upload new favicon:', uploadError);
       res.status(400);
@@ -404,7 +387,7 @@ const updateGlobalFavicon = async (req, res, next) => {
 };
 
 // ============================================================
-// PUBLIC PRICING ENDPOINT (no auth required)
+// PUBLIC PRICING ENDPOINT
 // ============================================================
 
 // @desc    Get current pricing (monthly price & trial days)
@@ -436,7 +419,6 @@ const getPricing = async (req, res, next) => {
 const updatePricing = async (req, res, next) => {
   try {
     const { monthlyPrice, trialPeriodDays } = req.body;
-
     const settings = await AppSettings.getSingleton();
 
     if (monthlyPrice !== undefined) {

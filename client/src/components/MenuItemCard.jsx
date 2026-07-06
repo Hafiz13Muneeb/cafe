@@ -1,9 +1,14 @@
 import React from 'react';
-import { useCart } from '../context/CartContext';
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../store/slices/cartSlice';
 import { Plus } from 'lucide-react';
 
 const MenuItemCard = ({ item, currency = 'Rs' }) => {
-  const { addToCart } = useCart();
+  const dispatch = useDispatch();
+
+  const handleAddToCart = () => {
+    dispatch(addToCart(item));
+  };
 
   return (
     <div
@@ -38,7 +43,7 @@ const MenuItemCard = ({ item, currency = 'Rs' }) => {
             {currency}{item.price}
           </span>
           <button
-            onClick={() => addToCart(item)}
+            onClick={handleAddToCart}
             disabled={!item.isAvailable}
             className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold transition-all hover:bg-[#3E2723] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#8A9A5B]"
           >

@@ -1,7 +1,8 @@
 // src/pages/AdminLogin.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser, logoutUser, selectUser, selectIsAuthenticated } from '../store/slices/authSlice';
 import {
   Lock,
   User,
@@ -11,17 +12,22 @@ import {
   CheckCircle,
   ChevronRight,
   ChevronLeft,
+  LogOut,
 } from 'lucide-react';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 
 const AdminLogin = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const user = useSelector(selectUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuth();
-  const navigate = useNavigate();
 
   // Tour state
   const [showTour, setShowTour] = useState(false);
@@ -36,7 +42,6 @@ const AdminLogin = () => {
 
   // Check if we should show the tour
   useEffect(() => {
-    // ✅ Removed redundant `adminToken` check – tokens are now httpOnly cookies
     const hasUserData = localStorage.getItem('adminData');
     const hasCookie = document.cookie.split(';').some((c) => c.trim().startsWith('token='));
     const tourShown = localStorage.getItem('tourShown');
@@ -68,15 +73,20 @@ const AdminLogin = () => {
 
     setLoading(true);
     try {
-      const result = await login(username.trim(), password.trim());
-      if (result.success) {
-        if (result.user?.role === 'superadmin') {
+      const resultAction = await dispatch(loginUser({
+        username: username.trim(),
+        password: password.trim(),
+      }));
+
+      if (loginUser.fulfilled.match(resultAction)) {
+        const user = resultAction.payload;
+        if (user?.role === 'superadmin') {
           navigate('/admin/super');
         } else {
           navigate('/admin/dashboard');
         }
       } else {
-        setError(result.error || 'Login failed. Please try again.');
+        setError(resultAction.payload || 'Login failed. Please try again.');
       }
     } catch (err) {
       setError(err.message || 'An unexpected error occurred');
@@ -89,6 +99,12 @@ const AdminLogin = () => {
     setUsername('Demo');
     setPassword('demo123');
     setError('');
+  };
+
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
+    // Stay on the same page; the login form will appear.
+    window.location.reload(); // force refresh to clear any stale state
   };
 
   // ---------- TOUR CONFIG ----------
@@ -148,7 +164,6 @@ const AdminLogin = () => {
     }
   };
 
-  // Get position of the target element
   const getTargetRect = () => {
     const ref = currentStepData?.target?.current;
     if (!ref) return null;
@@ -157,13 +172,12 @@ const AdminLogin = () => {
 
   const targetRect = getTargetRect();
 
-  // Decide tooltip position (top or bottom) based on viewport space
   const getTooltipPosition = () => {
     if (!targetRect) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
     const viewportHeight = window.innerHeight;
     const spaceBelow = viewportHeight - targetRect.bottom;
     const spaceAbove = targetRect.top;
-    const tooltipHeight = 240; // approximate
+    const tooltipHeight = 240;
     let top, left;
     const leftPos = Math.max(20, Math.min(targetRect.left + targetRect.width / 2 - 160, window.innerWidth - 360));
     if (spaceBelow > tooltipHeight + 20) {
@@ -171,7 +185,6 @@ const AdminLogin = () => {
     } else if (spaceAbove > tooltipHeight + 20) {
       top = targetRect.top - tooltipHeight - 16;
     } else {
-      // fallback: center of viewport
       top = (viewportHeight - tooltipHeight) / 2;
       return { top: `${top}px`, left: '50%', transform: 'translateX(-50%)' };
     }
@@ -180,14 +193,56 @@ const AdminLogin = () => {
 
   const tooltipStyle = getTooltipPosition();
 
+  // ------------------------------------------------------------
+  // If user is already logged in, show a special message
+  // ------------------------------------------------------------
+  if (isAuthenticated && user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F5DC]">
+        <div className="w-full max-w-md bg-white border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8 text-center">
+          <div className="inline-block p-4 rounded-full bg-[#8A9A5B] border-2 border-[#3E2723] mb-4">
+            <CheckCircle size={32} className="text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-[#3E2723]">You are already logged in</h2>
+          <p className="text-sm text-[#3E2723]/70 mt-2">
+            Signed in as <strong>{user.username}</strong> ({user.role === 'superadmin' ? 'Super Admin' : 'Owner'}).
+          </p>
+          <p className="text-xs text-[#3E2723]/50 mt-1">
+            If you want to sign in with a different account, please log out first.
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            <Button
+              variant="primary"
+              onClick={() => navigate(user.role === 'superadmin' ? '/admin/super' : '/admin/dashboard')}
+              className="w-full justify-center"
+            >
+              Go to Dashboard
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleLogout}
+              className="w-full justify-center"
+            >
+              <LogOut size={16} className="inline mr-2" /> Logout
+            </Button>
+          </div>
+          <div className="mt-4 border-t border-[#3E2723]/20 pt-4">
+            <Link to="/register" className="text-xs text-[#8A9A5B] hover:underline">
+              Create another account
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ------------------------------------------------------------
+  // Normal login form (user not authenticated)
+  // ------------------------------------------------------------
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F5DC] relative">
-      {/* ===================== TOUR OVERLAY (CLEAR BACKGROUND) ===================== */}
       {showTour && targetRect && (
         <div className="fixed inset-0 z-50 pointer-events-none">
-          {/* No dimming overlay – background is fully clear */}
-
-          {/* Highlight ring around target */}
           <div
             className="absolute pointer-events-none"
             style={{
@@ -200,8 +255,6 @@ const AdminLogin = () => {
               transition: 'all 0.3s ease',
             }}
           />
-
-          {/* Tooltip – pointer-events auto for interactivity */}
           <div
             className="absolute bg-white border-4 border-[#3E2723] shadow-[8px_8px_0px_0px_#8A9A5B] p-5 max-w-xs w-72 pointer-events-auto"
             style={{
@@ -210,42 +263,31 @@ const AdminLogin = () => {
               transform: tooltipStyle.transform || 'none',
             }}
           >
-            {/* Step indicator */}
             <div className="flex items-center gap-1.5 mb-3">
               {Array.from({ length: totalSteps }).map((_, idx) => (
                 <div
                   key={idx}
-                  className={`h-1 flex-1 rounded-full transition ${
-                    idx === tourStep ? 'bg-[#8A9A5B]' : 'bg-[#EAE0C8]'
-                  }`}
+                  className={`h-1 flex-1 rounded-full transition ${idx === tourStep ? 'bg-[#8A9A5B]' : 'bg-[#EAE0C8]'}`}
                 />
               ))}
             </div>
-
-            {/* Icon & Title */}
             <div className="flex items-center gap-3 mb-2">
               <div className="p-1.5 bg-[#8A9A5B] rounded-full border-2 border-[#3E2723]">
                 <currentStepData.icon size={18} className="text-white" />
               </div>
               <h3 className="font-bold text-[#3E2723] text-base">{currentStepData.title}</h3>
             </div>
-
             <p className="text-sm text-[#3E2723]/70 mb-4">{currentStepData.description}</p>
-
-            {/* Navigation */}
             <div className="flex justify-between items-center">
               <button
                 onClick={handlePrev}
                 disabled={tourStep === 0}
                 className={`text-sm font-bold transition ${
-                  tourStep === 0
-                    ? 'text-[#3E2723]/30 cursor-not-allowed'
-                    : 'text-[#3E2723] hover:text-[#8A9A5B]'
+                  tourStep === 0 ? 'text-[#3E2723]/30 cursor-not-allowed' : 'text-[#3E2723] hover:text-[#8A9A5B]'
                 }`}
               >
                 Back
               </button>
-
               <div className="flex gap-2">
                 <button
                   onClick={handleSkip}
@@ -266,7 +308,6 @@ const AdminLogin = () => {
         </div>
       )}
 
-      {/* ===================== LOGIN FORM ===================== */}
       <div className="w-full max-w-md bg-white border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8">
         <div className="text-center mb-6">
           <div className="inline-block p-4 rounded-full bg-[#8A9A5B] border-2 border-[#3E2723] mb-4">
@@ -330,7 +371,6 @@ const AdminLogin = () => {
           </div>
         </form>
 
-        {/* Demo credentials with click-to-fill */}
         <div className="mt-6 border-t border-[#3E2723]/20 pt-4">
           <p className="text-xs text-center text-[#3E2723]/40">
             Demo credentials:{' '}
@@ -348,12 +388,9 @@ const AdminLogin = () => {
 
         <p ref={createAccountRef} className="text-xs text-center text-[#3E2723]/40 mt-3">
           Don't have an account?{' '}
-          <a
-            href="/blog#howCreateAccount"
-            className="text-[#8A9A5B] hover:underline font-medium"
-          >
+          <Link to="/register" className="text-[#8A9A5B] hover:underline font-medium">
             Create one here
-          </a>
+          </Link>
         </p>
       </div>
     </div>
