@@ -8,6 +8,7 @@ const {
   getUnreadCount,
   markAllAsRead,
   deleteNotification,
+  getNotificationSummary, // ✅ new
 } = require('../controllers/notificationController');
 const { protect, restrictTo } = require('../middleware/auth');
 
@@ -15,6 +16,9 @@ const { protect, restrictTo } = require('../middleware/auth');
 // PROTECTED ROUTES – All require authentication
 // ============================================================
 router.use(protect);
+
+// 🆕 Summary endpoint – combines unread count + notifications list
+router.get('/summary', getNotificationSummary);
 
 // Owner routes (available to all authenticated users)
 router.get('/owner', getOwnerNotifications);
@@ -27,4 +31,4 @@ router.post('/', restrictTo('superadmin'), sendNotification);
 router.get('/', restrictTo('superadmin'), getSentNotifications);
 router.delete('/:id', restrictTo('superadmin'), deleteNotification);
 
-module.exports = router; // ✅ CORRECT
+module.exports = router;

@@ -201,6 +201,36 @@ const deleteNotification = async (req, res, next) => {
   }
 };
 
+// ============================================================
+// 🆕 MERGED SUMMARY – returns unreadCount + notifications in one call
+// ============================================================
+const getNotificationSummary = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const [unreadCount, notifications] = await Promise.all([
+      Notification.countDocuments({ 'readBy.userId': { $ne: userId } }),
+      Notification.find({ 'readBy.userId': { $ne: userId } })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate('sentBy', 'username')
+    ]);
+    // Mark them as unread (since we only fetch unread)
+    const notificationsWithReadStatus = notifications.map(notif => ({
+      ...notif.toObject(),
+      isRead: false,
+    }));
+    res.status(200).json({
+      success: true,
+      data: {
+        unreadCount,
+        notifications: notificationsWithReadStatus,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   sendNotification,
   getSentNotifications,
@@ -209,4 +239,5 @@ module.exports = {
   getUnreadCount,
   markAllAsRead,
   deleteNotification,
+  getNotificationSummary, // ✅ exported
 };

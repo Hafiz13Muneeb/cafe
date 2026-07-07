@@ -1,7 +1,7 @@
 // src/pages/OwnerSettings.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom'; // ✅ import Link
+import { Link } from 'react-router-dom';
 import { selectUser, updateUser } from '../store/slices/authSlice';
 import { selectTheme, updateTheme as updateThemeAction } from '../store/slices/themeSlice';
 import api from '../api/axios';
@@ -39,6 +39,9 @@ const OwnerSettings = () => {
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // ✅ Ref to prevent concurrent theme saves
+  const isSavingRef = useRef(false);
 
   // Fetch current settings on mount
   useEffect(() => {
@@ -138,12 +141,18 @@ const OwnerSettings = () => {
     }
   };
 
-  // ----- Theme Settings Submit (separate endpoint) -----
+  // ----- Theme Settings Submit (with debounce & rate-limit handling) -----
   const handleThemeSubmit = async (e) => {
     e?.preventDefault();
+
+    // ✅ Prevent concurrent requests
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
+
     console.log('🟢 Theme submit called – URL: /settings/theme');
     setLoading(true);
     setMessage({ text: '', type: '' });
+
     try {
       const payload = {
         primaryColor,
@@ -156,15 +165,19 @@ const OwnerSettings = () => {
         setMessage({ text: 'Theme updated successfully!', type: 'success' });
       }
     } catch (err) {
+      const status = err.response?.status;
       const msg = err.response?.data?.message || 'Failed to update theme';
-      if (err.response?.status === 403) {
-        // ✅ Store the error with a marker so we can show the upgrade link
+
+      if (status === 429) {
+        setMessage({ text: 'Too many requests. Please wait a moment before trying again.', type: 'error' });
+      } else if (status === 403) {
         setMessage({ text: 'Theme customization requires a paid subscription. Please upgrade.', type: 'error_subscription' });
       } else {
         setMessage({ text: msg, type: 'error' });
       }
     } finally {
       setLoading(false);
+      isSavingRef.current = false; // ✅ allow next request
     }
   };
 
@@ -249,7 +262,6 @@ const OwnerSettings = () => {
           aria-live="polite"
         >
           <span>{message.text}</span>
-          {/* ✅ If it's the subscription error, show an Upgrade link */}
           {message.type === 'error_subscription' && (
             <Link
               to="/admin/subscription"

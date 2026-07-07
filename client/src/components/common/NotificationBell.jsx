@@ -19,27 +19,70 @@ const NotificationBell = () => {
   const [selectedNotif, setSelectedNotif] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const intervalRef = useRef(null);
 
+  // ✅ Single API call – summary endpoint
   const fetchNotifications = async () => {
     if (!user) return;
     try {
-      const [countRes, listRes] = await Promise.all([
-        api.get('/notifications/unread-count'),
-        api.get('/notifications/owner?unreadOnly=true&limit=10'),
-      ]);
-      setUnreadCount(countRes.data.data.count || 0);
-      setNotifications(listRes.data.data || []);
+      setLoading(true);
+      const res = await api.get('/notifications/summary');
+      if (res.data.success) {
+        setUnreadCount(res.data.data.unreadCount || 0);
+        setNotifications(res.data.data.notifications || []);
+      }
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Mount: fetch & set polling (60s, only when visible)
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+
+    const startInterval = () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          fetchNotifications();
+        }
+      }, 60000); // 60 seconds
+    };
+
+    startInterval();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchNotifications(); // refresh immediately
+        if (!intervalRef.current) {
+          startInterval(); // restart interval if it was cleared
+        }
+      } else {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [user]);
 
+  // Fetch fresh data when dropdown is opened
+  useEffect(() => {
+    if (isOpen) {
+      fetchNotifications();
+    }
+  }, [isOpen]);
+
+  // Click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -53,6 +96,7 @@ const NotificationBell = () => {
   const handleMarkAsRead = async (notificationId) => {
     try {
       await api.patch(`/notifications/${notificationId}/read`);
+      // Update local state
       setNotifications(notifications.filter(n => n._id !== notificationId));
       setUnreadCount(prev => Math.max(0, prev - 1));
       toast.success('Notification marked as read');

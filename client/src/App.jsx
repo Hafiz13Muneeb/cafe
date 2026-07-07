@@ -1,4 +1,5 @@
 // src/App.jsx
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useEffect } from 'react';
@@ -6,30 +7,34 @@ import { useDispatch, useSelector } from 'react-redux';
 import { selectUser, selectIsAuthenticated, selectAuthLoading, fetchMe } from './store/slices/authSlice';
 import { selectTheme } from './store/slices/themeSlice';
 import { syncCart } from './store/slices/cartSlice';
-import Home from './pages/Home';
-import CustomerMenu from './pages/CustomerMenu';
-import AdminLogin from './pages/AdminLogin';
-import AdminDashboard from './pages/AdminDashboard';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
-import SuperAdminSettings from './pages/SuperAdminSettings';
-import OwnerSettings from './pages/OwnerSettings';
-import SuperAdminCafeDetails from './pages/SuperAdminCafeDetails';
-import Blog from './pages/Blog';
-import Contact from './pages/Contact';
-import OwnerAnalytics from './pages/OwnerAnalytics';
-import QRCodePage from './pages/QRCodePage';
-import SubscriptionPage from './pages/SubscriptionPage';
-import RegisterCafe from './pages/RegisterCafe';
-import Onboarding from './pages/Onboarding';
-import Feedback from './pages/Feedback';
-import SuperAdminNotifications from './pages/SuperAdminNotifications';
 import ChatWidget from './components/common/ChatWidget';
 
-// Helper: convert hex to RGB string
+// ============================================================
+// LAZY LOAD ALL PAGES – reduces initial bundle size
+// ============================================================
+const Home = lazy(() => import('./pages/Home'));
+const CustomerMenu = lazy(() => import('./pages/CustomerMenu'));
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard'));
+const SuperAdminSettings = lazy(() => import('./pages/SuperAdminSettings'));
+const OwnerSettings = lazy(() => import('./pages/OwnerSettings'));
+const SuperAdminCafeDetails = lazy(() => import('./pages/SuperAdminCafeDetails'));
+const Blog = lazy(() => import('./pages/Blog'));
+const Contact = lazy(() => import('./pages/Contact'));
+const OwnerAnalytics = lazy(() => import('./pages/OwnerAnalytics'));
+const QRCodePage = lazy(() => import('./pages/QRCodePage'));
+const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
+const RegisterCafe = lazy(() => import('./pages/RegisterCafe'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
+const Feedback = lazy(() => import('./pages/Feedback'));
+const SuperAdminNotifications = lazy(() => import('./pages/SuperAdminNotifications'));
+
+// ============================================================
+// HELPERS
+// ============================================================
 const hexToRgb = (hex) => {
-  // Remove # if present
   const cleanHex = hex.replace('#', '');
-  // Parse 3-digit or 6-digit hex
   let r, g, b;
   if (cleanHex.length === 3) {
     r = parseInt(cleanHex[0] + cleanHex[0], 16);
@@ -43,14 +48,15 @@ const hexToRgb = (hex) => {
   return `${r}, ${g}, ${b}`;
 };
 
-const PublicLayout = ({ children }) => {
-  return (
-    <>
-      {children}
-      <ChatWidget />
-    </>
-  );
-};
+// ============================================================
+// LAYOUTS & ROUTE GUARDS
+// ============================================================
+const PublicLayout = ({ children }) => (
+  <>
+    {children}
+    <ChatWidget />
+  </>
+);
 
 const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
   const user = useSelector(selectUser);
@@ -90,9 +96,7 @@ const RootRedirect = () => {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const loading = useSelector(selectAuthLoading);
-
   if (loading) return null;
-
   if (isAuthenticated) {
     return <Navigate to={user?.role === 'superadmin' ? '/admin/super' : '/admin/dashboard'} replace />;
   }
@@ -123,11 +127,14 @@ const FaviconManager = ({ children }) => {
   return children;
 };
 
+// ============================================================
+// APP COMPONENT
+// ============================================================
 function App() {
   const dispatch = useDispatch();
   const theme = useSelector(selectTheme);
 
-  // Fetch authenticated user on mount
+  // Fetch authenticated user
   useEffect(() => {
     dispatch(fetchMe());
   }, [dispatch]);
@@ -152,7 +159,7 @@ function App() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [dispatch]);
 
-  // ✅ Apply theme to root CSS variables and toggle mode class
+  // Apply theme to root CSS variables and toggle mode class
   useEffect(() => {
     const root = document.documentElement;
     if (theme) {
@@ -160,9 +167,7 @@ function App() {
       const secondaryColor = theme.secondaryColor || '#b8860b';
       root.style.setProperty('--primary-color', primaryColor);
       root.style.setProperty('--secondary-color', secondaryColor);
-      // Convert primary color to RGB for transparency effects
       root.style.setProperty('--primary-color-rgb', hexToRgb(primaryColor));
-      // Toggle dark/light mode class
       if (theme.mode === 'dark') {
         root.classList.add('dark-mode');
         root.classList.remove('light-mode');
@@ -177,108 +182,125 @@ function App() {
     <Router>
       <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
       <FaviconManager>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/home" element={<PublicLayout><Home /></PublicLayout>} />
-          <Route path="/menu/:slug" element={<PublicLayout><CustomerMenu /></PublicLayout>} />
-          <Route path="/blog" element={<PublicLayout><Blog /></PublicLayout>} />
-          <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
-          <Route path="/register" element={<PublicLayout><RegisterCafe /></PublicLayout>} />
-          <Route path="/feedback" element={<PublicLayout><Feedback /></PublicLayout>} />
+        <Suspense
+          fallback={
+            <div
+              className="min-h-screen flex items-center justify-center"
+              style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+            >
+              <div className="text-center">
+                <div
+                  className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-t-transparent"
+                  style={{ borderColor: 'var(--primary-color) transparent transparent transparent' }}
+                />
+                <p className="mt-4" style={{ color: 'var(--text-color)' }}>Loading...</p>
+              </div>
+            </div>
+          }
+        >
+          <Routes>
+            {/* Public routes */}
+            <Route path="/home" element={<PublicLayout><Home /></PublicLayout>} />
+            <Route path="/menu/:slug" element={<PublicLayout><CustomerMenu /></PublicLayout>} />
+            <Route path="/blog" element={<PublicLayout><Blog /></PublicLayout>} />
+            <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
+            <Route path="/register" element={<PublicLayout><RegisterCafe /></PublicLayout>} />
+            <Route path="/feedback" element={<PublicLayout><Feedback /></PublicLayout>} />
 
-          {/* Root redirect */}
-          <Route path="/" element={<RootRedirect />} />
+            {/* Root redirect */}
+            <Route path="/" element={<RootRedirect />} />
 
-          {/* Login */}
-          <Route path="/admin" element={<LoginRoute />} />
+            {/* Login */}
+            <Route path="/admin" element={<LoginRoute />} />
 
-          {/* Onboarding – protected */}
-          <Route
-            path="/onboarding"
-            element={
-              <ProtectedRoute>
-                <Onboarding />
-              </ProtectedRoute>
-            }
-          />
+            {/* Onboarding – protected */}
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute>
+                  <Onboarding />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Protected admin routes */}
-          <Route
-            path="/admin/dashboard"
-            element={
-              <ProtectedRoute>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/analytics"
-            element={
-              <ProtectedRoute>
-                <OwnerAnalytics />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/qr"
-            element={
-              <ProtectedRoute>
-                <QRCodePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/subscription"
-            element={
-              <ProtectedRoute>
-                <SubscriptionPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/dashboard/settings"
-            element={
-              <ProtectedRoute>
-                <OwnerSettings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/super"
-            element={
-              <ProtectedRoute requireSuperAdmin>
-                <SuperAdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/settings"
-            element={
-              <ProtectedRoute requireSuperAdmin>
-                <SuperAdminSettings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/super/:cafeSlug"
-            element={
-              <ProtectedRoute requireSuperAdmin>
-                <SuperAdminCafeDetails />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/notifications"
-            element={
-              <ProtectedRoute requireSuperAdmin>
-                <SuperAdminNotifications />
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected admin routes */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics"
+              element={
+                <ProtectedRoute>
+                  <OwnerAnalytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/qr"
+              element={
+                <ProtectedRoute>
+                  <QRCodePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/subscription"
+              element={
+                <ProtectedRoute>
+                  <SubscriptionPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/dashboard/settings"
+              element={
+                <ProtectedRoute>
+                  <OwnerSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/super"
+              element={
+                <ProtectedRoute requireSuperAdmin>
+                  <SuperAdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute requireSuperAdmin>
+                  <SuperAdminSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/super/:cafeSlug"
+              element={
+                <ProtectedRoute requireSuperAdmin>
+                  <SuperAdminCafeDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/notifications"
+              element={
+                <ProtectedRoute requireSuperAdmin>
+                  <SuperAdminNotifications />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* 404 */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* 404 */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </FaviconManager>
     </Router>
   );
