@@ -28,13 +28,14 @@ router.get('/pricing', getPricing);
 // ============================================================
 router.use(protect);
 
-// Get owner settings (cafeName, whatsapp, tables, logo, favicon, currency)
+// Get owner settings (cafeName, whatsapp, tables, logo, favicon, currency) – free to view
 router.get('/', getSettings);
 
 // Update basic owner settings (cafeName, whatsapp, tables, logo, favicon, currency)
-// This route does NOT allow theme color changes – they go to /theme
+// ✅ Now requires a paid subscription (only paid users can change these)
 router.put(
   '/',
+  subscriptionGuard('paid'),
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'favicon', maxCount: 1 },
@@ -42,10 +43,10 @@ router.put(
   updateSettings
 );
 
-// 🆕 Update theme settings (primaryColor, secondaryColor, mode) – requires PAID subscription
+// Update theme settings (primaryColor, secondaryColor, mode) – already requires PAID subscription
 router.put(
   '/theme',
-  upload.none(), // No file uploads for theme
+  upload.none(),
   subscriptionGuard('paid'),
   updateSettings
 );

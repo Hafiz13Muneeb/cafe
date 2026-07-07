@@ -1,10 +1,10 @@
 // src/pages/AdminDashboard.jsx - Complete menu management with CRUD operations
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../store/slices/authSlice';
 import api from '../api/axios';
-import { Plus, Menu, Upload, X, Save, QrCode } from 'lucide-react';
+import { Plus, Menu, Upload, X, Save, QrCode, Lock } from 'lucide-react';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import TextArea from '../components/common/TextArea';
@@ -14,6 +14,10 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 const AdminDashboard = () => {
   const user = useSelector(selectUser);
   const navigate = useNavigate();
+  
+  // ✅ Check if user has an active paid subscription
+  const isPaid = user?.subscription?.plan === 'paid' && user?.subscription?.status === 'active';
+
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -73,13 +77,22 @@ const AdminDashboard = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // Only paid users can open the form
   const openAddForm = () => {
+    if (!isPaid) {
+      setError('Upgrade to a paid plan to add menu items.');
+      return;
+    }
     resetForm();
     setIsFormOpen(true);
     setEditingItem(null);
   };
 
   const openEditForm = (item) => {
+    if (!isPaid) {
+      setError('Upgrade to a paid plan to edit menu items.');
+      return;
+    }
     setEditingItem(item);
     setFormData({
       title: item.title || '',
@@ -116,6 +129,11 @@ const AdminDashboard = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isPaid) {
+      setError('Upgrade to a paid plan to manage menu items.');
+      return;
+    }
 
     if (!formData.title.trim()) {
       setError('Title is required');
@@ -175,6 +193,10 @@ const AdminDashboard = () => {
   };
 
   const handleDelete = async (itemId) => {
+    if (!isPaid) {
+      setError('Upgrade to a paid plan to delete menu items.');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this menu item? This action cannot be undone.')) return;
 
     try {
@@ -210,7 +232,29 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* QR Code Banner / Call-to-Action */}
+      {/* 🆕 Free User Upgrade Banner */}
+      {!isPaid && (
+        <div 
+          className="mb-4 p-4 border-2 border-[#3E2723] flex flex-wrap items-center justify-between gap-3"
+          style={{ backgroundColor: 'var(--bg-color)' }}
+        >
+          <div className="flex items-center gap-2">
+            <Lock size={20} style={{ color: 'var(--primary-color)' }} />
+            <span className="text-sm font-bold" style={{ color: 'var(--text-color)' }}>
+              Upgrade to a paid plan to add, edit, or delete menu items.
+            </span>
+          </div>
+          <Link
+            to="/admin/subscription"
+            className="px-4 py-1.5 text-sm font-bold border-2 border-[#3E2723] hover:opacity-80 transition"
+            style={{ backgroundColor: 'var(--primary-color)', color: '#ffffff' }}
+          >
+            Upgrade Now
+          </Link>
+        </div>
+      )}
+
+      {/* QR Code Banner */}
       <div 
         className="border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] p-4 sm:p-6 mb-6 flex flex-wrap items-center justify-between gap-4"
         style={{ backgroundColor: 'var(--card-bg)' }}
@@ -240,9 +284,12 @@ const AdminDashboard = () => {
           <h2 className="text-base sm:text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
             <Menu size={20} /> Menu Items ({menuItems.length})
           </h2>
-          <Button variant="primary" onClick={openAddForm} className="text-sm sm:text-base">
-            <Plus size={16} className="inline mr-1" /> Add New
-          </Button>
+          {/* ✅ Only show "Add New" if paid */}
+          {isPaid && (
+            <Button variant="primary" onClick={openAddForm} className="text-sm sm:text-base">
+              <Plus size={16} className="inline mr-1" /> Add New
+            </Button>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -252,6 +299,7 @@ const AdminDashboard = () => {
             onEdit={openEditForm}
             onDelete={handleDelete}
             currency={user?.currency || 'Rs'}
+            isPaid={isPaid} // ✅ Pass subscription status to table
           />
         </div>
       </div>

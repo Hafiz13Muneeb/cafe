@@ -15,6 +15,9 @@ const OwnerSettings = () => {
   const user = useSelector(selectUser);
   const theme = useSelector(selectTheme);
 
+  // ✅ Check if user has an active paid subscription
+  const isPaid = user?.subscription?.plan === 'paid' && user?.subscription?.status === 'active';
+
   const [activeTab, setActiveTab] = useState('cafe');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
@@ -90,6 +93,11 @@ const OwnerSettings = () => {
   // ----- Cafe Settings Submit -----
   const handleCafeSubmit = async (e) => {
     e.preventDefault();
+    // If not paid, just show a message (though button is disabled, safety check)
+    if (!isPaid) {
+      setMessage({ text: 'Upgrade to a paid plan to save cafe settings.', type: 'error' });
+      return;
+    }
     setLoading(true);
     setMessage({ text: '', type: '' });
     try {
@@ -412,9 +420,24 @@ const OwnerSettings = () => {
               </div>
             </div>
 
-            <Button type="submit" variant="primary" disabled={loading} className="w-full sm:w-auto">
-              <Save size={16} className="inline mr-1" /> {loading ? 'Saving...' : 'Save Settings'}
-            </Button>
+            {/* ✅ Cafe Save Button – Disabled for free users */}
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={loading || !isPaid}
+                className="w-full sm:w-auto"
+                title={!isPaid ? 'Upgrade to a paid plan to save cafe settings' : ''}
+              >
+                <Save size={16} className="inline mr-1" />
+                {loading ? 'Saving...' : 'Save Settings'}
+              </Button>
+              {!isPaid && (
+                <span className="text-sm flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+                  <Lock size={14} /> Upgrade to save changes
+                </span>
+              )}
+            </div>
           </form>
         )}
 

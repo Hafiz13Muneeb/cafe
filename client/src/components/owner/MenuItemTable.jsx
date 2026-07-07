@@ -1,7 +1,7 @@
 import React from 'react';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Lock } from 'lucide-react';
 
-const MenuItemTable = ({ items, loading, onEdit, onDelete, currency = 'Rs' }) => {
+const MenuItemTable = ({ items, loading, onEdit, onDelete, currency = 'Rs', isPaid = false }) => {
   if (loading) return <div className="p-8 text-center font-bold" style={{ color: 'var(--text-color)' }}>Loading items...</div>;
 
   return (
@@ -39,9 +39,7 @@ const MenuItemTable = ({ items, loading, onEdit, onDelete, currency = 'Rs' }) =>
               </td>
               <td className="px-2 sm:px-4 py-2">
                 <span 
-                  className={`px-1.5 sm:px-2 py-0.5 sm:py-1 font-bold border-2 border-[#3E2723] text-[10px] sm:text-xs whitespace-nowrap ${
-                    item.isAvailable ? 'text-white' : 'bg-red-300'
-                  }`}
+                  className={`px-1.5 sm:px-2 py-0.5 sm:py-1 font-bold border-2 border-[#3E2723] text-[10px] sm:text-xs whitespace-nowrap ${item.isAvailable ? 'text-white' : 'bg-red-300'}`}
                   style={item.isAvailable ? { backgroundColor: 'var(--primary-color)' } : {}}
                 >
                   {item.isAvailable ? 'Available' : 'Unavailable'}
@@ -49,22 +47,34 @@ const MenuItemTable = ({ items, loading, onEdit, onDelete, currency = 'Rs' }) =>
               </td>
               <td className="px-2 sm:px-4 py-2">
                 <div className="flex gap-1 sm:gap-2">
-                  <button 
-                    onClick={() => onEdit(item)} 
-                    className="p-1 sm:p-2 border-2 border-[#3E2723] transition"
-                    style={{ backgroundColor: 'transparent', color: 'var(--text-color)' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-color)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    <Edit size={14} className="sm:w-4 sm:h-4" />
-                  </button>
-                  <button 
-                    onClick={() => onDelete(item._id)} 
-                    className="p-1 sm:p-2 border-2 border-[#3E2723] transition hover:bg-red-400"
-                    style={{ backgroundColor: 'transparent', color: 'var(--text-color)' }}
-                  >
-                    <Trash2 size={14} className="sm:w-4 sm:h-4" />
-                  </button>
+                  {isPaid ? (
+                    <>
+                      <button 
+                        onClick={() => onEdit(item)} 
+                        className="p-1 sm:p-2 border-2 border-[#3E2723] transition"
+                        style={{ backgroundColor: 'transparent', color: 'var(--text-color)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-color)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <Edit size={14} className="sm:w-4 sm:h-4" />
+                      </button>
+                      <button 
+                        onClick={() => onDelete(item._id)} 
+                        className="p-1 sm:p-2 border-2 border-[#3E2723] transition hover:bg-red-400"
+                        style={{ backgroundColor: 'transparent', color: 'var(--text-color)' }}
+                      >
+                        <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <div 
+                      className="p-1 sm:p-2 border-2 border-[#3E2723] cursor-not-allowed opacity-60"
+                      style={{ backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
+                      title="Upgrade to edit or delete items"
+                    >
+                      <Lock size={14} className="sm:w-4 sm:h-4" />
+                    </div>
+                  )}
                 </div>
               </td>
             </tr>
