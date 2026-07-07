@@ -130,6 +130,9 @@ const loginUser = async (req, res, next) => {
       faviconUrl: user.faviconUrl || '',
       tables: user.tables || [],
       theme: user.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
+      // ✅ FIX: Add currency and subscription
+      currency: user.currency || 'Rs',
+      subscription: user.subscription || { plan: 'free', status: 'active' },
     };
 
     res.status(200).json({
