@@ -82,7 +82,6 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
       alert('Title and content are required');
       return;
     }
-    // ✅ Validation: if reminder is active, a date must be provided
     if (addFormData.isReminderActive && !addFormData.reminderDate) {
       alert('Please select a reminder date and time when the reminder is active.');
       return;
@@ -95,7 +94,6 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
         title: addFormData.title.trim(),
         content: addFormData.content.trim(),
         reminderDate: addFormData.reminderDate || null,
-        // ✅ Fix: use the checkbox value directly
         isReminderActive: addFormData.isReminderActive,
       });
       setIsAddModalOpen(false);
@@ -113,7 +111,6 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
       alert('Title and content are required');
       return;
     }
-    // ✅ Validation: if reminder is active, a date must be provided
     if (editFormData.isReminderActive && !editFormData.reminderDate) {
       alert('Please select a reminder date and time when the reminder is active.');
       return;
@@ -125,7 +122,6 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
         title: editFormData.title.trim(),
         content: editFormData.content.trim(),
         reminderDate: editFormData.reminderDate || null,
-        // ✅ Fix: use the checkbox value directly
         isReminderActive: editFormData.isReminderActive,
       });
       setIsEditModalOpen(false);
@@ -157,20 +153,32 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
 
   if (loading) {
     return (
-      <div className="bg-white p-6 border-2 border-[#3E2723]" style={{ boxShadow: "8px 8px 0px 0px #8A9A5B" }}>
+      <div 
+        className="p-6 border-2 border-[#3E2723]"
+        style={{ 
+          backgroundColor: 'var(--card-bg)',
+          boxShadow: "8px 8px 0px 0px var(--primary-color)"
+        }}
+      >
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold font-['Permanent_Marker'] text-[#3E2723]">Notes</h3>
+          <h3 className="text-xl font-bold font-['Permanent_Marker']" style={{ color: 'var(--text-color)' }}>Notes</h3>
           <Button variant="primary" disabled>Loading...</Button>
         </div>
-        <div className="text-center py-8 text-[#3E2723]/60">Loading notes...</div>
+        <div className="text-center py-8" style={{ color: 'var(--text-secondary)' }}>Loading notes...</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white p-6 border-2 border-[#3E2723]" style={{ boxShadow: "8px 8px 0px 0px #8A9A5B" }}>
+    <div 
+      className="p-6 border-2 border-[#3E2723]"
+      style={{ 
+        backgroundColor: 'var(--card-bg)',
+        boxShadow: "8px 8px 0px 0px var(--primary-color)"
+      }}
+    >
       <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
-        <h3 className="text-xl font-bold font-['Permanent_Marker'] text-[#3E2723]">
+        <h3 className="text-xl font-bold font-['Permanent_Marker']" style={{ color: 'var(--text-color)' }}>
           Notes ({notes?.length || 0})
         </h3>
         <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>
@@ -179,7 +187,10 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
       </div>
 
       {!notes || notes.length === 0 ? (
-        <div className="text-center py-8 text-[#3E2723]/60 border-2 border-dashed border-[#3E2723]">
+        <div 
+          className="text-center py-8 border-2 border-dashed border-[#3E2723]"
+          style={{ color: 'var(--text-secondary)' }}
+        >
           No notes yet. Click "Add Note" to create one.
         </div>
       ) : (
@@ -188,11 +199,12 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
             <div
               key={note._id}
               className={`p-4 border-2 border-[#3E2723] transition-all ${
-                isReminderDue(note) ? 'bg-red-100 border-red-500' : 'bg-[#F5F5DC]'
+                isReminderDue(note) ? 'bg-red-100 border-red-500' : ''
               }`}
+              style={isReminderDue(note) ? {} : { backgroundColor: 'var(--bg-color)' }}
             >
               <div className="flex justify-between items-start gap-2">
-                <h4 className="font-bold text-[#3E2723] flex items-center gap-2">
+                <h4 className="font-bold flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
                   {note.title}
                   {isReminderDue(note) && (
                     <span className="text-xs bg-red-500 text-white px-2 py-0.5 border-2 border-[#3E2723] animate-pulse">
@@ -203,10 +215,13 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
                 <div className="flex gap-1 flex-shrink-0">
                   <button
                     onClick={() => openEditModal(note)}
-                    className="p-1.5 border-2 border-[#3E2723] hover:bg-[#8A9A5B] transition"
+                    className="p-1.5 border-2 border-[#3E2723] transition"
+                    style={{ backgroundColor: 'transparent' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-color)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     title="Edit note"
                   >
-                    <Edit size={14} className="text-[#3E2723]" />
+                    <Edit size={14} style={{ color: 'var(--text-color)' }} />
                   </button>
                   <button
                     onClick={() => {
@@ -214,15 +229,16 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
                         onDelete(note._id);
                       }
                     }}
-                    className="p-1.5 border-2 border-[#3E2723] hover:bg-red-400 transition"
+                    className="p-1.5 border-2 border-[#3E2723] transition hover:bg-red-400"
+                    style={{ backgroundColor: 'transparent' }}
                     title="Delete note"
                   >
-                    <Trash2 size={14} className="text-[#3E2723]" />
+                    <Trash2 size={14} style={{ color: 'var(--text-color)' }} />
                   </button>
                 </div>
               </div>
-              <p className="text-sm my-2 text-[#3E2723]/80">{note.content}</p>
-              <div className="flex justify-between items-center text-xs font-bold text-[#3E2723]/70">
+              <p className="text-sm my-2" style={{ color: 'var(--text-secondary)' }}>{note.content}</p>
+              <div className="flex justify-between items-center text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>
                 <span className="flex items-center gap-1">
                   <Calendar size={12} />
                   {formatDate(note.reminderDate)}
@@ -272,7 +288,7 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
               onChange={handleAddChange}
               className="w-4 h-4 border-2 border-[#3E2723]"
             />
-            <label htmlFor="addReminderActive" className="text-sm font-bold text-[#3E2723]">
+            <label htmlFor="addReminderActive" className="text-sm font-bold" style={{ color: 'var(--text-color)' }}>
               Activate reminder
             </label>
           </div>
@@ -323,7 +339,7 @@ const NoteList = ({ notes, onAdd, onEdit, onDelete, cafeId, loading = false }) =
               onChange={handleEditChange}
               className="w-4 h-4 border-2 border-[#3E2723]"
             />
-            <label htmlFor="editReminderActive" className="text-sm font-bold text-[#3E2723]">
+            <label htmlFor="editReminderActive" className="text-sm font-bold" style={{ color: 'var(--text-color)' }}>
               Activate reminder
             </label>
           </div>

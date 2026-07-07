@@ -10,9 +10,6 @@ import OwnerTable from '../components/superadmin/OwnerTable';
 import OwnerFormModal from '../components/superadmin/OwnerFormModal';
 import DashboardLayout from '../components/layout/DashboardLayout';
 
-/**
- * Helper: Fetch notes for a single owner with error handling
- */
 const fetchOwnerNotes = async (ownerId) => {
   try {
     const response = await api.get(`/analytics/notes/${ownerId}`);
@@ -30,13 +27,6 @@ const fetchOwnerNotes = async (ownerId) => {
   }
 };
 
-/**
- * Process an array of promises with a concurrency limit
- * 🔧 Reduced from 5 to 2 to be gentler on the server when 500+ owners exist.
- * 🚀 For production with many owners, consider a backend endpoint that
- *    returns owners with pre‑aggregated activeReminders (e.g., /users/owners?includeReminderCount=true)
- *    to eliminate these per‑owner requests entirely.
- */
 const promiseAllWithLimit = async (tasks, limit) => {
   const results = [];
   const executing = [];
@@ -59,7 +49,6 @@ const SuperAdminDashboard = () => {
   const isSuperAdmin = user?.role === 'superadmin';
   const navigate = useNavigate();
 
-  // Redirect if not superadmin
   useEffect(() => {
     if (!isSuperAdmin) navigate('/admin/dashboard');
   }, [isSuperAdmin, navigate]);
@@ -69,10 +58,8 @@ const SuperAdminDashboard = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Cache for activeReminders to avoid refetching on refresh
   const reminderCache = useRef({});
 
-  // Add/Edit modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addFormData, setAddFormData] = useState({
     username: '',
@@ -94,7 +81,6 @@ const SuperAdminDashboard = () => {
   });
   const [editLoading, setEditLoading] = useState(false);
 
-  // Fetch owners with optional force refresh
   const fetchOwners = useCallback(
     async (forceRefresh = false) => {
       try {
@@ -108,7 +94,6 @@ const SuperAdminDashboard = () => {
 
         const ownersData = response.data.data || [];
 
-        // If forceRefresh is false, try to use cached reminder counts
         let ownersWithReminders;
         if (!forceRefresh && reminderCache.current) {
           ownersWithReminders = ownersData.map((owner) => ({
@@ -116,14 +101,11 @@ const SuperAdminDashboard = () => {
             activeReminders: reminderCache.current[owner._id] ?? 0,
           }));
         } else {
-          // Fetch notes for each owner with a lower concurrency limit (2)
-          // to avoid overwhelming the server when many owners exist.
           const noteTasks = ownersData.map(
             (owner) => () => fetchOwnerNotes(owner._id)
           );
           const noteResults = await promiseAllWithLimit(noteTasks, 2);
 
-          // Build map of ownerId -> activeReminders
           const reminderMap = {};
           noteResults.forEach((result) => {
             if (result.ownerId) {
@@ -131,7 +113,6 @@ const SuperAdminDashboard = () => {
             }
           });
 
-          // Update cache
           reminderCache.current = { ...reminderCache.current, ...reminderMap };
 
           ownersWithReminders = ownersData.map((owner) => ({
@@ -140,7 +121,6 @@ const SuperAdminDashboard = () => {
           }));
         }
 
-        // Sort by activeReminders descending (most urgent first)
         ownersWithReminders.sort((a, b) => b.activeReminders - a.activeReminders);
         setOwners(ownersWithReminders);
       } catch (err) {
@@ -154,10 +134,8 @@ const SuperAdminDashboard = () => {
 
   useEffect(() => {
     fetchOwners();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-dismiss messages after 5 seconds
   useEffect(() => {
     if (success || error) {
       const timer = setTimeout(() => {
@@ -168,7 +146,6 @@ const SuperAdminDashboard = () => {
     }
   }, [success, error]);
 
-  // ----- Handlers -----
   const handleAddOwner = async (e) => {
     e.preventDefault();
     setAddLoading(true);
@@ -187,7 +164,6 @@ const SuperAdminDashboard = () => {
           cafeName: '',
           temporaryPassword: '',
         });
-        // Invalidate cache for this owner (will be fetched on next refresh)
         if (newOwner._id) {
           delete reminderCache.current[newOwner._id];
         }
@@ -288,18 +264,30 @@ const SuperAdminDashboard = () => {
   return (
     <DashboardLayout title="Super Admin" subtitle="Control Panel">
       {error && (
-        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-red-300 text-[#3E2723] font-bold flex items-center gap-2 text-sm sm:text-base">
+        <div
+          className="mb-4 p-3 border-2 border-[#3E2723] bg-red-300 font-bold flex items-center gap-2 text-sm sm:text-base"
+          style={{ color: 'var(--text-color)' }}
+        >
           <AlertCircle size={18} /> {error}
         </div>
       )}
       {success && (
-        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold flex items-center gap-2 text-sm sm:text-base">
+        <div
+          className="mb-4 p-3 border-2 border-[#3E2723] text-white font-bold flex items-center gap-2 text-sm sm:text-base"
+          style={{ backgroundColor: 'var(--primary-color)' }}
+        >
           <CheckCircle size={18} /> {success}
         </div>
       )}
 
-      <div className="flex flex-wrap justify-between items-center gap-3 sm:gap-4 mb-6 bg-[#EAE0C8] p-3 sm:p-4 border-2 border-[#3E2723]">
-        <h2 className="text-xl sm:text-2xl font-bold text-[#3E2723]">Cafe Owners</h2>
+      {/* Top bar - uses theme colors */}
+      <div
+        className="flex flex-wrap justify-between items-center gap-3 sm:gap-4 mb-6 p-3 sm:p-4 border-2 border-[#3E2723]"
+        style={{ backgroundColor: 'var(--secondary-color)' }}
+      >
+        <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-color)' }}>
+          Cafe Owners
+        </h2>
         <div className="flex flex-wrap gap-2">
           <Button
             variant="secondary"
@@ -320,7 +308,11 @@ const SuperAdminDashboard = () => {
         </div>
       </div>
 
-      <div className="border-2 border-[#3E2723] bg-white p-1 sm:p-2 overflow-x-auto">
+      {/* Table container - uses theme card background */}
+      <div
+        className="border-2 border-[#3E2723] p-1 sm:p-2 overflow-x-auto"
+        style={{ backgroundColor: 'var(--card-bg)' }}
+      >
         <OwnerTable
           owners={owners}
           loading={loading}

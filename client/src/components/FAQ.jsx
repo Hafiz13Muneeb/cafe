@@ -22,14 +22,24 @@ const faqData = [
 ];
 
 const FAQItem = ({ question, answer, isOpen, onClick }) => (
-  <div className="border-4 border-[#3E2723] mb-4 bg-white transition-all" 
-       style={{ boxShadow: isOpen ? "4px 4px 0px 0px #8A9A5B" : "none" }}>
+  <div
+    className="border-4 border-[#3E2723] mb-4 transition-all"
+    style={{
+      backgroundColor: 'var(--card-bg)',
+      boxShadow: isOpen ? "4px 4px 0px 0px var(--primary-color)" : "none",
+    }}
+  >
     <button
       onClick={onClick}
-      className="w-full px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between text-left font-bold text-[#3E2723] text-sm sm:text-base"
+      className="w-full px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between text-left font-bold text-sm sm:text-base"
+      style={{ color: 'var(--text-color)' }}
     >
       <span className="text-sm sm:text-base md:text-lg">{question}</span>
-      <ChevronDown className={`transition-transform flex-shrink-0 ml-2 ${isOpen ? 'rotate-180' : ''}`} size={20} />
+      <ChevronDown
+        className={`transition-transform flex-shrink-0 ml-2 ${isOpen ? 'rotate-180' : ''}`}
+        size={20}
+        style={{ color: 'var(--text-color)' }}
+      />
     </button>
     
     <AnimatePresence>
@@ -40,7 +50,13 @@ const FAQItem = ({ question, answer, isOpen, onClick }) => (
           exit={{ height: 0 }}
           className="overflow-hidden border-t-2 border-[#3E2723]"
         >
-          <p className="px-4 sm:px-6 py-3 sm:py-4 text-[#3E2723]/80 bg-[#FAF9F6] text-sm sm:text-base">
+          <p
+            className="px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base"
+            style={{
+              color: 'var(--text-secondary)',
+              backgroundColor: 'var(--bg-color)',
+            }}
+          >
             {answer}
           </p>
         </motion.div>
@@ -53,9 +69,18 @@ const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(null);
 
   return (
-    <section className="py-16 sm:py-20 md:py-24 px-4 bg-[#F5F5DC]">
+    <section
+      className="py-16 sm:py-20 md:py-24 px-4"
+      style={{ backgroundColor: 'var(--bg-color)' }}
+    >
       <div className="max-w-3xl mx-auto">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#3E2723] mb-8 sm:mb-12 text-center" style={{ fontFamily: "'Permanent Marker', cursive" }}>
+        <h2
+          className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 sm:mb-12 text-center"
+          style={{
+            fontFamily: "'Permanent Marker', cursive",
+            color: 'var(--text-color)',
+          }}
+        >
           Common Questions
         </h2>
 

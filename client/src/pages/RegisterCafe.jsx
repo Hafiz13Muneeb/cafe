@@ -204,14 +204,25 @@ const RegisterCafe = () => {
   // If OTP step is active, show OTP form
   if (otpSent && !otpVerified) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F5DC]">
-        <div className="w-full max-w-md bg-white border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8">
+      <div
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ backgroundColor: 'var(--bg-color)' }}
+      >
+        <div
+          className="w-full max-w-md border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8"
+          style={{ backgroundColor: 'var(--card-bg)' }}
+        >
           <div className="text-center mb-6">
-            <div className="inline-block p-4 rounded-full bg-[#8A9A5B] border-2 border-[#3E2723] mb-4">
+            <div
+              className="inline-block p-4 rounded-full border-2 border-[#3E2723] mb-4"
+              style={{ backgroundColor: 'var(--primary-color)' }}
+            >
               <Mail size={32} className="text-white" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-[#3E2723]">Verify Your Email</h2>
-            <p className="text-sm text-[#3E2723]/60 mt-1">
+            <h2 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-color)' }}>
+              Verify Your Email
+            </h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
               We sent a 6‑digit code to <strong>{registeredEmail}</strong>
             </p>
           </div>
@@ -237,7 +248,7 @@ const RegisterCafe = () => {
               type="submit"
               fullWidth
               disabled={otpLoading}
-              className="bg-[#8A9A5B] border-2 border-[#3E2723] text-white hover:bg-[#78884d]"
+              variant="primary"
             >
               {otpLoading ? 'Verifying...' : (
                 <>
@@ -252,20 +263,20 @@ const RegisterCafe = () => {
               type="button"
               onClick={handleResendOTP}
               disabled={resendCooldown > 0 || otpLoading}
-              className={`text-sm font-medium transition ${
-                resendCooldown > 0 || otpLoading
-                  ? 'text-[#3E2723]/40 cursor-not-allowed'
-                  : 'text-[#8A9A5B] hover:underline'
-              }`}
+              className="text-sm font-medium transition"
+              style={{
+                color: resendCooldown > 0 || otpLoading ? 'var(--text-secondary)' : 'var(--primary-color)',
+                cursor: resendCooldown > 0 || otpLoading ? 'not-allowed' : 'pointer',
+              }}
             >
               <RefreshCw size={14} className={`inline mr-1 ${resendCooldown > 0 ? 'animate-spin' : ''}`} />
               {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
             </button>
           </div>
 
-          <div className="mt-4 border-t border-[#3E2723]/20 pt-4">
-            <p className="text-xs text-center text-[#3E2723]/40">
-              <Link to="/admin" className="text-[#8A9A5B] hover:underline">
+          <div className="mt-4 border-t pt-4" style={{ borderColor: 'var(--border-color)' }}>
+            <p className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
+              <Link to="/admin" className="hover:underline" style={{ color: 'var(--primary-color)' }}>
                 Back to Sign In
               </Link>
             </p>
@@ -277,14 +288,27 @@ const RegisterCafe = () => {
 
   // Main registration form
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F5DC]">
-      <div className="w-full max-w-md bg-white border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8">
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ backgroundColor: 'var(--bg-color)' }}
+    >
+      <div
+        className="w-full max-w-md border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8"
+        style={{ backgroundColor: 'var(--card-bg)' }}
+      >
         <div className="text-center mb-6">
-          <div className="inline-block p-4 rounded-full bg-[#8A9A5B] border-2 border-[#3E2723] mb-4">
+          <div
+            className="inline-block p-4 rounded-full border-2 border-[#3E2723] mb-4"
+            style={{ backgroundColor: 'var(--primary-color)' }}
+          >
             <Coffee size={32} className="text-white" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#3E2723]">Create Your Cafe</h1>
-          <p className="text-xs sm:text-sm text-[#3E2723]/60 mt-1">Start your digital menu journey today</p>
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-color)' }}>
+            Create Your Cafe
+          </h1>
+          <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+            Start your digital menu journey today
+          </p>
         </div>
 
         {error && (
@@ -359,16 +383,16 @@ const RegisterCafe = () => {
             type="submit"
             fullWidth
             disabled={loading}
-            className="bg-[#8A9A5B] border-2 border-[#3E2723] text-white hover:bg-[#78884d]"
+            variant="primary"
           >
             {loading ? 'Creating Account...' : 'Register'}
           </Button>
         </form>
 
-        <div className="mt-6 border-t border-[#3E2723]/20 pt-4">
-          <p className="text-xs text-center text-[#3E2723]/40">
+        <div className="mt-6 border-t pt-4" style={{ borderColor: 'var(--border-color)' }}>
+          <p className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
             Already have an account?{' '}
-            <Link to="/admin" className="text-[#8A9A5B] hover:underline font-medium">
+            <Link to="/admin" className="hover:underline font-medium" style={{ color: 'var(--primary-color)' }}>
               Sign in
             </Link>
           </p>

@@ -202,18 +202,24 @@ const AdminDashboard = () => {
         </div>
       )}
       {success && (
-        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold text-sm sm:text-base">
+        <div 
+          className="mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base text-white"
+          style={{ backgroundColor: 'var(--primary-color)' }}
+        >
           {success}
         </div>
       )}
 
       {/* QR Code Banner / Call-to-Action */}
-      <div className="bg-white border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] p-4 sm:p-6 mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div 
+        className="border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] p-4 sm:p-6 mb-6 flex flex-wrap items-center justify-between gap-4"
+        style={{ backgroundColor: 'var(--card-bg)' }}
+      >
         <div>
-          <h2 className="text-lg font-bold text-[#3E2723] flex items-center gap-2">
-            <QrCode size={24} className="text-[#8A9A5B]" /> Your QR Code
+          <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
+            <QrCode size={24} style={{ color: 'var(--primary-color)' }} /> Your QR Code
           </h2>
-          <p className="text-sm text-[#3E2723]/70">
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
             Download or copy your cafe menu QR code to place on tables.
           </p>
         </div>
@@ -223,9 +229,15 @@ const AdminDashboard = () => {
       </div>
 
       {/* Menu Items Table */}
-      <div className="bg-white border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] overflow-hidden">
-        <div className="p-3 sm:p-4 border-b-2 border-[#3E2723] flex flex-wrap justify-between items-center gap-3">
-          <h2 className="text-base sm:text-lg font-bold text-[#3E2723] flex items-center gap-2">
+      <div 
+        className="border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] overflow-hidden"
+        style={{ backgroundColor: 'var(--card-bg)' }}
+      >
+        <div 
+          className="p-3 sm:p-4 border-b-2 border-[#3E2723] flex flex-wrap justify-between items-center gap-3"
+          style={{ backgroundColor: 'var(--secondary-color)' }}
+        >
+          <h2 className="text-base sm:text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
             <Menu size={20} /> Menu Items ({menuItems.length})
           </h2>
           <Button variant="primary" onClick={openAddForm} className="text-sm sm:text-base">
@@ -239,18 +251,28 @@ const AdminDashboard = () => {
             loading={loading}
             onEdit={openEditForm}
             onDelete={handleDelete}
+            currency={user?.currency || 'Rs'}
           />
         </div>
       </div>
 
       {isFormOpen && (
-        <div className="mt-6 bg-white border-2 border-[#3E2723] p-4 sm:p-6 shadow-[6px_6px_0px_0px_#3E2723]">
+        <div 
+          className="mt-6 border-2 border-[#3E2723] p-4 sm:p-6 shadow-[6px_6px_0px_0px_#3E2723]"
+          style={{ backgroundColor: 'var(--card-bg)' }}
+        >
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold font-['Permanent_Marker'] text-[#3E2723]">
+            <h3 className="text-xl font-bold font-['Permanent_Marker']" style={{ color: 'var(--text-color)' }}>
               {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
             </h3>
-            <button onClick={resetForm} className="p-1 hover:bg-[#EAE0C8] border-2 border-[#3E2723]">
-              <X size={20} />
+            <button 
+              onClick={resetForm} 
+              className="p-1 hover:bg-secondary border-2 border-[#3E2723]"
+              style={{ backgroundColor: 'transparent' }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-color)'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+            >
+              <X size={20} style={{ color: 'var(--text-color)' }} />
             </button>
           </div>
 
@@ -265,7 +287,7 @@ const AdminDashboard = () => {
                 placeholder="Item name"
               />
               <Input
-                label="Price (Rs.)"
+                label={`Price (${user?.currency || 'Rs'})`}
                 name="price"
                 type="number"
                 step="0.01"
@@ -296,7 +318,7 @@ const AdminDashboard = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[#3E2723] mb-1">
+              <label className="block text-sm font-bold mb-1" style={{ color: 'var(--text-color)' }}>
                 Image {!editingItem && <span className="text-red-500">*</span>}
               </label>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 flex-wrap">
@@ -333,19 +355,20 @@ const AdminDashboard = () => {
                   {editingItem && !imageFile ? 'Change Image' : 'Upload Image'}
                 </Button>
                 {editingItem && !imageFile && imagePreview && (
-                  <span className="text-xs text-[#3E2723]/60">(Keep current image)</span>
+                  <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>(Keep current image)</span>
                 )}
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <label className="text-sm font-bold text-[#3E2723]">Available:</label>
+              <label className="text-sm font-bold" style={{ color: 'var(--text-color)' }}>Available:</label>
               <button
                 type="button"
                 onClick={() => setFormData((prev) => ({ ...prev, isAvailable: !prev.isAvailable }))}
-                className={`relative w-12 h-6 rounded-full transition-colors ${
-                  formData.isAvailable ? 'bg-[#8A9A5B]' : 'bg-gray-300'
-                }`}
+                className="relative w-12 h-6 rounded-full transition-colors"
+                style={{
+                  backgroundColor: formData.isAvailable ? 'var(--primary-color)' : '#d1d5db',
+                }}
               >
                 <span
                   className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
@@ -353,7 +376,7 @@ const AdminDashboard = () => {
                   }`}
                 />
               </button>
-              <span className="text-sm font-bold text-[#3E2723]">
+              <span className="text-sm font-bold" style={{ color: 'var(--text-color)' }}>
                 {formData.isAvailable ? 'Available' : 'Unavailable'}
               </span>
             </div>

@@ -132,7 +132,6 @@ const SuperAdminSettings = () => {
       };
       const res = await api.put('/settings/global', payload);
       if (res.data.success) {
-        // ✅ Dispatch Redux action instead of context
         dispatch(updateThemeAction({
           primaryColor: payload.primaryColor,
           secondaryColor: payload.secondaryColor,
@@ -184,8 +183,13 @@ const SuperAdminSettings = () => {
       {message.text && (
         <div
           className={`mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base ${
-            message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'
+            message.type === 'success' ? 'text-white' : ''
           }`}
+          style={
+            message.type === 'success'
+              ? { backgroundColor: 'var(--primary-color)' }
+              : { backgroundColor: '#fca5a5', color: 'var(--text-color)' } // red-300 with text var
+          }
           role="alert"
           aria-live="polite"
         >
@@ -194,16 +198,30 @@ const SuperAdminSettings = () => {
       )}
 
       {/* Tab bar */}
-      <div className="flex flex-wrap gap-1 bg-[#EAE0C8] border-2 border-[#3E2723] p-1 mb-6">
+      <div
+        className="flex flex-wrap gap-1 border-2 border-[#3E2723] p-1 mb-6"
+        style={{ backgroundColor: 'var(--secondary-color)' }}
+      >
         {tabItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm sm:text-base font-bold transition-all ${
-              activeTab === item.id
-                ? 'bg-[#8A9A5B] text-white border-2 border-[#3E2723]'
-                : 'text-[#3E2723] hover:bg-[#3E2723]/10'
-            }`}
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm sm:text-base font-bold transition-all border-2"
+            style={{
+              backgroundColor: activeTab === item.id ? 'var(--primary-color)' : 'transparent',
+              color: activeTab === item.id ? '#ffffff' : 'var(--text-color)',
+              borderColor: activeTab === item.id ? '#3E2723' : 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== item.id) {
+                e.target.style.backgroundColor = 'rgba(var(--primary-color-rgb), 0.1)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== item.id) {
+                e.target.style.backgroundColor = 'transparent';
+              }
+            }}
           >
             <item.icon size={16} />
             <span>{item.label}</span>
@@ -212,7 +230,10 @@ const SuperAdminSettings = () => {
       </div>
 
       {/* Content area */}
-      <div className="bg-[#F5F5DC] p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]">
+      <div
+        className="p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]"
+        style={{ backgroundColor: 'var(--bg-color)' }}
+      >
         {activeTab === 'profile' && (
           <form onSubmit={handleProfileSubmit} className="space-y-4">
             <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
@@ -236,7 +257,8 @@ const SuperAdminSettings = () => {
               <button
                 type="button"
                 onClick={() => setShowOld(!showOld)}
-                className="absolute right-3 top-9 text-[#3E2723]"
+                className="absolute right-3 top-9"
+                style={{ color: 'var(--text-color)' }}
               >
                 {showOld ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -252,7 +274,8 @@ const SuperAdminSettings = () => {
               <button
                 type="button"
                 onClick={() => setShowNew(!showNew)}
-                className="absolute right-3 top-9 text-[#3E2723]"
+                className="absolute right-3 top-9"
+                style={{ color: 'var(--text-color)' }}
               >
                 {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -268,7 +291,8 @@ const SuperAdminSettings = () => {
               <button
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-3 top-9 text-[#3E2723]"
+                className="absolute right-3 top-9"
+                style={{ color: 'var(--text-color)' }}
               >
                 {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -283,7 +307,7 @@ const SuperAdminSettings = () => {
           <form onSubmit={handleThemeSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-[#3E2723] mb-1">Primary Color</label>
+                <label className="block text-sm font-bold mb-1" style={{ color: 'var(--text-color)' }}>Primary Color</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -295,7 +319,7 @@ const SuperAdminSettings = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-bold text-[#3E2723] mb-1">Secondary Color</label>
+                <label className="block text-sm font-bold mb-1" style={{ color: 'var(--text-color)' }}>Secondary Color</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -308,16 +332,28 @@ const SuperAdminSettings = () => {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-[#3E2723] mb-1">Mode</label>
+              <label className="block text-sm font-bold mb-1" style={{ color: 'var(--text-color)' }}>Mode</label>
               <div className="flex flex-wrap gap-2 sm:gap-4">
                 {['light', 'dark'].map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setGlobalTheme({ ...globalTheme, mode: m })}
-                    className={`px-3 sm:px-4 py-2 border-2 border-[#3E2723] font-bold transition text-sm sm:text-base ${
-                      globalTheme.mode === m ? 'bg-[#8A9A5B] text-white' : 'bg-white text-[#3E2723]'
-                    }`}
+                    className="px-3 sm:px-4 py-2 border-2 border-[#3E2723] font-bold transition text-sm sm:text-base"
+                    style={{
+                      backgroundColor: globalTheme.mode === m ? 'var(--primary-color)' : 'var(--card-bg)',
+                      color: globalTheme.mode === m ? '#ffffff' : 'var(--text-color)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (globalTheme.mode !== m) {
+                        e.target.style.backgroundColor = 'var(--secondary-color)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (globalTheme.mode !== m) {
+                        e.target.style.backgroundColor = 'var(--card-bg)';
+                      }
+                    }}
                   >
                     {m.charAt(0).toUpperCase() + m.slice(1)}
                   </button>
@@ -326,7 +362,7 @@ const SuperAdminSettings = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[#3E2723] mb-1">Global Favicon</label>
+              <label className="block text-sm font-bold mb-1" style={{ color: 'var(--text-color)' }}>Global Favicon</label>
               <div className="flex flex-wrap items-center gap-3">
                 {faviconPreview && <img src={faviconPreview} alt="Favicon" className="w-10 h-10 border-2 border-[#3E2723] object-cover" />}
                 <input

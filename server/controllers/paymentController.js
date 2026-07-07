@@ -4,7 +4,7 @@ const User = require('../models/User');
 const WebhookLog = require('../models/WebhookLog');
 
 // ------------------------------------------------
-// 1. CREATE CHECKOUT
+// 1. CREATE CHECKOUT (UPDATED)
 // ------------------------------------------------
 const createCheckout = async (req, res, next) => {
   try {
@@ -21,10 +21,14 @@ const createCheckout = async (req, res, next) => {
       throw new Error('User not found');
     }
 
-    if (user.subscription?.status === 'active') {
+    // ✅ Only block if the user has an ACTIVE PAID subscription
+    const isPaidActive = user.subscription?.plan === 'paid' && user.subscription?.status === 'active';
+    if (isPaidActive) {
       res.status(400);
-      throw new Error('You already have an active subscription');
+      throw new Error('You already have an active paid subscription.');
     }
+
+    // Free users, canceled, or expired subscriptions are allowed to proceed
 
     const apiUrl = 'https://api.lemonsqueezy.com/v1/checkouts';
 
@@ -95,7 +99,7 @@ const createCheckout = async (req, res, next) => {
 };
 
 // ------------------------------------------------
-// 2. WEBHOOK HANDLER (FIXED)
+// 2. WEBHOOK HANDLER
 // ------------------------------------------------
 const webhookHandler = async (req, res, next) => {
   try {

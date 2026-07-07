@@ -24,7 +24,7 @@ router.post('/:slug/order-completed', trackOrderCompleted);
 // PROTECTED ROUTES – Must be logged in
 // ============================================================
 
-// ✅ Analytics for owners – no subscription restriction (all owners can view)
+// Analytics for owners – all owners can view (free tier)
 // Superadmin bypasses entirely; owners pass through with 'free' guard (no check)
 router.get(
   '/cafe/:cafeId',
@@ -34,8 +34,7 @@ router.get(
     if (req.user.role === 'superadmin') {
       return next();
     }
-    // Apply subscription guard with 'free' – this allows all authenticated owners
-    // (no subscription requirement)
+    // Allow all owners (free) – no subscription restriction
     return subscriptionGuard('free')(req, res, next);
   },
   getCafeAnalytics

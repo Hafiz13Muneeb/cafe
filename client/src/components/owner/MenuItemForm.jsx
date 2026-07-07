@@ -14,7 +14,8 @@ const MenuItemForm = ({
   setImagePreview,
   loading,
   editingItem,
-  error = '', // 🆕 error prop for inline display
+  error = '',
+  currency = 'Rs',
 }) => {
   if (!isOpen) return null;
 
@@ -25,14 +26,17 @@ const MenuItemForm = ({
 
   return (
     <div
-      className="p-4 sm:p-6 border-2 border-[#3E2723] bg-[#F5F5DC] mb-6"
-      style={{ boxShadow: '4px 4px 0px 0px #8A9A5B' }}
+      className="p-4 sm:p-6 border-2 border-[#3E2723] mb-6"
+      style={{
+        backgroundColor: 'var(--bg-color)',
+        boxShadow: '4px 4px 0px 0px var(--primary-color)',
+      }}
     >
       <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-4">
-        {/* 🆕 Display error message inside the form */}
         {error && (
           <div
-            className="p-3 border-2 border-[#3E2723] bg-red-300 text-[#3E2723] font-bold text-sm sm:text-base"
+            className="p-3 border-2 border-[#3E2723] bg-red-300 font-bold text-sm sm:text-base"
+            style={{ color: 'var(--text-color)' }}
             role="alert"
             aria-live="polite"
           >
@@ -50,9 +54,11 @@ const MenuItemForm = ({
             aria-label="Item title"
           />
           <Input
-            label="Price (Rs.)"
+            label={`Price (${currency})`}
             name="price"
             type="number"
+            step="0.01"
+            min="0"
             value={formData.price}
             onChange={handleFormChange}
             required

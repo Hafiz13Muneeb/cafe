@@ -46,7 +46,7 @@ const generateUniqueSlug = async (baseSlug, excludeId) => {
 const getSettings = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select(
-      'cafeName whatsappNumber logoUrl faviconUrl tables slug currency'
+      'cafeName whatsappNumber logoUrl faviconUrl tables slug currency theme'
     );
     if (!user) {
       res.status(404);
@@ -63,6 +63,7 @@ const getSettings = async (req, res, next) => {
         tables: user.tables || [],
         slug: user.slug || '',
         currency: user.currency || 'Rs',
+        theme: user.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
       },
     });
   } catch (error) {
@@ -71,11 +72,11 @@ const getSettings = async (req, res, next) => {
 };
 
 // @desc    Update the logged-in owner's settings
-// @route   PUT /api/settings
-// @access  Private (Owner)
+// @route   PUT /api/settings (basic info) and PUT /api/settings/theme (theme only)
+// @access  Private (Owner) – theme updates require paid subscription
 const updateSettings = async (req, res, next) => {
   try {
-    const { cafeName, whatsappNumber, tables, slug, currency } = req.body;
+    const { cafeName, whatsappNumber, tables, slug, currency, primaryColor, secondaryColor, mode } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) {
       res.status(404);
@@ -134,8 +135,7 @@ const updateSettings = async (req, res, next) => {
       if (newSlug !== user.slug) {
         user.slug = newSlug;
         changes.slug = newSlug;
-        changes.slugWarning =
-          'Your cafe URL has changed. Existing QR codes will no longer work. Please regenerate them.';
+        changes.slugWarning = 'Your cafe URL has changed. Existing QR codes will no longer work. Please regenerate them.';
       }
     }
 
@@ -185,6 +185,47 @@ const updateSettings = async (req, res, next) => {
       if (trimmed !== user.currency) {
         user.currency = trimmed;
         changes.currency = trimmed;
+      }
+    }
+
+    // --- THEME SETTINGS (Requires paid subscription) ---
+    const themeFieldsProvided = primaryColor !== undefined || secondaryColor !== undefined || mode !== undefined;
+    if (themeFieldsProvided) {
+      // Only paid users with active status can update theme
+      const isPaid = user.subscription?.plan === 'paid' && user.subscription?.status === 'active';
+      if (!isPaid) {
+        res.status(403);
+        throw new Error('Theme customization requires a paid subscription. Please upgrade your plan.');
+      }
+
+      // Initialize theme object if not present
+      if (!user.theme) {
+        user.theme = { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' };
+      }
+
+      if (primaryColor !== undefined) {
+        if (!/^#[0-9A-F]{6}$/i.test(primaryColor)) {
+          res.status(400);
+          throw new Error('Primary color must be a valid hex color');
+        }
+        user.theme.primaryColor = primaryColor;
+        changes.primaryColor = primaryColor;
+      }
+      if (secondaryColor !== undefined) {
+        if (!/^#[0-9A-F]{6}$/i.test(secondaryColor)) {
+          res.status(400);
+          throw new Error('Secondary color must be a valid hex color');
+        }
+        user.theme.secondaryColor = secondaryColor;
+        changes.secondaryColor = secondaryColor;
+      }
+      if (mode !== undefined) {
+        if (!['light', 'dark'].includes(mode)) {
+          res.status(400);
+          throw new Error('Mode must be either "light" or "dark"');
+        }
+        user.theme.mode = mode;
+        changes.mode = mode;
       }
     }
 
@@ -251,6 +292,7 @@ const updateSettings = async (req, res, next) => {
       faviconUrl: user.faviconUrl || '',
       tables: user.tables || [],
       currency: user.currency || 'Rs',
+      theme: user.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
     };
 
     if (changes.slugWarning) {

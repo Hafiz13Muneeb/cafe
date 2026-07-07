@@ -4,10 +4,34 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
+// Helper to get CSS variable value (with fallback)
+const getCSSVar = (varName, fallback) => {
+  if (typeof window === 'undefined') return fallback;
+  const root = document.documentElement;
+  const value = getComputedStyle(root).getPropertyValue(varName).trim();
+  return value || fallback;
+};
+
 const LineChart = ({ data, labels, label, color = '#8A9A5B', height = 250 }) => {
+  // Read CSS variables at render time
+  const bgColor = getCSSVar('--bg-color', '#f8fafc');
+  const textColor = getCSSVar('--text-color', '#0f172a');
+  const borderColor = getCSSVar('--border-color', '#e2e8f0');
+  const secondaryColor = getCSSVar('--secondary-color', '#b8860b');
+
   const chartData = {
     labels: labels || [],
-    datasets: [{ label: label || 'Data', data: data || [], borderColor: '#3E2723', backgroundColor: color + '40', fill: true, tension: 0, pointBackgroundColor: '#3E2723' }],
+    datasets: [
+      {
+        label: label || 'Data',
+        data: data || [],
+        borderColor: '#3E2723', // fixed for contrast
+        backgroundColor: color + '40', // use provided color with opacity
+        fill: true,
+        tension: 0,
+        pointBackgroundColor: '#3E2723',
+      },
+    ],
   };
 
   const options = {
@@ -16,23 +40,34 @@ const LineChart = ({ data, labels, label, color = '#8A9A5B', height = 250 }) => 
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#F5F5DC',
-        titleColor: '#3E2723',
-        bodyColor: '#3E2723',
-        borderColor: '#3E2723',
+        backgroundColor: bgColor,
+        titleColor: textColor,
+        bodyColor: textColor,
+        borderColor: borderColor,
         borderWidth: 2,
       },
     },
     scales: {
-      y: { grid: { color: '#EAE0C8' } },
-      x: { grid: { display: false } },
+      y: {
+        grid: { color: secondaryColor },
+      },
+      x: {
+        grid: { display: false },
+      },
     },
   };
 
   return (
-    <div className="w-full border-2 border-[#3E2723] p-2 sm:p-3 bg-white" style={{ height: `${height}px` }}>
+    <div
+      className="w-full border-2 border-[#3E2723] p-2 sm:p-3"
+      style={{
+        backgroundColor: 'var(--card-bg)',
+        height: `${height}px`,
+      }}
+    >
       <Line data={chartData} options={options} />
     </div>
   );
 };
+
 export default LineChart;

@@ -12,15 +12,19 @@ const sectionVariants = {
 };
 
 const Home = () => {
-  // No loading check needed – Redux-Persist ensures store is rehydrated before rendering.
   return (
-    <div className="min-h-screen bg-[#F5F5DC] text-[#3E2723] overflow-x-hidden">
+    <div
+      className="min-h-screen overflow-x-hidden"
+      style={{
+        backgroundColor: 'var(--bg-color)',
+        color: 'var(--text-color)',
+      }}
+    >
       <CursorGlow />
       <motion.div initial="visible" animate="visible">
         <Hero />
       </motion.div>
 
-      {/* Responsive container for sections after Hero */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.section
           variants={sectionVariants}
@@ -50,7 +54,13 @@ const Home = () => {
         </motion.section>
       </div>
 
-      <footer className="py-8 sm:py-10 text-center border-t-2 border-[#3E2723] text-[#3E2723]/60 px-4 text-sm sm:text-base">
+      <footer
+        className="py-8 sm:py-10 text-center border-t-2 px-4 text-sm sm:text-base"
+        style={{
+          borderColor: 'var(--border-color)',
+          color: 'var(--text-secondary)',
+        }}
+      >
         <p>© 2026 CafeFlow. Optimized for production.</p>
       </footer>
     </div>

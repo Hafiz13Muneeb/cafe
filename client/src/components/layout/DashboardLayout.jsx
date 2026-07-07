@@ -18,7 +18,13 @@ const DashboardLayout = ({ children, title, subtitle, showSidebar = true }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5DC] text-[#3E2723]">
+    <div
+      className="min-h-screen"
+      style={{
+        backgroundColor: 'var(--bg-color)',
+        color: 'var(--text-color)',
+      }}
+    >
       <Header title={title} subtitle={subtitle} onLogout={handleLogout} user={user} />
       <div className="flex flex-col sm:flex-row">
         {showSidebar && (

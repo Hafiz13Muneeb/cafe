@@ -86,11 +86,10 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // ✅ WEBHOOK MUST BE RAW BEFORE JSON PARSER
-//    Accept any content type so Lemon Squeezy's 'application/vnd.api+json' is captured.
 const { webhookHandler } = require('./controllers/paymentController');
 app.post(
   '/api/payments/webhooks/lemon-squeezy',
-  express.raw({ type: '*/*' }),   // ✅ Accept any content type
+  express.raw({ type: '*/*' }),
   webhookHandler
 );
 
@@ -130,6 +129,10 @@ app.use('/api/menu', require('./routes/menuRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+
+// 🆕 Feedback & Notification routes
+app.use('/api/feedback', require('./routes/feedbackRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 app.get('/api/health', async (req, res) => {
   try {

@@ -6,11 +6,11 @@ const {
   getGlobalSettings,
   updateGlobalSettings,
   updateGlobalFavicon,
-  // 🆕 Import new pricing controllers
   getPricing,
   updatePricing,
 } = require('../controllers/settingsController');
 const { protect, restrictTo } = require('../middleware/auth');
+const subscriptionGuard = require('../middleware/subscriptionGuard');
 const upload = require('../config/multer');
 
 // ============================================================
@@ -20,7 +20,7 @@ const upload = require('../config/multer');
 // Global settings (theme, favicon, pricing)
 router.get('/global', getGlobalSettings);
 
-// 🆕 Public pricing endpoint – fetch current monthly price and trial days
+// Public pricing endpoint – fetch current monthly price and trial days
 router.get('/pricing', getPricing);
 
 // ============================================================
@@ -28,16 +28,25 @@ router.get('/pricing', getPricing);
 // ============================================================
 router.use(protect);
 
-// Get owner settings (cafeName, whatsapp, tables, logo, favicon)
+// Get owner settings (cafeName, whatsapp, tables, logo, favicon, currency)
 router.get('/', getSettings);
 
-// Update owner settings (with logo & favicon upload)
+// Update basic owner settings (cafeName, whatsapp, tables, logo, favicon, currency)
+// This route does NOT allow theme color changes – they go to /theme
 router.put(
   '/',
   upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'favicon', maxCount: 1 },
   ]),
+  updateSettings
+);
+
+// 🆕 Update theme settings (primaryColor, secondaryColor, mode) – requires PAID subscription
+router.put(
+  '/theme',
+  upload.none(), // No file uploads for theme
+  subscriptionGuard('paid'),
   updateSettings
 );
 
@@ -56,7 +65,7 @@ router.put(
   updateGlobalFavicon
 );
 
-// 🆕 Update pricing (monthlyPrice, trialPeriodDays) – SuperAdmin only
+// Update pricing (monthlyPrice, trialPeriodDays) – SuperAdmin only
 router.put('/pricing', protect, restrictTo('superadmin'), updatePricing);
 
 module.exports = router;

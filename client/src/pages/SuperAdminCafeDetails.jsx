@@ -187,8 +187,11 @@ const SuperAdminCafeDetails = () => {
   if (loading) {
     return (
       <DashboardLayout title="Loading..." subtitle="Analytics">
-        <div className="bg-[#F5F5DC] p-6 border-2 border-[#3E2723] text-center">
-          <p className="text-[#3E2723]/60">Loading cafe details...</p>
+        <div
+          className="p-6 border-2 border-[#3E2723] text-center"
+          style={{ backgroundColor: 'var(--bg-color)' }}
+        >
+          <p style={{ color: 'var(--text-secondary)' }}>Loading cafe details...</p>
         </div>
       </DashboardLayout>
     );
@@ -197,11 +200,15 @@ const SuperAdminCafeDetails = () => {
   if (error) {
     return (
       <DashboardLayout title="Error" subtitle="Analytics">
-        <div className="bg-[#F5F5DC] p-6 border-2 border-[#3E2723] bg-red-100">
+        <div
+          className="p-6 border-2 border-[#3E2723] bg-red-100"
+          style={{ backgroundColor: 'var(--bg-color)' }}
+        >
           <p className="text-red-600 font-bold">{error}</p>
           <button
             onClick={() => navigate('/admin/super')}
-            className="mt-4 px-4 py-2 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold"
+            className="mt-4 px-4 py-2 border-2 border-[#3E2723] text-white font-bold"
+            style={{ backgroundColor: 'var(--primary-color)' }}
           >
             Back to Owners
           </button>
@@ -215,14 +222,18 @@ const SuperAdminCafeDetails = () => {
   return (
     <DashboardLayout title={cafeName || 'Cafe Details'} subtitle="Analytics & Notes">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 className="text-lg font-bold text-[#3E2723]">Performance Overview</h2>
+        <h2 className="text-lg font-bold" style={{ color: 'var(--text-color)' }}>Performance Overview</h2>
         <PeriodFilter periods={periods} selected={period} onSelect={setPeriod} />
       </div>
 
       {analyticsLoading && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white border-2 border-[#3E2723] p-3 sm:p-4 animate-pulse">
+            <div
+              key={i}
+              className="border-2 border-[#3E2723] p-3 sm:p-4 animate-pulse"
+              style={{ backgroundColor: 'var(--card-bg)' }}
+            >
               <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
               <div className="h-6 bg-gray-200 rounded w-3/4"></div>
             </div>
@@ -269,8 +280,14 @@ const SuperAdminCafeDetails = () => {
 
           {chartData && chartData.labels.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
-              <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
-                <h3 className="text-md font-bold text-[#3E2723] mb-2">Views</h3>
+              <div
+                className="border-2 border-[#3E2723] p-4"
+                style={{
+                  backgroundColor: 'var(--card-bg)',
+                  boxShadow: '6px 6px 0px 0px var(--secondary-color)',
+                }}
+              >
+                <h3 className="text-md font-bold" style={{ color: 'var(--text-color)' }}>Views</h3>
                 <LineChart
                   labels={chartData.labels}
                   data={chartData.viewsData}
@@ -279,8 +296,14 @@ const SuperAdminCafeDetails = () => {
                   height={200}
                 />
               </div>
-              <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
-                <h3 className="text-md font-bold text-[#3E2723] mb-2">Completed Orders</h3>
+              <div
+                className="border-2 border-[#3E2723] p-4"
+                style={{
+                  backgroundColor: 'var(--card-bg)',
+                  boxShadow: '6px 6px 0px 0px var(--secondary-color)',
+                }}
+              >
+                <h3 className="text-md font-bold" style={{ color: 'var(--text-color)' }}>Completed Orders</h3>
                 <LineChart
                   labels={chartData.labels}
                   data={chartData.ordersData}
@@ -289,8 +312,14 @@ const SuperAdminCafeDetails = () => {
                   height={200}
                 />
               </div>
-              <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8] lg:col-span-2">
-                <h3 className="text-md font-bold text-[#3E2723] mb-2">Revenue Trend</h3>
+              <div
+                className="border-2 border-[#3E2723] p-4 lg:col-span-2"
+                style={{
+                  backgroundColor: 'var(--card-bg)',
+                  boxShadow: '6px 6px 0px 0px var(--secondary-color)',
+                }}
+              >
+                <h3 className="text-md font-bold" style={{ color: 'var(--text-color)' }}>Revenue Trend</h3>
                 <LineChart
                   labels={chartData.labels}
                   data={chartData.revenueData}
@@ -301,17 +330,22 @@ const SuperAdminCafeDetails = () => {
               </div>
             </div>
           ) : (
-            <div className="bg-white border-2 border-[#3E2723] p-6 sm:p-8 text-center shadow-[6px_6px_0px_0px_#EAE0C8] mb-6">
-              <BarChart3 size={48} className="mx-auto text-[#3E2723]/30 mb-2" />
-              <p className="text-[#3E2723]/60 font-bold">No analytics data available yet.</p>
-              <p className="text-sm text-[#3E2723]/40">Data will appear once customers start viewing the menu and placing orders.</p>
+            <div
+              className="border-2 border-[#3E2723] p-6 sm:p-8 text-center shadow-[6px_6px_0px_0px_#EAE0C8] mb-6"
+              style={{ backgroundColor: 'var(--card-bg)' }}
+            >
+              <BarChart3 size={48} className="mx-auto mb-2" style={{ color: 'var(--text-secondary)' }} />
+              <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>No analytics data available yet.</p>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Data will appear once customers start viewing the menu and placing orders.
+              </p>
             </div>
           )}
         </>
       )}
 
       <div className="mt-6">
-        <h3 className="text-lg font-bold text-[#3E2723] mb-2">Notes</h3>
+        <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-color)' }}>Notes</h3>
         <NoteList
           notes={notes}
           cafeId={cafeId}

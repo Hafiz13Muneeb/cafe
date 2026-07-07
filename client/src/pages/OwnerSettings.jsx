@@ -1,6 +1,7 @@
 // src/pages/OwnerSettings.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Link } from 'react-router-dom'; // ✅ import Link
 import { selectUser, updateUser } from '../store/slices/authSlice';
 import { selectTheme, updateTheme as updateThemeAction } from '../store/slices/themeSlice';
 import api from '../api/axios';
@@ -39,6 +40,7 @@ const OwnerSettings = () => {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Fetch current settings on mount
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -59,34 +61,21 @@ const OwnerSettings = () => {
     fetchSettings();
   }, []);
 
-  // Sync local state with Redux when user/theme changes
+  // Sync with Redux
   useEffect(() => {
     if (user?.theme) {
       setPrimaryColor(user.theme.primaryColor || '#d4a843');
       setSecondaryColor(user.theme.secondaryColor || '#b8860b');
       setMode(user.theme.mode || 'light');
     }
-    if (user?.currency) {
-      setCurrency(user.currency);
-    }
-    if (user?.cafeName) {
-      setCafeName(user.cafeName);
-    }
-    if (user?.whatsappNumber !== undefined) {
-      setWhatsappNumber(user.whatsappNumber);
-    }
-    if (user?.tables) {
-      setTables(user.tables.join(', '));
-    }
-    if (user?.logoUrl !== undefined) {
-      setLogoPreview(user.logoUrl);
-    }
-    if (user?.faviconUrl !== undefined) {
-      setFaviconPreview(user.faviconUrl);
-    }
+    if (user?.currency) setCurrency(user.currency);
+    if (user?.cafeName) setCafeName(user.cafeName);
+    if (user?.whatsappNumber !== undefined) setWhatsappNumber(user.whatsappNumber);
+    if (user?.tables) setTables(user.tables.join(', '));
+    if (user?.logoUrl !== undefined) setLogoPreview(user.logoUrl);
+    if (user?.faviconUrl !== undefined) setFaviconPreview(user.faviconUrl);
   }, [user]);
 
-  // Also sync theme from Redux
   useEffect(() => {
     if (theme) {
       setPrimaryColor(theme.primaryColor || '#d4a843');
@@ -95,6 +84,7 @@ const OwnerSettings = () => {
     }
   }, [theme]);
 
+  // ----- Cafe Settings Submit -----
   const handleCafeSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -128,10 +118,8 @@ const OwnerSettings = () => {
         whatsappNumber,
         tables: trimmedTables,
         currency: trimmedCurrency,
-        primaryColor,
-        secondaryColor,
-        mode,
       };
+
       const res = await api.put('/settings', payload);
       if (res.data.success) {
         const updatedData = {
@@ -139,11 +127,8 @@ const OwnerSettings = () => {
           whatsappNumber,
           tables: trimmedTables,
           currency: trimmedCurrency,
-          theme: { primaryColor, secondaryColor, mode },
         };
-        // ✅ Dispatch Redux actions instead of context functions
         dispatch(updateUser(updatedData));
-        dispatch(updateThemeAction({ primaryColor, secondaryColor, mode }));
         setMessage({ text: 'Settings saved successfully!', type: 'success' });
       }
     } catch (err) {
@@ -153,6 +138,37 @@ const OwnerSettings = () => {
     }
   };
 
+  // ----- Theme Settings Submit (separate endpoint) -----
+  const handleThemeSubmit = async (e) => {
+    e?.preventDefault();
+    console.log('🟢 Theme submit called – URL: /settings/theme');
+    setLoading(true);
+    setMessage({ text: '', type: '' });
+    try {
+      const payload = {
+        primaryColor,
+        secondaryColor,
+        mode,
+      };
+      const res = await api.put('/settings/theme', payload);
+      if (res.data.success) {
+        dispatch(updateThemeAction({ primaryColor, secondaryColor, mode }));
+        setMessage({ text: 'Theme updated successfully!', type: 'success' });
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to update theme';
+      if (err.response?.status === 403) {
+        // ✅ Store the error with a marker so we can show the upgrade link
+        setMessage({ text: 'Theme customization requires a paid subscription. Please upgrade.', type: 'error_subscription' });
+      } else {
+        setMessage({ text: msg, type: 'error' });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ----- Image Upload -----
   const handleImageUpload = async (file, type) => {
     if (!file) return;
     const formData = new FormData();
@@ -176,6 +192,7 @@ const OwnerSettings = () => {
     }
   };
 
+  // ----- Password Change -----
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
@@ -221,25 +238,54 @@ const OwnerSettings = () => {
       {message.text && (
         <div
           className={`mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base ${
-            message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'
+            message.type === 'success' ? 'text-white' : ''
           }`}
+          style={
+            message.type === 'success'
+              ? { backgroundColor: 'var(--primary-color)' }
+              : { backgroundColor: '#fca5a5', color: 'var(--text-color)' }
+          }
           role="alert"
           aria-live="polite"
         >
-          {message.text}
+          <span>{message.text}</span>
+          {/* ✅ If it's the subscription error, show an Upgrade link */}
+          {message.type === 'error_subscription' && (
+            <Link
+              to="/admin/subscription"
+              className="ml-3 underline font-bold hover:opacity-80 transition"
+              style={{ color: 'var(--primary-color)' }}
+            >
+              Upgrade Now →
+            </Link>
+          )}
         </div>
       )}
 
-      <div className="flex flex-wrap gap-1 bg-[#EAE0C8] border-2 border-[#3E2723] p-1 mb-6">
+      <div
+        className="flex flex-wrap gap-1 border-2 border-[#3E2723] p-1 mb-6"
+        style={{ backgroundColor: 'var(--secondary-color)' }}
+      >
         {tabItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm sm:text-base font-bold transition-all ${
-              activeTab === item.id
-                ? 'bg-[#8A9A5B] text-white border-2 border-[#3E2723]'
-                : 'text-[#3E2723] hover:bg-[#3E2723]/10'
-            }`}
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm sm:text-base font-bold transition-all border-2"
+            style={{
+              backgroundColor: activeTab === item.id ? 'var(--primary-color)' : 'transparent',
+              color: activeTab === item.id ? '#ffffff' : 'var(--text-color)',
+              borderColor: activeTab === item.id ? '#3E2723' : 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== item.id) {
+                e.target.style.backgroundColor = 'rgba(var(--primary-color-rgb), 0.1)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== item.id) {
+                e.target.style.backgroundColor = 'transparent';
+              }
+            }}
           >
             <item.icon size={16} />
             <span>{item.label}</span>
@@ -247,7 +293,11 @@ const OwnerSettings = () => {
         ))}
       </div>
 
-      <div className="bg-[#F5F5DC] p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]">
+      <div
+        className="p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]"
+        style={{ backgroundColor: 'var(--bg-color)' }}
+      >
+        {/* CAFE TAB */}
         {activeTab === 'cafe' && (
           <form onSubmit={handleCafeSubmit} className="space-y-4">
             <Input
@@ -255,7 +305,6 @@ const OwnerSettings = () => {
               value={cafeName}
               onChange={(e) => setCafeName(e.target.value)}
               required
-              aria-label="Cafe name"
             />
             <Input
               label="WhatsApp Number"
@@ -263,7 +312,6 @@ const OwnerSettings = () => {
               onChange={(e) => setWhatsappNumber(e.target.value)}
               placeholder="e.g. 03001234567"
               required
-              aria-label="WhatsApp number"
             />
             <Input
               label="Table Numbers / Names"
@@ -272,7 +320,6 @@ const OwnerSettings = () => {
               onBlur={handleTablesBlur}
               placeholder="1, 2, 3, 4, 5 (comma separated)"
               required
-              aria-label="Table numbers or names"
             />
             <Input
               label="Currency Symbol"
@@ -280,13 +327,11 @@ const OwnerSettings = () => {
               onChange={(e) => setCurrency(e.target.value)}
               placeholder="e.g. Rs, $, €"
               required
-              aria-label="Currency symbol"
-              helpText="This currency will be used for displaying prices on your public menu."
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-[#3E2723] mb-1" htmlFor="logoUpload">
+                <label className="block text-sm font-bold mb-1" style={{ color: 'var(--text-color)' }} htmlFor="logoUpload">
                   Logo
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
@@ -308,7 +353,6 @@ const OwnerSettings = () => {
                     }}
                     className="hidden"
                     id="logoUpload"
-                    aria-label="Upload logo"
                   />
                   <Button
                     type="button"
@@ -321,7 +365,7 @@ const OwnerSettings = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-bold text-[#3E2723] mb-1" htmlFor="faviconUpload">
+                <label className="block text-sm font-bold mb-1" style={{ color: 'var(--text-color)' }} htmlFor="faviconUpload">
                   Favicon
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
@@ -343,7 +387,6 @@ const OwnerSettings = () => {
                     }}
                     className="hidden"
                     id="faviconUpload"
-                    aria-label="Upload favicon"
                   />
                   <Button
                     type="button"
@@ -363,11 +406,12 @@ const OwnerSettings = () => {
           </form>
         )}
 
+        {/* APPEARANCE TAB */}
         {activeTab === 'appearance' && (
-          <form onSubmit={handleCafeSubmit} className="space-y-4">
+          <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-[#3E2723] mb-1" htmlFor="primaryColor">
+                <label className="block text-sm font-bold mb-1" style={{ color: 'var(--text-secondary)' }} htmlFor="primaryColor">
                   Primary Color
                 </label>
                 <div className="flex items-center gap-2">
@@ -377,18 +421,16 @@ const OwnerSettings = () => {
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
                     className="w-10 h-10 p-0 border-2 border-[#3E2723] cursor-pointer"
-                    aria-label="Primary color picker"
                   />
                   <Input
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
                     className="flex-1"
-                    aria-label="Primary color hex"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-bold text-[#3E2723] mb-1" htmlFor="secondaryColor">
+                <label className="block text-sm font-bold mb-1" style={{ color: 'var(--text-secondary)' }} htmlFor="secondaryColor">
                   Secondary Color
                 </label>
                 <div className="flex items-center gap-2">
@@ -398,42 +440,56 @@ const OwnerSettings = () => {
                     value={secondaryColor}
                     onChange={(e) => setSecondaryColor(e.target.value)}
                     className="w-10 h-10 p-0 border-2 border-[#3E2723] cursor-pointer"
-                    aria-label="Secondary color picker"
                   />
                   <Input
                     value={secondaryColor}
                     onChange={(e) => setSecondaryColor(e.target.value)}
                     className="flex-1"
-                    aria-label="Secondary color hex"
                   />
                 </div>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-[#3E2723] mb-1">Mode</label>
+              <label className="block text-sm font-bold mb-1" style={{ color: 'var(--text-secondary)' }}>Mode</label>
               <div className="flex flex-wrap gap-2 sm:gap-4">
                 {['light', 'dark'].map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setMode(m)}
-                    className={`px-3 sm:px-4 py-2 border-2 border-[#3E2723] font-bold transition text-sm sm:text-base ${
-                      mode === m ? 'bg-[#8A9A5B] text-white' : 'bg-white text-[#3E2723]'
-                    }`}
-                    aria-label={`Switch to ${m} mode`}
-                    aria-pressed={mode === m}
+                    className="px-3 sm:px-4 py-2 border-2 border-[#3E2723] font-bold transition text-sm sm:text-base"
+                    style={{
+                      backgroundColor: mode === m ? 'var(--primary-color)' : 'var(--card-bg)',
+                      color: mode === m ? '#ffffff' : 'var(--text-color)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (mode !== m) {
+                        e.target.style.backgroundColor = 'var(--secondary-color)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (mode !== m) {
+                        e.target.style.backgroundColor = 'var(--card-bg)';
+                      }
+                    }}
                   >
                     {m.charAt(0).toUpperCase() + m.slice(1)}
                   </button>
                 ))}
               </div>
             </div>
-            <Button type="submit" variant="primary" disabled={loading} className="w-full sm:w-auto">
+            <Button
+              variant="primary"
+              disabled={loading}
+              onClick={handleThemeSubmit}
+              className="w-full sm:w-auto"
+            >
               <Save size={16} className="inline mr-1" /> {loading ? 'Saving...' : 'Save Theme'}
             </Button>
-          </form>
+          </div>
         )}
 
+        {/* SECURITY TAB */}
         {activeTab === 'security' && (
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div className="relative">
@@ -443,13 +499,12 @@ const OwnerSettings = () => {
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
                 required
-                aria-label="Current password"
               />
               <button
                 type="button"
                 onClick={() => setShowOld(!showOld)}
-                className="absolute right-3 top-9 text-[#3E2723]"
-                aria-label={showOld ? 'Hide password' : 'Show password'}
+                className="absolute right-3 top-9"
+                style={{ color: 'var(--text-color)' }}
               >
                 {showOld ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -461,13 +516,12 @@ const OwnerSettings = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
-                aria-label="New password"
               />
               <button
                 type="button"
                 onClick={() => setShowNew(!showNew)}
-                className="absolute right-3 top-9 text-[#3E2723]"
-                aria-label={showNew ? 'Hide new password' : 'Show new password'}
+                className="absolute right-3 top-9"
+                style={{ color: 'var(--text-color)' }}
               >
                 {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -479,13 +533,12 @@ const OwnerSettings = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                aria-label="Confirm new password"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-3 top-9 text-[#3E2723]"
-                aria-label={showConfirm ? 'Hide confirmation' : 'Show confirmation'}
+                className="absolute right-3 top-9"
+                style={{ color: 'var(--text-color)' }}
               >
                 {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>

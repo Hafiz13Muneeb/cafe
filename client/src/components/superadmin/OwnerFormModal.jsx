@@ -13,7 +13,7 @@ const OwnerFormModal = ({
   setFormData,
   loading,
   isEdit = false,
-  error = '', // 🆕 error prop for inline display
+  error = '',
 }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -27,14 +27,15 @@ const OwnerFormModal = ({
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="lg">
       <form
         onSubmit={onSubmit}
-        className="space-y-4 font-bold text-[#3E2723]"
+        className="space-y-4 font-bold"
+        style={{ color: 'var(--text-color)' }}
         noValidate
         aria-label="Owner form"
       >
-        {/* 🆕 Display error message inside the modal */}
         {error && (
           <div
-            className="p-3 border-2 border-[#3E2723] bg-red-300 text-[#3E2723] font-bold text-sm sm:text-base"
+            className="p-3 border-2 border-[#3E2723] bg-red-300 font-bold text-sm sm:text-base"
+            style={{ color: 'var(--text-color)' }}
             role="alert"
             aria-live="polite"
           >
@@ -42,7 +43,6 @@ const OwnerFormModal = ({
           </div>
         )}
 
-        {/* Username */}
         <Input
           label="Username"
           name="username"
@@ -53,7 +53,6 @@ const OwnerFormModal = ({
           aria-label="Username"
         />
 
-        {/* Email */}
         <Input
           label="Email"
           name="email"
@@ -65,7 +64,6 @@ const OwnerFormModal = ({
           aria-label="Email address"
         />
 
-        {/* Cafe Name */}
         <Input
           label="Cafe Name"
           name="cafeName"
@@ -76,7 +74,6 @@ const OwnerFormModal = ({
           aria-label="Cafe name"
         />
 
-        {/* Temporary Password - only for adding new owners */}
         {!isEdit && (
           <Input
             label="Temporary Password"
@@ -90,7 +87,6 @@ const OwnerFormModal = ({
           />
         )}
 
-        {/* WhatsApp Number - only for editing */}
         {isEdit && (
           <Input
             label="WhatsApp Number"
@@ -102,7 +98,6 @@ const OwnerFormModal = ({
           />
         )}
 
-        {/* Tables - only for editing */}
         {isEdit && (
           <Input
             label="Table Numbers / Names"
@@ -114,14 +109,14 @@ const OwnerFormModal = ({
           />
         )}
 
-        {/* Theme Settings - only for editing */}
         {isEdit && (
           <div className="space-y-3">
-            <p className="text-sm font-bold text-[#3E2723]">Theme Settings</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--text-color)' }}>Theme Settings</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label
-                  className="block text-xs font-bold text-[#3E2723]/70 mb-1"
+                  className="block text-xs font-bold mb-1"
+                  style={{ color: 'var(--text-secondary)' }}
                   htmlFor="primaryColor"
                 >
                   Primary Color
@@ -148,7 +143,8 @@ const OwnerFormModal = ({
               </div>
               <div>
                 <label
-                  className="block text-xs font-bold text-[#3E2723]/70 mb-1"
+                  className="block text-xs font-bold mb-1"
+                  style={{ color: 'var(--text-secondary)' }}
                   htmlFor="secondaryColor"
                 >
                   Secondary Color
@@ -175,9 +171,8 @@ const OwnerFormModal = ({
               </div>
             </div>
 
-            {/* Mode Toggle */}
             <div>
-              <label className="block text-xs font-bold text-[#3E2723]/70 mb-1">
+              <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text-secondary)' }}>
                 Mode
               </label>
               <div className="flex gap-3">
@@ -187,11 +182,21 @@ const OwnerFormModal = ({
                     type="button"
                     name="mode"
                     onClick={() => setFormData((prev) => ({ ...prev, mode: m }))}
-                    className={`px-4 py-2 border-2 border-[#3E2723] font-bold transition ${
-                      formData.mode === m
-                        ? 'bg-[#8A9A5B] text-white'
-                        : 'bg-white text-[#3E2723] hover:bg-[#EAE0C8]'
-                    }`}
+                    className="px-4 py-2 border-2 border-[#3E2723] font-bold transition"
+                    style={{
+                      backgroundColor: formData.mode === m ? 'var(--primary-color)' : 'var(--card-bg)',
+                      color: formData.mode === m ? '#ffffff' : 'var(--text-color)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (formData.mode !== m) {
+                        e.target.style.backgroundColor = 'var(--secondary-color)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (formData.mode !== m) {
+                        e.target.style.backgroundColor = 'var(--card-bg)';
+                      }
+                    }}
                     aria-label={`Switch to ${m} mode`}
                     aria-pressed={formData.mode === m}
                   >
@@ -203,7 +208,6 @@ const OwnerFormModal = ({
           </div>
         )}
 
-        {/* Submit Button */}
         <Button
           type="submit"
           variant="primary"
@@ -223,7 +227,6 @@ const OwnerFormModal = ({
           )}
         </Button>
 
-        {/* Cancel Button */}
         <Button
           type="button"
           variant="secondary"

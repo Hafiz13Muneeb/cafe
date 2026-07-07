@@ -103,8 +103,7 @@ const AdminLogin = () => {
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
-    // Stay on the same page; the login form will appear.
-    window.location.reload(); // force refresh to clear any stale state
+    window.location.reload();
   };
 
   // ---------- TOUR CONFIG ----------
@@ -198,16 +197,25 @@ const AdminLogin = () => {
   // ------------------------------------------------------------
   if (isAuthenticated && user) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F5DC]">
-        <div className="w-full max-w-md bg-white border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8 text-center">
-          <div className="inline-block p-4 rounded-full bg-[#8A9A5B] border-2 border-[#3E2723] mb-4">
+      <div
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ backgroundColor: 'var(--bg-color)' }}
+      >
+        <div
+          className="w-full max-w-md border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8 text-center"
+          style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)' }}
+        >
+          <div
+            className="inline-block p-4 rounded-full border-2 border-[#3E2723] mb-4"
+            style={{ backgroundColor: 'var(--primary-color)' }}
+          >
             <CheckCircle size={32} className="text-white" />
           </div>
-          <h2 className="text-xl font-bold text-[#3E2723]">You are already logged in</h2>
-          <p className="text-sm text-[#3E2723]/70 mt-2">
+          <h2 className="text-xl font-bold" style={{ color: 'var(--text-color)' }}>You are already logged in</h2>
+          <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
             Signed in as <strong>{user.username}</strong> ({user.role === 'superadmin' ? 'Super Admin' : 'Owner'}).
           </p>
-          <p className="text-xs text-[#3E2723]/50 mt-1">
+          <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
             If you want to sign in with a different account, please log out first.
           </p>
           <div className="mt-6 flex flex-col gap-3">
@@ -227,7 +235,7 @@ const AdminLogin = () => {
             </Button>
           </div>
           <div className="mt-4 border-t border-[#3E2723]/20 pt-4">
-            <Link to="/register" className="text-xs text-[#8A9A5B] hover:underline">
+            <Link to="/register" className="text-xs hover:underline" style={{ color: 'var(--primary-color)' }}>
               Create another account
             </Link>
           </div>
@@ -240,7 +248,10 @@ const AdminLogin = () => {
   // Normal login form (user not authenticated)
   // ------------------------------------------------------------
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F5DC] relative">
+    <div
+      className="min-h-screen flex items-center justify-center px-4 relative"
+      style={{ backgroundColor: 'var(--bg-color)' }}
+    >
       {showTour && targetRect && (
         <div className="fixed inset-0 z-50 pointer-events-none">
           <div
@@ -251,53 +262,63 @@ const AdminLogin = () => {
               width: targetRect.width + 16,
               height: targetRect.height + 16,
               borderRadius: '6px',
-              boxShadow: '0 0 0 4px #8A9A5B, 0 0 20px rgba(138, 154, 91, 0.6)',
+              boxShadow: `0 0 0 4px var(--primary-color), 0 0 20px rgba(var(--primary-color-rgb), 0.6)`,
               transition: 'all 0.3s ease',
             }}
           />
           <div
-            className="absolute bg-white border-4 border-[#3E2723] shadow-[8px_8px_0px_0px_#8A9A5B] p-5 max-w-xs w-72 pointer-events-auto"
+            className="absolute border-4 border-[#3E2723] shadow-[8px_8px_0px_0px_var(--primary-color)] p-5 max-w-xs w-72 pointer-events-auto"
             style={{
               top: tooltipStyle.top,
               left: tooltipStyle.left,
               transform: tooltipStyle.transform || 'none',
+              backgroundColor: 'var(--card-bg)',
             }}
           >
             <div className="flex items-center gap-1.5 mb-3">
               {Array.from({ length: totalSteps }).map((_, idx) => (
                 <div
                   key={idx}
-                  className={`h-1 flex-1 rounded-full transition ${idx === tourStep ? 'bg-[#8A9A5B]' : 'bg-[#EAE0C8]'}`}
+                  className="h-1 flex-1 rounded-full transition"
+                  style={{
+                    backgroundColor: idx === tourStep ? 'var(--primary-color)' : 'var(--bg-color)',
+                  }}
                 />
               ))}
             </div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-1.5 bg-[#8A9A5B] rounded-full border-2 border-[#3E2723]">
+              <div
+                className="p-1.5 rounded-full border-2 border-[#3E2723]"
+                style={{ backgroundColor: 'var(--primary-color)' }}
+              >
                 <currentStepData.icon size={18} className="text-white" />
               </div>
-              <h3 className="font-bold text-[#3E2723] text-base">{currentStepData.title}</h3>
+              <h3 className="font-bold text-base" style={{ color: 'var(--text-color)' }}>{currentStepData.title}</h3>
             </div>
-            <p className="text-sm text-[#3E2723]/70 mb-4">{currentStepData.description}</p>
+            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{currentStepData.description}</p>
             <div className="flex justify-between items-center">
               <button
                 onClick={handlePrev}
                 disabled={tourStep === 0}
                 className={`text-sm font-bold transition ${
-                  tourStep === 0 ? 'text-[#3E2723]/30 cursor-not-allowed' : 'text-[#3E2723] hover:text-[#8A9A5B]'
+                  tourStep === 0 ? 'cursor-not-allowed opacity-30' : 'hover:text-primary'
                 }`}
+                style={tourStep === 0 ? { color: 'var(--text-secondary)' } : { color: 'var(--text-color)' }}
               >
                 Back
               </button>
               <div className="flex gap-2">
                 <button
                   onClick={handleSkip}
-                  className="text-xs font-bold text-[#3E2723]/50 hover:text-[#3E2723] transition"
+                  className="text-xs font-bold transition hover:opacity-70"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
                   Skip
                 </button>
                 <button
                   onClick={handleNext}
-                  className="px-4 py-1.5 bg-[#8A9A5B] text-white font-bold border-2 border-[#3E2723] shadow-[3px_3px_0px_0px_#3E2723] hover:shadow-none transition text-xs"
+                  className="px-4 py-1.5 text-white font-bold border-2 border-[#3E2723] shadow-[3px_3px_0px_0px_#3E2723] hover:shadow-none transition text-xs"
+                  style={{ backgroundColor: 'var(--primary-color)' }}
                 >
                   {tourStep === totalSteps - 1 ? 'Finish' : 'Next'}
                   {tourStep < totalSteps - 1 && <ChevronRight size={14} className="inline ml-0.5" />}
@@ -308,13 +329,19 @@ const AdminLogin = () => {
         </div>
       )}
 
-      <div className="w-full max-w-md bg-white border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8">
+      <div
+        className="w-full max-w-md border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8"
+        style={{ backgroundColor: 'var(--card-bg)' }}
+      >
         <div className="text-center mb-6">
-          <div className="inline-block p-4 rounded-full bg-[#8A9A5B] border-2 border-[#3E2723] mb-4">
+          <div
+            className="inline-block p-4 rounded-full border-2 border-[#3E2723] mb-4"
+            style={{ backgroundColor: 'var(--primary-color)' }}
+          >
             <Lock size={32} className="text-white" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#3E2723]">Admin Login</h1>
-          <p className="text-xs sm:text-sm text-[#3E2723]/60 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-color)' }}>Admin Login</h1>
+          <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Enter your credentials to access the dashboard
           </p>
         </div>
@@ -357,7 +384,7 @@ const AdminLogin = () => {
               type="submit"
               fullWidth
               disabled={loading}
-              className="bg-[#8A9A5B] border-2 border-[#3E2723] text-white hover:bg-[#78884d]"
+              variant="primary"
             >
               {loading ? (
                 <>
@@ -372,23 +399,24 @@ const AdminLogin = () => {
         </form>
 
         <div className="mt-6 border-t border-[#3E2723]/20 pt-4">
-          <p className="text-xs text-center text-[#3E2723]/40">
+          <p className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
             Demo credentials:{' '}
             <button
               ref={demoBtnRef}
               type="button"
               onClick={fillDemoCredentials}
-              className="font-mono font-medium text-[#3E2723]/60 hover:text-[#8A9A5B] underline-offset-2 hover:underline transition cursor-pointer"
+              className="font-mono font-medium underline-offset-2 hover:underline transition cursor-pointer"
+              style={{ color: 'var(--text-color)' }}
             >
               demo / demo123
             </button>
-            <span className="text-[#3E2723]/30 ml-1">(click to auto‑fill)</span>
+            <span style={{ color: 'var(--text-secondary)' }} className="ml-1">(click to auto‑fill)</span>
           </p>
         </div>
 
-        <p ref={createAccountRef} className="text-xs text-center text-[#3E2723]/40 mt-3">
+        <p ref={createAccountRef} className="text-xs text-center mt-3" style={{ color: 'var(--text-secondary)' }}>
           Don't have an account?{' '}
-          <Link to="/register" className="text-[#8A9A5B] hover:underline font-medium">
+          <Link to="/register" className="hover:underline font-medium" style={{ color: 'var(--primary-color)' }}>
             Create one here
           </Link>
         </p>

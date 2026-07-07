@@ -95,14 +95,27 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5DC] flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-2xl bg-white border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8">
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-8"
+      style={{ backgroundColor: 'var(--bg-color)' }}
+    >
+      <div
+        className="w-full max-w-2xl border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8"
+        style={{ backgroundColor: 'var(--card-bg)' }}
+      >
         <div className="text-center mb-6">
-          <div className="inline-block p-4 rounded-full bg-[#8A9A5B] border-2 border-[#3E2723] mb-4">
+          <div
+            className="inline-block p-4 rounded-full border-2 border-[#3E2723] mb-4"
+            style={{ backgroundColor: 'var(--primary-color)' }}
+          >
             <Coffee size={32} className="text-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#3E2723]">Welcome, {user?.username}!</h1>
-          <p className="text-sm text-[#3E2723]/60 mt-1">Let's set up your cafe in a few steps.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: 'var(--text-color)' }}>
+            Welcome, {user?.username}!
+          </h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+            Let's set up your cafe in a few steps.
+          </p>
         </div>
 
         {error && (
@@ -156,13 +169,15 @@ const Onboarding = () => {
             required
           />
 
-          <div className="border-t border-[#3E2723]/20 pt-4">
-            <h3 className="text-sm font-bold text-[#3E2723] mb-3 flex items-center gap-2">
+          <div className="border-t pt-4" style={{ borderColor: 'var(--border-color)' }}>
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
               <Palette size={18} /> Theme Settings
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-[#3E2723]/70 mb-1">Primary Color</label>
+                <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                  Primary Color
+                </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -178,7 +193,9 @@ const Onboarding = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-[#3E2723]/70 mb-1">Secondary Color</label>
+                <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                  Secondary Color
+                </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -195,16 +212,30 @@ const Onboarding = () => {
               </div>
             </div>
             <div className="mt-3">
-              <label className="block text-xs font-bold text-[#3E2723]/70 mb-1">Mode</label>
+              <label className="block text-xs font-bold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                Mode
+              </label>
               <div className="flex gap-3">
                 {['light', 'dark'].map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setMode(m)}
-                    className={`px-4 py-2 border-2 border-[#3E2723] font-bold transition text-sm ${
-                      mode === m ? 'bg-[#8A9A5B] text-white' : 'bg-white text-[#3E2723] hover:bg-[#EAE0C8]'
-                    }`}
+                    className="px-4 py-2 border-2 border-[#3E2723] font-bold transition text-sm"
+                    style={{
+                      backgroundColor: mode === m ? 'var(--primary-color)' : 'var(--card-bg)',
+                      color: mode === m ? '#ffffff' : 'var(--text-color)',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (mode !== m) {
+                        e.target.style.backgroundColor = 'var(--secondary-color)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (mode !== m) {
+                        e.target.style.backgroundColor = 'var(--card-bg)';
+                      }
+                    }}
                   >
                     {m.charAt(0).toUpperCase() + m.slice(1)}
                   </button>
@@ -213,7 +244,7 @@ const Onboarding = () => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-[#3E2723]/20">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t" style={{ borderColor: 'var(--border-color)' }}>
             <Button
               type="submit"
               variant="primary"

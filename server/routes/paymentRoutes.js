@@ -9,9 +9,7 @@ const {
 } = require('../controllers/paymentController');
 const { protect } = require('../middleware/auth');
 
-// ============================================================
 // ALL ROUTES ARE PROTECTED (require authentication)
-// ============================================================
 router.use(protect);
 
 // Create a checkout session

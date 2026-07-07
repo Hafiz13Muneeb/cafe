@@ -37,7 +37,7 @@ const BLOG_POSTS = [
     subtopics: ['Contact Us', 'Receive Credentials', 'Set Up Menu', 'Start Taking Orders'],
     render: () => (
       <div className="space-y-6">
-        <p className="text-[#3E2723]/80">
+        <p style={{ color: 'var(--text-secondary)' }}>
           Getting started is quick and free. Follow these steps to set up your digital menu in minutes.
         </p>
         <div className="space-y-4">
@@ -45,8 +45,7 @@ const BLOG_POSTS = [
             {
               step: 1,
               title: 'Contact Us',
-              // ✅ FIX: Replace <Link> with <a> because it's inside dangerouslySetInnerHTML
-              desc: `Reach out via our <a href="/contact" className="text-[#8A9A5B] underline">contact form</a> or email us at <a href="mailto:${CONTACT_EMAIL}" className="text-[#8A9A5B] underline">${CONTACT_EMAIL}</a>. We'll set up your account within 24 hours.`,
+              desc: `Reach out via our <a href="/contact" style="color: var(--primary-color); text-decoration: underline;">contact form</a> or email us at <a href="mailto:${CONTACT_EMAIL}" style="color: var(--primary-color); text-decoration: underline;">${CONTACT_EMAIL}</a>. We'll set up your account within 24 hours.`,
             },
             {
               step: 2,
@@ -56,7 +55,7 @@ const BLOG_POSTS = [
             {
               step: 3,
               title: 'Set Up Your Menu',
-              desc: `Log in, upload your cafe logo, add menu items with images, and customise your theme colours. Your public menu will be live instantly at <span className="font-mono bg-[#EAE0C8] px-1">/menu/your-cafe</span>.`,
+              desc: `Log in, upload your cafe logo, add menu items with images, and customise your theme colours. Your public menu will be live instantly at <span style="font-family: monospace; background-color: var(--secondary-color); padding: 0 4px;">/menu/your-cafe</span>.`,
             },
             {
               step: 4,
@@ -66,22 +65,39 @@ const BLOG_POSTS = [
           ].map((item) => (
             <div
               key={item.step}
-              className="flex items-start gap-4 p-4 border-2 border-[#3E2723]/10 hover:border-[#8A9A5B] hover:shadow-[4px_4px_0px_0px_#EAE0C8] transition-all rounded-lg"
+              className="flex items-start gap-4 p-4 border-2 transition-all rounded-lg"
+              style={{
+                borderColor: 'var(--border-color)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--primary-color)';
+                e.currentTarget.style.boxShadow = '4px 4px 0px 0px var(--secondary-color)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
-              <div className="w-8 h-8 flex-shrink-0 bg-[#8A9A5B] text-white font-bold rounded-full flex items-center justify-center text-sm border-2 border-[#3E2723]">
+              <div
+                className="w-8 h-8 flex-shrink-0 text-white font-bold rounded-full flex items-center justify-center text-sm border-2 border-[#3E2723]"
+                style={{ backgroundColor: 'var(--primary-color)' }}
+              >
                 {item.step}
               </div>
               <div>
-                <h3 className="font-bold text-[#3E2723] text-lg">{item.title}</h3>
-                <p className="text-sm text-[#3E2723]/70" dangerouslySetInnerHTML={{ __html: item.desc }} />
+                <h3 className="font-bold text-lg" style={{ color: 'var(--text-color)' }}>{item.title}</h3>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }} dangerouslySetInnerHTML={{ __html: item.desc }} />
               </div>
             </div>
           ))}
         </div>
-        <div className="bg-[#EAE0C8] border-2 border-[#3E2723] p-4 mt-4 rounded-lg">
-          <p className="text-sm font-bold text-[#3E2723] flex items-center gap-2">
+        <div
+          className="border-2 border-[#3E2723] p-4 mt-4 rounded-lg"
+          style={{ backgroundColor: 'var(--secondary-color)' }}
+        >
+          <p className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
             <Shield size={18} /> Already have an account?{' '}
-            <Link to="/admin" className="text-[#8A9A5B] underline hover:no-underline">
+            <Link to="/admin" style={{ color: 'var(--primary-color)', textDecoration: 'underline' }}>
               Log in here
             </Link>
           </p>
@@ -95,7 +111,7 @@ const BLOG_POSTS = [
     subtopics: ['Zero Commission', 'Real-time Updates', 'WhatsApp Integration', 'Beautiful Design'],
     render: () => (
       <div className="space-y-6">
-        <p className="text-[#3E2723]/80">
+        <p style={{ color: 'var(--text-secondary)' }}>
           Here’s why hundreds of cafe owners trust us to power their digital menus every day.
         </p>
         <div className="grid grid-cols-1 gap-4">
@@ -107,13 +123,23 @@ const BLOG_POSTS = [
           ].map((feature, idx) => (
             <div
               key={idx}
-              className="bg-white border-2 border-[#3E2723] p-5 shadow-[4px_4px_0px_0px_#EAE0C8] hover:shadow-[8px_8px_0px_0px_#8A9A5B] transition-all duration-300 hover:-translate-y-1"
+              className="border-2 border-[#3E2723] p-5 transition-all duration-300 hover:-translate-y-1"
+              style={{
+                backgroundColor: 'var(--card-bg)',
+                boxShadow: '4px 4px 0px 0px var(--secondary-color)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '8px 8px 0px 0px var(--primary-color)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '4px 4px 0px 0px var(--secondary-color)';
+              }}
             >
               <div className="flex items-center gap-3">
-                <feature.icon size={24} className="text-[#8A9A5B]" />
-                <h3 className="font-bold text-[#3E2723] text-lg">{feature.title}</h3>
+                <feature.icon size={24} style={{ color: 'var(--primary-color)' }} />
+                <h3 className="font-bold text-lg" style={{ color: 'var(--text-color)' }}>{feature.title}</h3>
               </div>
-              <p className="text-sm text-[#3E2723]/70 mt-1">{feature.desc}</p>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{feature.desc}</p>
             </div>
           ))}
         </div>
@@ -126,7 +152,7 @@ const BLOG_POSTS = [
     subtopics: ['Themes & Colors', 'Logo & Favicon', 'Menu Categories', 'Table Management'],
     render: () => (
       <div className="space-y-6">
-        <p className="text-[#3E2723]/80">
+        <p style={{ color: 'var(--text-secondary)' }}>
           Make your digital menu truly yours with these powerful customization options.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -136,10 +162,10 @@ const BLOG_POSTS = [
             { icon: Coffee, title: 'Menu Categories', desc: 'Organise your items into categories (Burgers, Drinks, Desserts) for easy browsing.' },
             { icon: Users, title: 'Table Management', desc: 'Define custom table numbers/names for your space – orders will ask customers to select one.' },
           ].map((item, idx) => (
-            <div key={idx} className="bg-[#FAF9F6] border-2 border-[#3E2723] p-4">
-              <item.icon size={20} className="text-[#8A9A5B] mb-2" />
-              <h4 className="font-bold text-[#3E2723]">{item.title}</h4>
-              <p className="text-xs text-[#3E2723]/70 mt-1">{item.desc}</p>
+            <div key={idx} className="border-2 border-[#3E2723] p-4" style={{ backgroundColor: 'var(--bg-color)' }}>
+              <item.icon size={20} style={{ color: 'var(--primary-color)' }} className="mb-2" />
+              <h4 className="font-bold" style={{ color: 'var(--text-color)' }}>{item.title}</h4>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
             </div>
           ))}
         </div>
@@ -152,7 +178,7 @@ const BLOG_POSTS = [
     subtopics: ['Track Views', 'Monitor Orders', 'Revenue Tracking', 'Bounce Rate'],
     render: () => (
       <div className="space-y-6">
-        <p className="text-[#3E2723]/80">
+        <p style={{ color: 'var(--text-secondary)' }}>
           Understand your customers better with built‑in analytics that help you make data‑driven decisions.
         </p>
         <div className="space-y-4">
@@ -162,11 +188,11 @@ const BLOG_POSTS = [
             { icon: DollarSign, title: 'Revenue Tracking', desc: 'Automatically calculate total revenue from orders placed through your menu.' },
             { icon: Zap, title: 'Bounce Rate', desc: 'Understand how many visitors view without ordering – and optimise your menu accordingly.' },
           ].map((item, idx) => (
-            <div key={idx} className="flex items-start gap-3 p-3 border-b border-[#3E2723]/10 last:border-0">
-              <item.icon size={20} className="text-[#8A9A5B] mt-0.5" />
+            <div key={idx} className="flex items-start gap-3 p-3 border-b last:border-0" style={{ borderColor: 'var(--border-color)' }}>
+              <item.icon size={20} style={{ color: 'var(--primary-color)' }} className="mt-0.5" />
               <div>
-                <h4 className="font-bold text-[#3E2723]">{item.title}</h4>
-                <p className="text-sm text-[#3E2723]/70">{item.desc}</p>
+                <h4 className="font-bold" style={{ color: 'var(--text-color)' }}>{item.title}</h4>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
               </div>
             </div>
           ))}
@@ -187,12 +213,11 @@ const Blog = () => {
 
   // Read hash on mount and update active post
   useEffect(() => {
-    const hash = window.location.hash.slice(1); // remove '#'
+    const hash = window.location.hash.slice(1);
     const found = BLOG_POSTS.find((post) => post.id === hash);
     if (found) {
       setActivePostId(found.id);
     } else {
-      // Fallback to first post, but update URL
       const firstId = BLOG_POSTS[0]?.id;
       if (firstId && window.location.hash !== `#${firstId}`) {
         window.history.replaceState(null, '', `#${firstId}`);
@@ -201,16 +226,15 @@ const Blog = () => {
     }
   }, []);
 
-  // Listen for hash changes (e.g., when user clicks sidebar links)
+  // Listen for hash changes
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1);
       const found = BLOG_POSTS.find((post) => post.id === hash);
       if (found) {
         setActivePostId(found.id);
-        // Scroll to top of content on mobile
         contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        setSidebarOpen(false); // close sidebar on mobile
+        setSidebarOpen(false);
       }
     };
     window.addEventListener('hashchange', handleHashChange);
@@ -223,35 +247,52 @@ const Blog = () => {
     topRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Animation variants
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
   };
 
   return (
-    <div ref={topRef} className="min-h-screen bg-[#F5F5DC] text-[#3E2723]">
+    <div
+      ref={topRef}
+      className="min-h-screen"
+      style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+    >
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b-4 border-[#3E2723] shadow-[0_4px_0_0_#8A9A5B] py-3 px-4 sm:px-6">
+      <header
+        className="sticky top-0 z-50 backdrop-blur-sm border-b-4 border-[#3E2723] py-3 px-4 sm:px-6"
+        style={{
+          backgroundColor: 'var(--card-bg)',
+          boxShadow: '0 4px 0 0 var(--primary-color)',
+        }}
+      >
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Coffee size={28} className="text-[#8A9A5B]" />
-            <span className="text-2xl font-bold font-['Permanent_Marker'] text-[#3E2723]">
+            <Coffee size={28} style={{ color: 'var(--primary-color)' }} />
+            <span
+              className="text-2xl font-bold font-['Permanent_Marker']"
+              style={{ color: 'var(--text-color)' }}
+            >
               {BRAND_NAME}
             </span>
           </div>
           <div className="flex items-center gap-3">
-            {/* Mobile sidebar toggle */}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="md:hidden p-2 border-2 border-[#3E2723] bg-white hover:bg-[#EAE0C8] transition"
+              className="md:hidden p-2 border-2 border-[#3E2723] transition"
+              style={{ backgroundColor: 'var(--card-bg)' }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--secondary-color)'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--card-bg)'}
               aria-label="Toggle sidebar"
             >
-              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              {sidebarOpen ? <X size={20} style={{ color: 'var(--text-color)' }} /> : <Menu size={20} style={{ color: 'var(--text-color)' }} />}
             </button>
             <Link
               to="/"
-              className="flex items-center gap-2 text-sm font-bold text-[#3E2723] hover:text-[#8A9A5B] transition"
+              className="flex items-center gap-2 text-sm font-bold transition"
+              style={{ color: 'var(--text-color)' }}
+              onMouseEnter={(e) => e.target.style.color = 'var(--primary-color)'}
+              onMouseLeave={(e) => e.target.style.color = 'var(--text-color)'}
             >
               <ArrowLeft size={16} /> <span className="hidden sm:inline">Back to Home</span>
             </Link>
@@ -267,35 +308,48 @@ const Blog = () => {
             md:w-64 lg:w-72 flex-shrink-0
             ${sidebarOpen ? 'block' : 'hidden'} md:block
             fixed md:sticky top-20 md:top-24 left-0 right-0 z-40 md:z-auto
-            bg-white border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#EAE0C8]
+            border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_var(--secondary-color)]
             max-h-[calc(100vh-100px)] overflow-y-auto p-4 mx-4 md:mx-0
             md:max-h-[calc(100vh-120px)]
           `}
+          style={{ backgroundColor: 'var(--card-bg)' }}
         >
-          <h3 className="font-bold font-['Permanent_Marker'] text-xl text-[#3E2723] mb-4 flex items-center gap-2">
-            <Menu size={18} className="text-[#8A9A5B]" /> All Blogs
+          <h3 className="font-bold font-['Permanent_Marker'] text-xl mb-4 flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
+            <Menu size={18} style={{ color: 'var(--primary-color)' }} /> All Blogs
           </h3>
           <nav className="space-y-1">
             {BLOG_POSTS.map((post) => (
               <div key={post.id}>
                 <a
                   href={`#${post.id}`}
-                  className={`
-                    block px-3 py-2 border-l-4 font-bold text-sm transition-all
-                    ${activePostId === post.id
-                      ? 'border-[#8A9A5B] bg-[#EAE0C8] text-[#3E2723]'
-                      : 'border-transparent hover:border-[#8A9A5B] hover:bg-[#F5F5DC] text-[#3E2723]/70'
+                  className="block px-3 py-2 border-l-4 font-bold text-sm transition-all"
+                  style={{
+                    borderColor: activePostId === post.id ? 'var(--primary-color)' : 'transparent',
+                    backgroundColor: activePostId === post.id ? 'var(--secondary-color)' : 'transparent',
+                    color: activePostId === post.id ? 'var(--text-color)' : 'var(--text-secondary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (activePostId !== post.id) {
+                      e.target.style.borderColor = 'var(--primary-color)';
+                      e.target.style.backgroundColor = 'var(--bg-color)';
+                      e.target.style.color = 'var(--text-color)';
                     }
-                  `}
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activePostId !== post.id) {
+                      e.target.style.borderColor = 'transparent';
+                      e.target.style.backgroundColor = 'transparent';
+                      e.target.style.color = 'var(--text-secondary)';
+                    }
+                  }}
                 >
                   {post.title}
                 </a>
-                {/* Subtopics */}
                 {activePostId === post.id && (
-                  <ul className="ml-4 mt-1 space-y-0.5 border-l-2 border-[#EAE0C8] pl-3">
+                  <ul className="ml-4 mt-1 space-y-0.5 border-l-2 pl-3" style={{ borderColor: 'var(--secondary-color)' }}>
                     {post.subtopics.map((sub, idx) => (
-                      <li key={idx} className="text-xs text-[#3E2723]/60 flex items-center gap-1.5 py-0.5">
-                        <span className="w-1 h-1 bg-[#8A9A5B] rounded-full" />
+                      <li key={idx} className="text-xs flex items-center gap-1.5 py-0.5" style={{ color: 'var(--text-secondary)' }}>
+                        <span className="w-1 h-1 rounded-full" style={{ backgroundColor: 'var(--primary-color)' }} />
                         {sub}
                       </li>
                     ))}
@@ -304,10 +358,11 @@ const Blog = () => {
               </div>
             ))}
           </nav>
-          <div className="mt-6 pt-4 border-t-2 border-[#EAE0C8]">
+          <div className="mt-6 pt-4 border-t-2" style={{ borderColor: 'var(--secondary-color)' }}>
             <Link
               to="/admin"
-              className="block w-full text-center px-4 py-2 bg-[#8A9A5B] text-white font-bold border-2 border-[#3E2723] shadow-[4px_4px_0px_0px_#3E2723] hover:shadow-none transition-all text-sm"
+              className="block w-full text-center px-4 py-2 text-white font-bold border-2 border-[#3E2723] shadow-[4px_4px_0px_0px_#3E2723] hover:shadow-none transition-all text-sm"
+              style={{ backgroundColor: 'var(--primary-color)' }}
             >
               <Send size={14} className="inline mr-2" /> Login to Dashboard
             </Link>
@@ -322,9 +377,13 @@ const Blog = () => {
             initial="hidden"
             animate="visible"
             variants={fadeInUp}
-            className="bg-white border-4 border-[#3E2723] shadow-[12px_12px_0px_0px_#8A9A5B] p-6 sm:p-8 md:p-10"
+            className="border-4 border-[#3E2723] p-6 sm:p-8 md:p-10"
+            style={{
+              backgroundColor: 'var(--card-bg)',
+              boxShadow: '12px 12px 0px 0px var(--primary-color)',
+            }}
           >
-            <h1 className="text-2xl sm:text-4xl font-bold font-['Permanent_Marker'] text-[#3E2723] mb-4">
+            <h1 className="text-2xl sm:text-4xl font-bold font-['Permanent_Marker'] mb-4" style={{ color: 'var(--text-color)' }}>
               {activePost?.title}
             </h1>
             {activePost?.render()}
@@ -335,24 +394,30 @@ const Blog = () => {
             initial="hidden"
             animate="visible"
             variants={fadeInUp}
-            className="text-center bg-white border-4 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8"
+            className="text-center border-4 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8"
+            style={{ backgroundColor: 'var(--card-bg)' }}
           >
-            <h2 className="text-xl sm:text-2xl font-bold font-['Permanent_Marker'] text-[#3E2723]">
+            <h2 className="text-xl sm:text-2xl font-bold font-['Permanent_Marker']" style={{ color: 'var(--text-color)' }}>
               Ready to Transform Your Tables?
             </h2>
-            <p className="text-[#3E2723]/70 mt-2 max-w-md mx-auto">
+            <p className="mt-2 max-w-md mx-auto" style={{ color: 'var(--text-secondary)' }}>
               Join hundreds of cafe owners already using {BRAND_NAME} to take orders digitally.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link
                 to="/admin"
-                className="px-8 py-3 bg-[#8A9A5B] text-white font-bold border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] hover:shadow-none transition-all"
+                className="px-8 py-3 text-white font-bold border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] hover:shadow-none transition-all"
+                style={{ backgroundColor: 'var(--primary-color)' }}
               >
                 <Send size={18} className="inline mr-2" /> Get Started Now
               </Link>
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="px-8 py-3 bg-white text-[#3E2723] font-bold border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#EAE0C8] hover:shadow-none transition-all"
+                className="px-8 py-3 font-bold border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_var(--secondary-color)] hover:shadow-none transition-all"
+                style={{
+                  backgroundColor: 'var(--card-bg)',
+                  color: 'var(--text-color)',
+                }}
               >
                 <Mail size={18} className="inline mr-2" /> Contact Sales
               </a>
@@ -362,21 +427,57 @@ const Blog = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t-4 border-[#3E2723] py-6 px-4 mt-8 relative">
-        <div className="max-w-7xl mx-auto text-center text-sm text-[#3E2723]/60">
+      <footer
+        className="border-t-4 border-[#3E2723] py-6 px-4 mt-8 relative"
+        style={{ backgroundColor: 'var(--card-bg)' }}
+      >
+        <div className="max-w-7xl mx-auto text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
           <p>
             © {new Date().getFullYear()} {BRAND_NAME}. Built for cafe owners, by cafe lovers.
           </p>
           <p className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1">
-            <Link to="/" className="hover:text-[#8A9A5B] transition">Home</Link>
-            <a href="/blog#howCreateAccount" className="hover:text-[#8A9A5B] transition">How to Create Account</a>
-            <Link to="/admin" className="hover:text-[#8A9A5B] transition">Login</Link>
+            <Link
+              to="/"
+              className="transition"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={(e) => e.target.style.color = 'var(--primary-color)'}
+              onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+            >
+              Home
+            </Link>
+            <a
+              href="/blog#howCreateAccount"
+              className="transition"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={(e) => e.target.style.color = 'var(--primary-color)'}
+              onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+            >
+              How to Create Account
+            </a>
+            <Link
+              to="/admin"
+              className="transition"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={(e) => e.target.style.color = 'var(--primary-color)'}
+              onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+            >
+              Login
+            </Link>
           </p>
         </div>
         {/* Back to Top Button */}
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 p-3 bg-[#8A9A5B] text-white border-2 border-[#3E2723] shadow-[4px_4px_0px_0px_#3E2723] hover:shadow-none transition-all hover:bg-[#78884d]"
+          className="fixed bottom-6 right-6 z-50 p-3 text-white border-2 border-[#3E2723] shadow-[4px_4px_0px_0px_#3E2723] hover:shadow-none transition-all"
+          style={{
+            backgroundColor: 'var(--primary-color)',
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = 'rgba(var(--primary-color-rgb), 0.8)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = 'var(--primary-color)';
+          }}
           aria-label="Back to top"
         >
           <ArrowUp size={20} />

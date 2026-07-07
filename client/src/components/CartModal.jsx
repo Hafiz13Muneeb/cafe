@@ -201,7 +201,8 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
                 backgroundColor: 'var(--bg-color)',
                 color: 'var(--text-color)',
                 borderColor: 'var(--border-color)',
-                focusRing: 'var(--primary-color)',
+                outline: 'none',
+                '--tw-ring-color': 'var(--primary-color)',
               }}
             >
               <option value="">-- Choose your table --</option>
