@@ -20,7 +20,7 @@ const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard'));
 const SuperAdminSettings = lazy(() => import('./pages/SuperAdminSettings'));
 const OwnerSettings = lazy(() => import('./pages/OwnerSettings'));
 const SuperAdminCafeDetails = lazy(() => import('./pages/SuperAdminCafeDetails'));
-const Blog = lazy(() => import('./pages/Blog'));
+const Blog = lazy(() => import('./pages/Blog/index'));
 const Contact = lazy(() => import('./pages/Contact'));
 const OwnerAnalytics = lazy(() => import('./pages/OwnerAnalytics'));
 const QRCodePage = lazy(() => import('./pages/QRCodePage'));
