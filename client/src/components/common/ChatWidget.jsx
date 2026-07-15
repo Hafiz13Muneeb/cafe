@@ -1,5 +1,5 @@
-// src/components/common/ChatWidget.jsx
-import React, { useState, useEffect } from 'react';
+// src/components/common/ChatWidget.jsx - Single-cafe version (removed superadmin references, fixed footer & FAQ)
+import React, { useState } from 'react';
 import { MessageCircle, X, ChevronDown, ChevronUp, Send } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 const BRAND_NAME = import.meta.env.VITE_BRAND_NAME || 'CafeFlow';
 const SUPPORT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || 'support@cafeflow.com';
 
-// FAQ Data – easily scalable (add more Q&A pairs here)
+// FAQ Data – updated for single-cafe
 const FAQS = [
   {
     id: 1,
@@ -25,7 +25,7 @@ const FAQS = [
     id: 3,
     question: 'How do I change the theme colours?',
     answer:
-      'Go to Settings → Appearance. You can pick a preset palette or set custom primary/secondary colours using the colour pickers. Toggle between Light and Dark mode as well.',
+      'Go to Settings → Appearance. You can set custom primary/secondary colours using the colour pickers. Toggle between Light and Dark mode as well.',
   },
   {
     id: 4,
@@ -37,7 +37,7 @@ const FAQS = [
     id: 5,
     question: 'How do I track orders and analytics?',
     answer:
-      'On the Dashboard, you\'ll see your QR code and menu items. For detailed analytics (views, orders, revenue), contact your superadmin who has access to the Analytics dashboard.',
+      'You can track all your analytics (views, orders, revenue) directly from the Analytics section in your Dashboard. Everything is available at your fingertips – no need to contact anyone.',
   },
 ];
 
@@ -48,14 +48,11 @@ const ChatWidget = () => {
   const [userQuestion, setUserQuestion] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Don't render if user is superadmin
-  if (user?.role === 'superadmin') {
-    return null;
-  }
+  // Use cafe name in header if logged in, otherwise fallback to brand name
+  const displayName = user?.cafeName || BRAND_NAME;
 
   const toggleWidget = () => {
     setIsOpen(!isOpen);
-    // Reset expanded FAQ when closing
     if (isOpen) {
       setExpandedFaq(null);
     }
@@ -68,9 +65,9 @@ const ChatWidget = () => {
   const handleAskQuestion = () => {
     if (!userQuestion.trim()) return;
 
-    const subject = encodeURIComponent(`Question from ${BRAND_NAME} User`);
+    const subject = encodeURIComponent(`Question from ${displayName}`);
     const body = encodeURIComponent(
-      `Hello ${BRAND_NAME} Support Team,\n\nI have a question about the platform:\n\n"${userQuestion.trim()}"\n\nPlease get back to me at your earliest convenience.\n\nThank you!`
+      `Hello Support Team,\n\nI have a question about my cafe dashboard:\n\n"${userQuestion.trim()}"\n\nPlease get back to me at your earliest convenience.\n\nThank you!`
     );
 
     window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
@@ -99,7 +96,7 @@ const ChatWidget = () => {
           {/* Header */}
           <div className="bg-[#8A9A5B] p-3 border-b-4 border-[#3E2723] flex items-center justify-between">
             <span className="font-bold font-['Permanent_Marker'] text-white text-lg">
-              {BRAND_NAME} Help
+              {displayName} Help
             </span>
             <button
               onClick={toggleWidget}
@@ -176,11 +173,6 @@ const ChatWidget = () => {
                 <Send size={14} /> Send to Support
               </button>
             </div>
-          </div>
-
-          {/* Footer */}
-          <div className="border-t-2 border-[#3E2723] bg-[#F5F5DC] p-2 text-center text-[10px] text-[#3E2723]/50">
-            Powered by {BRAND_NAME}
           </div>
         </div>
       )}

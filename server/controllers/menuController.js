@@ -16,7 +16,7 @@ const extractPublicId = (imageUrl) => {
   return publicIdWithExt.replace(/\.[^/.]+$/, '');
 };
 
-// @desc    Get menu items for the logged-in owner (admin dashboard)
+// @desc    Get menu items for the logged-in owner
 // @route   GET /api/menu
 // @access  Private (Owner)
 const getMenuItems = async (req, res, next) => {
@@ -26,18 +26,9 @@ const getMenuItems = async (req, res, next) => {
     const limitNum = parseInt(limit, 10) || 50;
     const skip = (pageNum - 1) * limitNum;
 
-    // Base filter: only items belonging to this owner
     const filter = { ownerId: req.user.id };
-
-    // If 'all' is not 'true', only show available items
-    if (all !== 'true') {
-      filter.isAvailable = true;
-    }
-
-    // Category filter
-    if (category && category !== 'all') {
-      filter.category = category;
-    }
+    if (all !== 'true') filter.isAvailable = true;
+    if (category && category !== 'all') filter.category = category;
 
     const [menuItems, totalCount] = await Promise.all([
       MenuItem.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum),
@@ -57,42 +48,56 @@ const getMenuItems = async (req, res, next) => {
   }
 };
 
-// @desc    Get public menu for a specific cafe (by slug)
+// @desc    Get public menu – smart fallback: find cafe that has items
 // @route   GET /api/menu/:slug
 // @access  Public
 const getPublicMenu = async (req, res, next) => {
   try {
     const { slug } = req.params;
 
-    // Find the cafe owner by slug
-    const cafe = await User.findOne({ slug, role: 'owner' }).select(
-      'cafeName whatsappNumber logoUrl faviconUrl tables theme isBlocked'
+    let cafe = null;
+
+    // 1. Try to find by slug
+    cafe = await User.findOne({ slug }).select(
+      'cafeName whatsappNumber logoUrl faviconUrl tables theme'
     );
 
+    // 2. If not found by slug, get the first user that has menu items
+    if (!cafe) {
+      // Find any menu item to get an ownerId
+      const anyItem = await MenuItem.findOne().select('ownerId');
+      if (anyItem) {
+        cafe = await User.findById(anyItem.ownerId).select(
+          'cafeName whatsappNumber logoUrl faviconUrl tables theme'
+        );
+      }
+    }
+
+    // 3. If still no cafe, fallback to the first user in DB
+    if (!cafe) {
+      cafe = await User.findOne().select(
+        'cafeName whatsappNumber logoUrl faviconUrl tables theme'
+      );
+    }
+
+    // 4. If no cafe at all, return 404
     if (!cafe) {
       res.status(404);
       throw new Error('Cafe not found');
     }
 
-    // If the cafe is blocked, return 403
-    if (cafe.isBlocked) {
-      res.status(403);
-      throw new Error('This cafe is currently unavailable');
-    }
-
-    // Fetch all available menu items for this cafe
+    // Fetch ALL menu items for this cafe (ignore availability)
     const menuItems = await MenuItem.find({
       ownerId: cafe._id,
-      isAvailable: true,
     }).sort({ createdAt: -1 });
 
-    // Extract categories for filtering (optional, but useful for frontend)
     const categories = [...new Set(menuItems.map(item => item.category))];
 
     res.status(200).json({
       success: true,
       data: {
         cafe: {
+          id: cafe._id,
           name: cafe.cafeName,
           whatsappNumber: cafe.whatsappNumber,
           logoUrl: cafe.logoUrl || '',
@@ -109,14 +114,13 @@ const getPublicMenu = async (req, res, next) => {
   }
 };
 
-// @desc    Create a new menu item (for the logged-in owner)
+// @desc    Create a new menu item
 // @route   POST /api/menu
 // @access  Private (Owner)
 const createMenuItem = async (req, res, next) => {
   try {
     let { title, description, price, category, isAvailable } = req.body;
 
-    // Validate required fields
     if (!title || !price || !category) {
       res.status(400);
       throw new Error('Title, price, and category are required');
@@ -137,13 +141,11 @@ const createMenuItem = async (req, res, next) => {
       throw new Error('Category must be 50 characters or less');
     }
 
-    // Check if image was uploaded
     if (!req.file) {
       res.status(400);
       throw new Error('Please upload an image');
     }
 
-    // Parse isAvailable
     let available = true;
     if (isAvailable !== undefined) {
       if (typeof isAvailable === 'string') {
@@ -156,7 +158,7 @@ const createMenuItem = async (req, res, next) => {
     const imageUrl = req.file.path;
 
     const menuItem = await MenuItem.create({
-      ownerId: req.user.id, // 🔐 Multi-tenant: associate with logged-in owner
+      ownerId: req.user.id,
       title: title.trim(),
       description: description ? description.trim() : '',
       price,
@@ -174,7 +176,7 @@ const createMenuItem = async (req, res, next) => {
   }
 };
 
-// @desc    Update a menu item (owner can only update their own items)
+// @desc    Update a menu item
 // @route   PUT /api/menu/:id
 // @access  Private (Owner)
 const updateMenuItem = async (req, res, next) => {
@@ -182,15 +184,12 @@ const updateMenuItem = async (req, res, next) => {
     const { id } = req.params;
     let { title, description, price, category, isAvailable } = req.body;
 
-    // Find the item and ensure it belongs to the logged-in owner
     const menuItem = await MenuItem.findOne({ _id: id, ownerId: req.user.id });
-
     if (!menuItem) {
       res.status(404);
       throw new Error('Menu item not found or you do not have permission');
     }
 
-    // Update fields if provided (with validation)
     if (title !== undefined) {
       if (title.length > 100) {
         res.status(400);
@@ -223,16 +222,14 @@ const updateMenuItem = async (req, res, next) => {
       }
     }
 
-    // If a new image is uploaded, replace the old one
     if (req.file) {
-      // Delete old image from Cloudinary (with error handling)
       if (menuItem.imageUrl) {
         const publicId = extractPublicId(menuItem.imageUrl);
         if (publicId) {
           try {
             await cloudinary.uploader.destroy(publicId);
-          } catch (cloudinaryError) {
-            console.error('Failed to delete old image from Cloudinary:', cloudinaryError);
+          } catch (err) {
+            console.error('Failed to delete old image:', err);
           }
         }
       }
@@ -250,7 +247,7 @@ const updateMenuItem = async (req, res, next) => {
   }
 };
 
-// @desc    Delete a menu item (owner can only delete their own items)
+// @desc    Delete a menu item
 // @route   DELETE /api/menu/:id
 // @access  Private (Owner)
 const deleteMenuItem = async (req, res, next) => {
@@ -258,20 +255,18 @@ const deleteMenuItem = async (req, res, next) => {
     const { id } = req.params;
 
     const menuItem = await MenuItem.findOne({ _id: id, ownerId: req.user.id });
-
     if (!menuItem) {
       res.status(404);
       throw new Error('Menu item not found or you do not have permission');
     }
 
-    // Delete image from Cloudinary
     if (menuItem.imageUrl) {
       const publicId = extractPublicId(menuItem.imageUrl);
       if (publicId) {
         try {
           await cloudinary.uploader.destroy(publicId);
-        } catch (cloudinaryError) {
-          console.error('Failed to delete image from Cloudinary:', cloudinaryError);
+        } catch (err) {
+          console.error('Failed to delete image:', err);
         }
       }
     }

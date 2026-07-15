@@ -1,6 +1,5 @@
-// src/context/AuthContext.jsx
+// src/context/AuthContext.jsx - Single-cafe, no DB, .env + localStorage password
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import api from '../api/axios';
 
 const AuthContext = createContext();
 
@@ -17,88 +16,118 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 🆕 On mount: try to fetch the user profile using the cookie (if present)
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        // Attempt to get the current user using the httpOnly cookie
-        const response = await api.get('/auth/me');
-        if (response.data.success) {
-          const userData = response.data.data;
-          setUser(userData);
-          // Also store user data in localStorage for fast re-load (optional)
-          localStorage.setItem('adminData', JSON.stringify(userData));
-        } else {
-          // Unexpected response – clear any stale data
-          localStorage.removeItem('adminData');
-          setUser(null);
-        }
-      } catch (err) {
-        // 401 or other error means not authenticated – clear stored user
-        console.debug('Not authenticated:', err.response?.status);
-        localStorage.removeItem('adminData');
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Read credentials from .env
+  const OWNER_USERNAME = import.meta.env.VITE_OWNER_USERNAME || 'admin';
+  const OWNER_PASSWORD = import.meta.env.VITE_OWNER_PASSWORD || 'admin123';
 
-    // If we have a stored user but no token (we don't store token anymore),
-    // we still try to validate via cookie. If cookie is missing, /auth/me will return 401.
-    fetchUser();
+  // On mount: check localStorage for existing session
+  useEffect(() => {
+    const storedUser = localStorage.getItem('adminData');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        setUser(parsed);
+      } catch (e) {
+        localStorage.removeItem('adminData');
+      }
+    }
+    setLoading(false);
   }, []);
 
-  // Login function – no token storage, token is set in httpOnly cookie
+  // Login – compare with .env or localStorage saved password
   const login = async (username, password) => {
-    try {
-      setError('');
-      const response = await api.post('/auth/login', { username, password });
+    setError('');
 
-      if (response.data.success) {
-        const { user: userData } = response.data.data;
+    const trimmedUsername = username.trim();
+    const trimmedPassword = password.trim();
 
-        if (userData.isBlocked) {
-          setError('Your account has been blocked. Please contact support.');
-          return { success: false, error: 'Account blocked' };
-        }
+    if (!trimmedUsername || !trimmedPassword) {
+      setError('Please enter both username and password');
+      return { success: false, error: 'Missing credentials' };
+    }
 
-        // Store user data in localStorage (but NOT the token)
-        localStorage.setItem('adminData', JSON.stringify(userData));
-        setUser(userData);
-        return { success: true, user: userData };
+    // Check against .env or saved password
+    const savedPassword = localStorage.getItem('ownerPassword');
+    const validPassword = savedPassword || OWNER_PASSWORD;
+
+    if (trimmedUsername === OWNER_USERNAME && trimmedPassword === validPassword) {
+      const userData = {
+        username: OWNER_USERNAME,
+        role: 'owner',
+        cafeName: '',
+        whatsappNumber: '',
+        tables: [],
+        logoUrl: '',
+        faviconUrl: '',
+        slug: '',
+        theme: { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
+      };
+
+      // Merge saved settings
+      const savedSettings = localStorage.getItem('cafeSettings');
+      if (savedSettings) {
+        try {
+          const parsed = JSON.parse(savedSettings);
+          Object.assign(userData, parsed);
+        } catch (e) {}
       }
-    } catch (err) {
-      const message = err.response?.data?.message || 'Login failed. Please try again.';
-      setError(message);
-      return { success: false, error: message };
+
+      localStorage.setItem('adminData', JSON.stringify(userData));
+      setUser(userData);
+      return { success: true, user: userData };
+    } else {
+      setError('Invalid username or password');
+      return { success: false, error: 'Invalid credentials' };
     }
   };
 
-  // 🆕 Logout – call logout endpoint to clear the cookie, then clear local state
-  const logout = async () => {
-    try {
-      // Call logout endpoint to clear the httpOnly cookie on the server
-      await api.post('/auth/logout');
-    } catch (err) {
-      console.error('Logout error:', err.message);
-    } finally {
-      // Always clear local state regardless of server response
-      localStorage.removeItem('adminData');
-      setUser(null);
-      // Redirect to login page (handled by the caller)
-    }
+  // Change password – saves to localStorage
+  const changePassword = async (oldPassword, newPassword, confirmPassword) => {
+    return new Promise((resolve, reject) => {
+      if (newPassword !== confirmPassword) {
+        reject(new Error('New password and confirmation do not match'));
+        return;
+      }
+      if (newPassword.length < 6) {
+        reject(new Error('New password must be at least 6 characters'));
+        return;
+      }
+
+      const savedPassword = localStorage.getItem('ownerPassword') || import.meta.env.VITE_OWNER_PASSWORD || 'admin123';
+      if (oldPassword !== savedPassword) {
+        reject(new Error('Current password is incorrect'));
+        return;
+      }
+
+      // Save new password
+      localStorage.setItem('ownerPassword', newPassword);
+      resolve({ success: true, message: 'Password changed successfully' });
+    });
   };
 
-  // Update user data – updates both state and localStorage
+  const logout = () => {
+    localStorage.removeItem('adminData');
+    setUser(null);
+  };
+
   const updateUserData = (updatedData) => {
     if (user) {
       const newUser = { ...user, ...updatedData };
       setUser(newUser);
       localStorage.setItem('adminData', JSON.stringify(newUser));
+
+      const settings = {
+        cafeName: newUser.cafeName,
+        whatsappNumber: newUser.whatsappNumber,
+        tables: newUser.tables,
+        logoUrl: newUser.logoUrl,
+        faviconUrl: newUser.faviconUrl,
+        slug: newUser.slug,
+        theme: newUser.theme,
+      };
+      localStorage.setItem('cafeSettings', JSON.stringify(settings));
     }
   };
-
-  const isSuperAdmin = user?.role === 'superadmin';
 
   const value = {
     user,
@@ -106,9 +135,9 @@ export const AuthProvider = ({ children }) => {
     error,
     login,
     logout,
+    changePassword,
     updateUserData,
     isAuthenticated: !!user,
-    isSuperAdmin,
   };
 
   return (

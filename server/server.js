@@ -1,4 +1,4 @@
-// server/server.js
+// server/server.js - Single-cafe version with auto-seed
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -10,8 +10,10 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const { errorHandler } = require('./utils/errorHandler');
-const User = require('./models/User');
 const mongoose = require('mongoose');
+
+// 🆕 Import auto-seed function
+const seedIfNeeded = require('./utils/seed');
 
 // Load .env
 const envPath = path.resolve(__dirname, '../.env');
@@ -56,14 +58,6 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
-// 🆕 WEBHOOK MUST BE RAW BEFORE JSON PARSER
-const { webhookHandler } = require('./controllers/paymentController');
-app.post(
-  '/api/payments/webhooks/lemon-squeezy',
-  express.raw({ type: 'application/json' }),
-  webhookHandler
-);
-
 // ----------------------------
 // 2. Body parsers (JSON & URL‑encoded)
 // ----------------------------
@@ -92,15 +86,12 @@ const cacheControl = (req, res, next) => {
 app.use(cacheControl);
 
 // ----------------------------
-// 3. Routes
+// 3. Routes (No payment, no user routes)
 // ----------------------------
 app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/menu', require('./routes/menuRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
-// 🆕 Payment routes (excluding webhook, which was registered separately)
-app.use('/api/payments', require('./routes/paymentRoutes'));
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -146,38 +137,14 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
-    await seedSuperAdminIfNeeded();
+    // 🆕 Auto-seed if needed
+    await seedIfNeeded();
     app.listen(PORT, () => {
       console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
     });
   } catch (err) {
     console.error('❌ Failed to start server:', err);
     process.exit(1);
-  }
-};
-
-const seedSuperAdminIfNeeded = async () => {
-  try {
-    const superAdminExists = await User.findOne({ role: 'superadmin' });
-    if (!superAdminExists) {
-      console.log('🔄 No superadmin found. Seeding default superadmin...');
-      const generatedPassword = 'SuperAdmin@2026!';
-      await User.create({
-        username: 'superadmin',
-        email: 'superadmin@cafemenu.com',
-        password: generatedPassword,
-        role: 'superadmin',
-        isBlocked: false,
-      });
-      console.log('✅ Superadmin created successfully:');
-      console.log(`   Username: superadmin`);
-      console.log(`   Password: ${generatedPassword}`);
-      console.log('   ⚠️ Please change these credentials after first login.');
-    } else {
-      console.log('✅ Superadmin already exists. Skipping seed.');
-    }
-  } catch (error) {
-    console.error('❌ Error seeding superadmin:', error.message);
   }
 };
 

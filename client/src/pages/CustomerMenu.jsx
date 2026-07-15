@@ -1,17 +1,26 @@
-// src/pages/CustomerMenu.jsx - Public menu with analytics tracking
+// src/pages/CustomerMenu.jsx - Public menu with fallback for missing cafe
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { fetchPublicMenu } from '../api/axios';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import MenuItemCard from '../components/MenuItemCard';
 import CartFloatingButton from '../components/CartFloatingButton';
 import CartModal from '../components/CartModal';
-import { Coffee, Utensils } from 'lucide-react';
+import { Coffee, Utensils, AlertCircle } from 'lucide-react';
 import api from '../api/axios';
 
+// 🆕 Read default slug from environment variables
+const DEFAULT_SLUG = import.meta.env.VITE_DEFAULT_CAFE_SLUG || 'cafe';
+
 const CustomerMenu = () => {
-  const { slug } = useParams();
+  const { slug: urlSlug } = useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { getTotalItems, getTotalPrice } = useCart();
+
+  // 🆕 Use user's slug, URL slug, or default from .env
+  const slug = user?.slug || urlSlug || DEFAULT_SLUG;
 
   const [cafeData, setCafeData] = useState(null);
   const [menuItems, setMenuItems] = useState([]);
@@ -60,13 +69,22 @@ const CustomerMenu = () => {
         setCategories(['all', ...(catList || [])]);
       } catch (err) {
         console.error('Error loading menu:', err);
-        setError(err.response?.data?.message || 'Failed to load menu');
+        // If cafe not found (404) and user is logged in, redirect to onboarding
+        if (err.response?.status === 404) {
+          if (user && !user.cafeName) {
+            navigate('/admin/onboarding');
+            return;
+          }
+          setError('Menu coming soon! Our cafe is getting ready to serve you.');
+        } else {
+          setError(err.response?.data?.message || 'Failed to load menu');
+        }
       } finally {
         setLoading(false);
       }
     };
     loadMenu();
-  }, [slug]);
+  }, [slug, user, navigate]);
 
   useEffect(() => {
     if (cafeData?.theme) {
@@ -103,9 +121,25 @@ const CustomerMenu = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F5F5DC] text-[#3E2723] px-4">
         <div className="text-center p-6 sm:p-8 border-4 border-[#3E2723] bg-white shadow-[8px_8px_0px_0px_#8A9A5B] max-w-sm w-full">
+          <AlertCircle size={48} className="mx-auto mb-4 text-[#8A9A5B]" />
+          <h2 className="text-2xl font-bold font-['Permanent_Marker'] mb-2">Menu Not Found</h2>
+          <p className="text-sm text-[#3E2723]/80">{error}</p>
+          <a href="/" className="inline-block mt-4 px-4 py-2 bg-[#8A9A5B] text-white font-bold border-2 border-[#3E2723] hover:bg-[#78884d] transition">
+            Back to Home
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // If no menu items, show empty state
+  if (menuItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#F5F5DC] text-[#3E2723] flex items-center justify-center px-4">
+        <div className="text-center p-6 sm:p-8 border-4 border-[#3E2723] bg-white shadow-[8px_8px_0px_0px_#8A9A5B] max-w-sm w-full">
           <Utensils size={48} className="mx-auto mb-4 text-[#3E2723]/30" />
-          <h2 className="text-2xl font-bold font-['Permanent_Marker'] mb-2">Oops!</h2>
-          <p className="text-sm">{error}</p>
+          <h2 className="text-2xl font-bold font-['Permanent_Marker'] mb-2">No Items Yet</h2>
+          <p className="text-sm text-[#3E2723]/80">This cafe hasn't added any menu items yet. Check back soon!</p>
         </div>
       </div>
     );

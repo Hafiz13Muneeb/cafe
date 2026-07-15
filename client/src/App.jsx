@@ -1,4 +1,4 @@
-// src/App.jsx
+// src/App.jsx - Single-cafe version (removed superadmin, blog, contact, subscription)
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
@@ -7,15 +7,10 @@ import Home from './pages/Home';
 import CustomerMenu from './pages/CustomerMenu';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
-import SuperAdminSettings from './pages/SuperAdminSettings';
 import OwnerSettings from './pages/OwnerSettings';
-import SuperAdminCafeDetails from './pages/SuperAdminCafeDetails';
-import Blog from './pages/Blog';
-import Contact from './pages/Contact';
 import OwnerAnalytics from './pages/OwnerAnalytics';
 import QRCodePage from './pages/QRCodePage';
-import SubscriptionPage from './pages/SubscriptionPage'; // 🆕 import
+import OnboardingSetup from './pages/OnboardingSetup';
 import ChatWidget from './components/common/ChatWidget';
 
 const PublicLayout = ({ children }) => {
@@ -27,8 +22,9 @@ const PublicLayout = ({ children }) => {
   );
 };
 
-const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
-  const { user, isAuthenticated, isSuperAdmin, loading } = useAuth();
+const ProtectedRoute = ({ children }) => {
+  const { user, isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -45,8 +41,15 @@ const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
     return <Navigate to="/admin" replace />;
   }
 
-  if (requireSuperAdmin && !isSuperAdmin) {
-    return <Navigate to="/admin/dashboard" replace />;
+  // Check if user has completed onboarding
+  const isOnboardingComplete =
+    user?.cafeName &&
+    user?.whatsappNumber &&
+    user?.tables &&
+    user.tables.length > 0;
+
+  if (!isOnboardingComplete && location.pathname !== '/admin/onboarding') {
+    return <Navigate to="/admin/onboarding" replace />;
   }
 
   return children;
@@ -73,18 +76,39 @@ const FaviconManager = ({ children }) => {
 };
 
 function App() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <Router>
       <FaviconManager>
         <Routes>
           {/* Public routes with ChatWidget */}
-          <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
+          <Route
+            path="/"
+            element={
+              <PublicLayout>
+                {isAuthenticated ? <Navigate to="/admin/dashboard" replace /> : <Home />}
+              </PublicLayout>
+            }
+          />
+          <Route path="/home" element={<PublicLayout><Home /></PublicLayout>} />
+          
+          {/* 🆕 Public menu routes – with and without slug */}
           <Route path="/menu/:slug" element={<PublicLayout><CustomerMenu /></PublicLayout>} />
-          <Route path="/blog" element={<PublicLayout><Blog /></PublicLayout>} />
-          <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
+          <Route path="/menu" element={<PublicLayout><CustomerMenu /></PublicLayout>} />
 
           {/* Login (no ChatWidget) */}
           <Route path="/admin" element={<AdminLogin />} />
+
+          {/* Onboarding (protected) */}
+          <Route
+            path="/admin/onboarding"
+            element={
+              <ProtectedRoute>
+                <OnboardingSetup />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Protected admin routes */}
           <Route
@@ -114,48 +138,11 @@ function App() {
             }
           />
 
-          {/* 🆕 Subscription page */}
-          <Route
-            path="/admin/subscription"
-            element={
-              <ProtectedRoute>
-                <SubscriptionPage />
-              </ProtectedRoute>
-            }
-          />
-
           <Route
             path="/admin/dashboard/settings"
             element={
               <ProtectedRoute>
                 <OwnerSettings />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/super"
-            element={
-              <ProtectedRoute requireSuperAdmin>
-                <SuperAdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/settings"
-            element={
-              <ProtectedRoute requireSuperAdmin>
-                <SuperAdminSettings />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/super/:cafeSlug"
-            element={
-              <ProtectedRoute requireSuperAdmin>
-                <SuperAdminCafeDetails />
               </ProtectedRoute>
             }
           />

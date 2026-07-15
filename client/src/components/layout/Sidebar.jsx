@@ -1,48 +1,37 @@
-// src/components/layout/Sidebar.jsx
+// src/components/layout/Sidebar.jsx - Simplified for single-cafe (owner only)
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Menu, Users, Settings, BarChart3, QrCode, CreditCard } from 'lucide-react';
+import { Menu, Settings, BarChart3, QrCode } from 'lucide-react';
 
-const Sidebar = ({ user }) => {
-  const isSuperAdmin = user?.role === 'superadmin';
-  
-  const navItems = isSuperAdmin
-    ? [
-        { to: '/admin/super', label: 'Owners', icon: Users },
-        { to: '/admin/settings', label: 'Settings', icon: Settings },
-      ]
-    : [
-        { to: '/admin/dashboard', label: 'Menu', icon: Menu },
-        { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-        { to: '/admin/qr', label: 'QR Code', icon: QrCode },
-        { to: '/admin/subscription', label: 'Subscription', icon: CreditCard }, // 🆕
-        { to: '/admin/dashboard/settings', label: 'Settings', icon: Settings },
-      ];
+const Sidebar = () => {
+  // Single-cafe: only owner links
+  const navItems = [
+    { to: '/admin/dashboard', label: 'Menu', icon: Menu, end: true },
+    { to: '/admin/analytics', label: 'Analytics', icon: BarChart3, end: false },
+    { to: '/admin/qr', label: 'QR Code', icon: QrCode, end: true },
+    { to: '/admin/dashboard/settings', label: 'Settings', icon: Settings, end: false },
+  ];
 
   return (
     <nav className="p-2 sm:p-4 space-y-1 sm:space-y-2">
-      {navItems.map((item) => {
-        // For pages that should not highlight sub‑routes, set `end` to true
-        const shouldEnd = ['/admin/dashboard', '/admin/qr', '/admin/subscription'].includes(item.to);
-        return (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={shouldEnd}
-            className={({ isActive }) =>
-              `flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base font-bold transition-all ${
-                isActive
-                  ? 'bg-[#8A9A5B] text-white border-2 border-[#3E2723]'
-                  : 'text-[#3E2723] hover:bg-[#EAE0C8]'
-              }`
-            }
-          >
-            <item.icon size={18} className="sm:w-5 sm:h-5" />
-            <span className="hidden sm:inline">{item.label}</span>
-            <span className="sm:hidden">{item.label.charAt(0)}</span>
-          </NavLink>
-        );
-      })}
+      {navItems.map((item) => (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          end={item.end}
+          className={({ isActive }) =>
+            `flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base font-bold transition-all ${
+              isActive
+                ? 'bg-[#8A9A5B] text-white border-2 border-[#3E2723]'
+                : 'text-[#3E2723] hover:bg-[#EAE0C8]'
+            }`
+          }
+        >
+          <item.icon size={18} className="sm:w-5 sm:h-5" />
+          <span className="hidden sm:inline">{item.label}</span>
+          <span className="sm:hidden">{item.label.charAt(0)}</span>
+        </NavLink>
+      ))}
     </nav>
   );
 };

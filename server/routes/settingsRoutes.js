@@ -4,14 +4,12 @@ const {
   getSettings,
   updateSettings,
   getGlobalSettings,
-  updateGlobalSettings,
-  updateGlobalFavicon,
 } = require('../controllers/settingsController');
-const { protect, restrictTo } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 const upload = require('../config/multer');
 
 // ============================================================
-// PUBLIC ROUTE – Global settings (no auth required)
+// PUBLIC ROUTE – Global settings (returns owner's theme)
 // ============================================================
 router.get('/global', getGlobalSettings);
 
@@ -20,7 +18,7 @@ router.get('/global', getGlobalSettings);
 // ============================================================
 router.use(protect);
 
-// Get owner settings (cafeName, whatsapp, tables, logo, favicon)
+// Get owner settings (cafeName, whatsapp, tables, logo, favicon, slug, theme)
 router.get('/', getSettings);
 
 // Update owner settings (with logo & favicon upload)
@@ -33,19 +31,6 @@ router.put(
   updateSettings
 );
 
-// ============================================================
-// SUPERADMIN ONLY – Global settings
-// ============================================================
-
-// Update global colors & mode (JSON)
-router.put('/global', restrictTo('superadmin'), updateGlobalSettings);
-
-// Update global favicon (file upload)
-router.put(
-  '/global/favicon',
-  restrictTo('superadmin'),
-  upload.single('favicon'),
-  updateGlobalFavicon
-);
+// All superadmin-only routes removed
 
 module.exports = router;

@@ -1,4 +1,4 @@
-// src/components/CartModal.jsx - Cart modal with dynamic theming and analytics tracking
+// src/components/CartModal.jsx - Consistent UI with the rest of the app
 import React, { useState } from 'react';
 import { X, Minus, Plus, Trash2, Send } from 'lucide-react';
 import { useCart } from '../context/CartContext';
@@ -76,69 +76,55 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center bg-black/30 backdrop-blur-sm animate-fade-in p-4">
-      <div
-        className="w-full max-w-lg rounded-t-2xl md:rounded-2xl max-h-[90vh] flex flex-col animate-slide-up"
-        style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)' }}
-      >
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
-          <h2 className="text-base sm:text-lg font-semibold" style={{ color: 'var(--text-color)' }}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center bg-[#3E2723]/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-lg rounded-t-2xl md:rounded-2xl max-h-[90vh] flex flex-col bg-white border-4 border-[#3E2723] shadow-[12px_12px_0px_0px_#8A9A5B]">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b-4 border-[#3E2723] bg-[#F5F5DC]">
+          <h2 className="text-xl font-bold font-['Permanent_Marker'] text-[#3E2723]">
             Your Order ({getTotalItems()} items)
           </h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-full transition hover:opacity-70"
-            style={{ backgroundColor: 'var(--bg-color)' }}
+            className="p-1 border-2 border-[#3E2723] bg-white hover:bg-[#EAE0C8] transition"
           >
-            <X size={22} style={{ color: 'var(--text-color)' }} />
+            <X size={22} className="text-[#3E2723]" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FAF9F6]">
           {cart.map((item) => (
             <div
               key={item._id}
-              className="flex items-center gap-3 rounded-lg p-3"
-              style={{ backgroundColor: 'var(--bg-color)' }}
+              className="flex items-center gap-3 border-2 border-[#3E2723] p-3 bg-white shadow-[4px_4px_0px_0px_#EAE0C8]"
             >
               <img
                 src={item.imageUrl}
                 alt={item.title}
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover"
+                className="w-14 h-14 rounded-lg object-cover border-2 border-[#3E2723]"
               />
               <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-sm truncate" style={{ color: 'var(--text-color)' }}>
-                  {item.title}
-                </h4>
-                <p className="text-sm font-semibold" style={{ color: 'var(--primary-color)' }}>
-                  ${item.price}
-                </p>
+                <h4 className="font-bold text-[#3E2723] truncate">{item.title}</h4>
+                <p className="text-sm font-bold text-[#8A9A5B]">Rs. {item.price}</p>
               </div>
-              <div className="flex items-center gap-1 sm:gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => removeFromCart(item._id)}
-                  className="p-1 rounded-full transition hover:opacity-70"
-                  style={{ backgroundColor: 'var(--border-color)' }}
+                  className="p-1 border-2 border-[#3E2723] bg-white hover:bg-[#EAE0C8] transition"
                 >
                   {item.quantity === 1 ? (
                     <Trash2 size={14} className="text-red-500" />
                   ) : (
-                    <Minus size={14} style={{ color: 'var(--text-color)' }} />
+                    <Minus size={14} className="text-[#3E2723]" />
                   )}
                 </button>
-                <span className="w-6 text-center text-sm font-medium" style={{ color: 'var(--text-color)' }}>
-                  {item.quantity}
-                </span>
+                <span className="w-8 text-center font-bold text-[#3E2723]">{item.quantity}</span>
                 <button
                   onClick={() => addToCart(item)}
-                  className="p-1 rounded-full transition hover:opacity-70"
-                  style={{ backgroundColor: 'var(--border-color)' }}
+                  className="p-1 border-2 border-[#3E2723] bg-white hover:bg-[#EAE0C8] transition disabled:opacity-40"
                   disabled={!item.isAvailable}
                 >
-                  <Plus
-                    size={14}
-                    style={{ color: item.isAvailable ? 'var(--text-color)' : 'var(--text-secondary)' }}
-                  />
+                  <Plus size={14} className="text-[#3E2723]" />
                 </button>
               </div>
             </div>
@@ -146,17 +132,17 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
           {cart.length > 0 && (
             <button
               onClick={clearCart}
-              className="text-sm font-medium hover:underline"
-              style={{ color: '#ef4444' }}
+              className="text-sm font-bold text-red-500 hover:underline"
             >
               Clear Cart
             </button>
           )}
         </div>
 
-        <div className="border-t p-3 sm:p-4 space-y-3" style={{ borderColor: 'var(--border-color)' }}>
+        {/* Footer */}
+        <div className="border-t-4 border-[#3E2723] p-4 space-y-3 bg-white">
           <div>
-            <label className="text-sm font-medium" style={{ color: 'var(--text-color)' }}>
+            <label className="block text-sm font-bold text-[#3E2723] mb-1">
               Select Table <span className="text-red-500">*</span>
             </label>
             <select
@@ -165,13 +151,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
                 setSelectedTable(e.target.value);
                 setError('');
               }}
-              className="mt-1 w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-sm"
-              style={{
-                backgroundColor: 'var(--bg-color)',
-                color: 'var(--text-color)',
-                borderColor: 'var(--border-color)',
-                focusRing: 'var(--primary-color)',
-              }}
+              className="w-full px-3 py-2 border-2 border-[#3E2723] bg-white text-[#3E2723] focus:outline-none focus:ring-2 focus:ring-[#8A9A5B]"
             >
               <option value="">-- Choose your table --</option>
               {tableOptions.map((table) => (
@@ -180,35 +160,29 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
                 </option>
               ))}
             </select>
-            {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+            {error && <p className="mt-1 text-sm text-red-500 font-bold">{error}</p>}
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
-            <span style={{ color: 'var(--text-secondary, #64748b)' }}>Total:</span>
-            <span className="text-lg font-bold" style={{ color: 'var(--primary-color)' }}>
-              ${getTotalPrice()}
+          <div className="flex items-center justify-between pt-2 border-t-2 border-[#3E2723]/20">
+            <span className="font-bold text-[#3E2723]">Total:</span>
+            <span className="text-2xl font-bold font-['Permanent_Marker'] text-[#8A9A5B]">
+              Rs. {getTotalPrice()}
             </span>
           </div>
 
           <button
             onClick={handlePlaceOrder}
             disabled={isSubmitting}
-            className="w-full py-2.5 sm:py-3 rounded-lg font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200 text-sm sm:text-base"
-            style={{
-              backgroundColor: isSubmitting ? 'var(--border-color)' : 'var(--primary-color)',
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              boxShadow: isSubmitting ? 'none' : '0 4px 15px rgba(0,0,0,0.15)',
-            }}
+            className="w-full py-3 bg-[#8A9A5B] text-white font-bold border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] hover:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
           >
             {isSubmitting ? (
               <>
-                <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                <div className="inline-block animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
                 Processing...
               </>
             ) : (
               <>
-                <Send size={18} />
-                Place Order via WhatsApp
+                <Send size={20} /> Place Order via WhatsApp
               </>
             )}
           </button>

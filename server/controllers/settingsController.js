@@ -1,6 +1,20 @@
 const User = require('../models/User');
-const AppSettings = require('../models/AppSettings');
 const cloudinary = require('../config/cloudinary');
+
+// Helper: expand 3‑digit hex to 6‑digit (e.g. #111 → #111111)
+const expandHex = (hex) => {
+  if (!hex) return hex;
+  const cleaned = hex.trim();
+  if (/^#[0-9A-F]{6}$/i.test(cleaned)) return cleaned;
+  if (/^#[0-9A-F]{3}$/i.test(cleaned)) {
+    const r = cleaned[1];
+    const g = cleaned[2];
+    const b = cleaned[3];
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+  // If invalid, return original (will be caught by validation)
+  return cleaned;
+};
 
 // Helper: extract Cloudinary public_id from URL
 const extractPublicId = (imageUrl) => {
@@ -33,7 +47,7 @@ const generateUniqueSlug = async (baseSlug, excludeId) => {
 };
 
 // ============================================================
-// OWNER SETTINGS (per-cafe)
+// OWNER SETTINGS (single-cafe)
 // ============================================================
 
 // @desc    Get the logged-in owner's settings
@@ -42,7 +56,7 @@ const generateUniqueSlug = async (baseSlug, excludeId) => {
 const getSettings = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select(
-      'cafeName whatsappNumber logoUrl faviconUrl tables slug'
+      'cafeName whatsappNumber logoUrl faviconUrl tables slug theme'
     );
     if (!user) {
       res.status(404);
@@ -58,6 +72,7 @@ const getSettings = async (req, res, next) => {
         faviconUrl: user.faviconUrl || '',
         tables: user.tables || [],
         slug: user.slug || '',
+        theme: user.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
       },
     });
   } catch (error) {
@@ -65,12 +80,12 @@ const getSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Update the logged-in owner's settings (cafeName, whatsapp, tables, logo, favicon, slug)
+// @desc    Update settings – supports partial updates (cafe, theme, images)
 // @route   PUT /api/settings
 // @access  Private (Owner)
 const updateSettings = async (req, res, next) => {
   try {
-    const { cafeName, whatsappNumber, tables, slug } = req.body;
+    const { cafeName, whatsappNumber, tables, slug, primaryColor, secondaryColor, mode } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -78,7 +93,6 @@ const updateSettings = async (req, res, next) => {
       throw new Error('User not found');
     }
 
-    // Track what changed for the response
     const changes = {};
 
     // --- Update cafeName ---
@@ -95,28 +109,23 @@ const updateSettings = async (req, res, next) => {
       if (trimmed !== user.cafeName) {
         user.cafeName = trimmed;
         changes.cafeName = trimmed;
-        // Slug will be regenerated only if not explicitly provided
       }
     }
 
-    // --- Update slug (explicitly provided by the owner) ---
+    // --- Update slug ---
     if (slug !== undefined) {
       const trimmedSlug = slug.trim().toLowerCase();
       if (!trimmedSlug || trimmedSlug.length === 0) {
         res.status(400);
         throw new Error('Slug cannot be empty');
       }
-      // Validate slug format: only lowercase letters, numbers, and hyphens
       if (!/^[a-z0-9-]+$/.test(trimmedSlug)) {
         res.status(400);
         throw new Error('Slug can only contain lowercase letters, numbers, and hyphens');
       }
       if (trimmedSlug !== user.slug) {
         // Check uniqueness
-        const existing = await User.findOne({
-          slug: trimmedSlug,
-          _id: { $ne: user._id },
-        });
+        const existing = await User.findOne({ slug: trimmedSlug, _id: { $ne: user._id } });
         if (existing) {
           res.status(400);
           throw new Error('This slug is already taken. Please choose another.');
@@ -124,10 +133,8 @@ const updateSettings = async (req, res, next) => {
         user.slug = trimmedSlug;
         changes.slug = trimmedSlug;
       }
-    } else if (cafeName !== undefined && cafeName.trim() !== user.cafeName) {
-      // If cafeName changed but slug was NOT explicitly provided,
-      // regenerate slug from the new cafeName (this is the existing behavior)
-      // BUT we show a warning that QR codes will change.
+    } else if (cafeName !== undefined && cafeName.trim() !== user.cafeName && !slug) {
+      // Auto-generate slug if cafeName changed and no explicit slug provided
       const baseSlug = user.cafeName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -136,8 +143,7 @@ const updateSettings = async (req, res, next) => {
       if (newSlug !== user.slug) {
         user.slug = newSlug;
         changes.slug = newSlug;
-        changes.slugWarning =
-          'Your cafe URL has changed. Existing QR codes will no longer work. Please regenerate them.';
+        changes.slugWarning = 'Your cafe URL has changed. Existing QR codes will no longer work. Please regenerate them.';
       }
     }
 
@@ -173,30 +179,56 @@ const updateSettings = async (req, res, next) => {
       changes.tables = tableArray;
     }
 
-    // --- Handle logo upload with rollback ---
+    // --- Update theme (with hex expansion) ---
+    if (primaryColor !== undefined || secondaryColor !== undefined || mode !== undefined) {
+      if (!user.theme) user.theme = {};
+      if (primaryColor !== undefined) {
+        const expanded = expandHex(primaryColor);
+        if (!/^#[0-9A-F]{6}$/i.test(expanded)) {
+          res.status(400);
+          throw new Error('Primary color must be a valid hex color (e.g. #d4a843 or #d4a)');
+        }
+        user.theme.primaryColor = expanded;
+        changes.primaryColor = expanded;
+      }
+      if (secondaryColor !== undefined) {
+        const expanded = expandHex(secondaryColor);
+        if (!/^#[0-9A-F]{6}$/i.test(expanded)) {
+          res.status(400);
+          throw new Error('Secondary color must be a valid hex color (e.g. #b8860b or #b88)');
+        }
+        user.theme.secondaryColor = expanded;
+        changes.secondaryColor = expanded;
+      }
+      if (mode !== undefined) {
+        if (!['light', 'dark'].includes(mode)) {
+          res.status(400);
+          throw new Error('Mode must be either "light" or "dark"');
+        }
+        user.theme.mode = mode;
+        changes.mode = mode;
+      }
+    }
+
+    // --- Handle logo/favicon upload ---
     if (req.files) {
-      // Logo
       if (req.files.logo && req.files.logo[0]) {
         const logoFile = req.files.logo[0];
         const oldLogoUrl = user.logoUrl;
         try {
-          // Upload new logo first
           user.logoUrl = logoFile.path;
-          // If upload succeeded and there was an old logo, delete it
           if (oldLogoUrl) {
             const publicId = extractPublicId(oldLogoUrl);
             if (publicId) {
               try {
                 await cloudinary.uploader.destroy(publicId);
-              } catch (cloudinaryError) {
-                console.error('Failed to delete old logo from Cloudinary:', cloudinaryError);
-                // Don't fail the request; the new logo is already saved
+              } catch (err) {
+                console.error('Failed to delete old logo:', err);
               }
             }
           }
           changes.logoUrl = logoFile.path;
         } catch (uploadError) {
-          // If new upload fails, revert to old logo
           user.logoUrl = oldLogoUrl;
           console.error('Failed to upload new logo:', uploadError);
           res.status(400);
@@ -204,7 +236,6 @@ const updateSettings = async (req, res, next) => {
         }
       }
 
-      // Favicon
       if (req.files.favicon && req.files.favicon[0]) {
         const faviconFile = req.files.favicon[0];
         const oldFaviconUrl = user.faviconUrl;
@@ -215,8 +246,8 @@ const updateSettings = async (req, res, next) => {
             if (publicId) {
               try {
                 await cloudinary.uploader.destroy(publicId);
-              } catch (cloudinaryError) {
-                console.error('Failed to delete old favicon from Cloudinary:', cloudinaryError);
+              } catch (err) {
+                console.error('Failed to delete old favicon:', err);
               }
             }
           }
@@ -232,7 +263,6 @@ const updateSettings = async (req, res, next) => {
 
     await user.save();
 
-    // Build response
     const responseData = {
       cafeName: user.cafeName,
       slug: user.slug,
@@ -240,9 +270,9 @@ const updateSettings = async (req, res, next) => {
       logoUrl: user.logoUrl || '',
       faviconUrl: user.faviconUrl || '',
       tables: user.tables || [],
+      theme: user.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
     };
 
-    // Add warning if slug changed without explicit request
     if (changes.slugWarning) {
       responseData.warning = changes.slugWarning;
     }
@@ -257,110 +287,34 @@ const updateSettings = async (req, res, next) => {
 };
 
 // ============================================================
-// GLOBAL SETTINGS (App-wide theme)
+// GLOBAL SETTINGS (used by public pages for theme)
 // ============================================================
 
-// @desc    Get global app settings (theme + favicon)
+// @desc    Get global app settings (theme + favicon) – returns owner's theme
 // @route   GET /api/settings/global
-// @access  Public (anyone can read)
+// @access  Public
 const getGlobalSettings = async (req, res, next) => {
   try {
-    const settings = await AppSettings.getSingleton();
+    const owner = await User.findOne().select('theme faviconUrl');
+    if (!owner) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          primaryColor: '#d4a843',
+          secondaryColor: '#b8860b',
+          mode: 'light',
+          faviconUrl: '',
+        },
+      });
+    }
     res.status(200).json({
       success: true,
-      data: settings,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Update global app settings (SuperAdmin only) – JSON only (colors, mode)
-// @route   PUT /api/settings/global
-// @access  Private (SuperAdmin)
-const updateGlobalSettings = async (req, res, next) => {
-  try {
-    const { primaryColor, secondaryColor, mode } = req.body;
-
-    const settings = await AppSettings.getSingleton();
-
-    if (primaryColor !== undefined) {
-      if (!/^#[0-9A-F]{6}$/i.test(primaryColor)) {
-        res.status(400);
-        throw new Error('Primary color must be a valid hex color');
-      }
-      settings.primaryColor = primaryColor;
-    }
-
-    if (secondaryColor !== undefined) {
-      if (!/^#[0-9A-F]{6}$/i.test(secondaryColor)) {
-        res.status(400);
-        throw new Error('Secondary color must be a valid hex color');
-      }
-      settings.secondaryColor = secondaryColor;
-    }
-
-    if (mode !== undefined) {
-      if (!['light', 'dark'].includes(mode)) {
-        res.status(400);
-        throw new Error('Mode must be either "light" or "dark"');
-      }
-      settings.mode = mode;
-    }
-
-    await settings.save();
-
-    res.status(200).json({
-      success: true,
-      data: settings,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Update global favicon (SuperAdmin only) – file upload
-// @route   PUT /api/settings/global/favicon
-// @access  Private (SuperAdmin)
-const updateGlobalFavicon = async (req, res, next) => {
-  try {
-    const settings = await AppSettings.getSingleton();
-
-    if (!req.file) {
-      res.status(400);
-      throw new Error('Please upload a favicon image');
-    }
-
-    const oldFaviconUrl = settings.faviconUrl;
-
-    try {
-      // Upload new favicon first
-      settings.faviconUrl = req.file.path;
-
-      // If upload succeeded and there was an old favicon, delete it
-      if (oldFaviconUrl) {
-        const publicId = extractPublicId(oldFaviconUrl);
-        if (publicId) {
-          try {
-            await cloudinary.uploader.destroy(publicId);
-          } catch (cloudinaryError) {
-            console.error('Failed to delete old favicon from Cloudinary:', cloudinaryError);
-          }
-        }
-      }
-    } catch (uploadError) {
-      // If new upload fails, revert to old favicon
-      settings.faviconUrl = oldFaviconUrl;
-      console.error('Failed to upload new favicon:', uploadError);
-      res.status(400);
-      throw new Error('Failed to upload favicon. Please try again.');
-    }
-
-    await settings.save();
-
-    res.status(200).json({
-      success: true,
-      data: settings,
+      data: {
+        primaryColor: owner.theme?.primaryColor || '#d4a843',
+        secondaryColor: owner.theme?.secondaryColor || '#b8860b',
+        mode: owner.theme?.mode || 'light',
+        faviconUrl: owner.faviconUrl || '',
+      },
     });
   } catch (error) {
     next(error);
@@ -371,6 +325,4 @@ module.exports = {
   getSettings,
   updateSettings,
   getGlobalSettings,
-  updateGlobalSettings,
-  updateGlobalFavicon,
 };

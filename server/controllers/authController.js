@@ -1,8 +1,11 @@
-// controllers/authController.js
+// server/controllers/authController.js - Single-cafe, .env credentials, no JWT
 const User = require('../models/User');
-const generateToken = require('../utils/generateToken');
 
-// @desc    Login user (both superadmin and cafe owners)
+// Read owner credentials from .env
+const OWNER_USERNAME = process.env.OWNER_USERNAME || 'admin';
+const OWNER_PASSWORD = process.env.OWNER_PASSWORD || 'admin123';
+
+// @desc    Login user – compare with .env credentials
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res, next) => {
@@ -14,58 +17,53 @@ const loginUser = async (req, res, next) => {
       throw new Error('Please provide username and password');
     }
 
-    const user = await User.findOne({ username }).select('+password');
-
-    if (!user) {
+    // Compare with .env
+    if (username.trim() !== OWNER_USERNAME || password.trim() !== OWNER_PASSWORD) {
       res.status(401);
       throw new Error('Invalid credentials');
     }
 
-    if (user.isBlocked) {
-      res.status(403);
-      throw new Error('Your account has been blocked. Please contact support.');
+    // Fetch the first owner from database (or create dummy)
+    let owner = await User.findOne({ role: 'owner' });
+    
+    if (!owner) {
+      // If no owner in DB, create a dummy one (but we should have seeded one)
+      // For now, we'll return a hardcoded owner object
+      owner = {
+        _id: '000000000000000000000001',
+        username: OWNER_USERNAME,
+        role: 'owner',
+        isBlocked: false,
+        cafeName: 'My Cafe',
+        slug: 'cafe',
+        whatsappNumber: '03001234567',
+        logoUrl: '',
+        faviconUrl: '',
+        tables: ['1', '2', '3', '4', '5'],
+        theme: { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
+      };
     }
 
-    const isMatch = await user.matchPassword(password);
-    if (!isMatch) {
-      res.status(401);
-      throw new Error('Invalid credentials');
-    }
-
-    // Generate JWT token
-    const token = generateToken(user._id);
-
-    // 🆕 Set token as httpOnly cookie
-    const isProduction = process.env.NODE_ENV === 'production';
-    res.cookie('token', token, {
-      httpOnly: true, // Cannot be accessed by JavaScript
-      secure: isProduction, // Only sent over HTTPS in production
-      sameSite: 'strict', // CSRF protection
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days (matches token expiry)
-      path: '/',
-    });
-
-    // Prepare user response (without token in body)
+    // Prepare user response (without password)
     const userResponse = {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      isBlocked: user.isBlocked,
-      cafeName: user.cafeName || '',
-      slug: user.slug || '',
-      whatsappNumber: user.whatsappNumber || '',
-      logoUrl: user.logoUrl || '',
-      faviconUrl: user.faviconUrl || '',
-      tables: user.tables || [],
-      theme: user.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
+      id: owner._id,
+      username: owner.username,
+      role: owner.role,
+      isBlocked: owner.isBlocked || false,
+      cafeName: owner.cafeName || '',
+      slug: owner.slug || '',
+      whatsappNumber: owner.whatsappNumber || '',
+      logoUrl: owner.logoUrl || '',
+      faviconUrl: owner.faviconUrl || '',
+      tables: owner.tables || [],
+      theme: owner.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
     };
 
     res.status(200).json({
       success: true,
       data: {
         user: userResponse,
-        // 🆕 No token in response body – it's in the cookie!
+        // No token – frontend will handle session via localStorage
       },
     });
   } catch (error) {
@@ -73,20 +71,12 @@ const loginUser = async (req, res, next) => {
   }
 };
 
-// 🆕 @desc    Logout user (clear cookie)
+// @desc    Logout user – clear session (just responds success)
 // @route   POST /api/auth/logout
 // @access  Public
 const logoutUser = async (req, res, next) => {
   try {
-    // Clear the token cookie
-    res.cookie('token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      expires: new Date(0), // Set expiry to past
-      path: '/',
-    });
-
+    // No cookie to clear – just respond success
     res.status(200).json({
       success: true,
       message: 'Logged out successfully',
@@ -96,17 +86,19 @@ const logoutUser = async (req, res, next) => {
   }
 };
 
-// @desc    Get logged-in user profile
+// @desc    Get logged-in user profile – returns the owner from DB or dummy
 // @route   GET /api/auth/me
-// @access  Private
+// @access  Private (but protect middleware already attaches user)
 const getProfile = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    // req.user is attached by protect middleware
+    const user = req.user;
     if (!user) {
-      res.status(404);
-      throw new Error('User not found');
+      res.status(401);
+      throw new Error('Not authenticated');
     }
 
+    // If user is a dummy object, we might not have all fields, but it's fine
     res.status(200).json({
       success: true,
       data: user,
@@ -116,175 +108,41 @@ const getProfile = async (req, res, next) => {
   }
 };
 
-// @desc    Create a new cafe owner (Super-admin only)
-// @route   POST /api/auth/create-owner
-// @access  Private (Superadmin)
-const createOwner = async (req, res, next) => {
-  try {
-    const { username, email, cafeName, temporaryPassword } = req.body;
-
-    if (!username || !email || !cafeName) {
-      res.status(400);
-      throw new Error('Username, email, and cafe name are required');
-    }
-
-    if (!temporaryPassword || temporaryPassword.length < 6) {
-      res.status(400);
-      throw new Error('Password is required and must be at least 6 characters');
-    }
-
-    const existingUser = await User.findOne({
-      $or: [{ username }, { email }],
-    });
-    if (existingUser) {
-      res.status(400);
-      throw new Error('Username or email already taken');
-    }
-
-    const baseSlug = cafeName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-    let slug = baseSlug;
-    let slugExists = await User.findOne({ slug });
-    if (slugExists) {
-      let randomSuffix = Math.random().toString(36).substring(2, 8);
-      slug = `${baseSlug}-${randomSuffix}`;
-      while (await User.findOne({ slug })) {
-        randomSuffix = Math.random().toString(36).substring(2, 8);
-        slug = `${baseSlug}-${randomSuffix}`;
-      }
-    }
-
-    const newOwner = await User.create({
-      username: username.trim(),
-      email: email.trim().toLowerCase(),
-      password: temporaryPassword.trim(),
-      role: 'owner',
-      isBlocked: false,
-      cafeName: cafeName.trim(),
-      slug: slug,
-    });
-
-    const userResponse = newOwner.toObject();
-    delete userResponse.password;
-
-    res.status(201).json({
-      success: true,
-      message: 'Cafe owner created successfully',
-      data: {
-        user: userResponse,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Change password (for logged-in user)
+// @desc    Change password – NOT needed for .env auth
 // @route   PUT /api/auth/change-password
 // @access  Private
 const changePassword = async (req, res, next) => {
-  try {
-    const { oldPassword, newPassword, confirmPassword } = req.body;
-
-    if (!oldPassword || !newPassword || !confirmPassword) {
-      res.status(400);
-      throw new Error('Please provide old password, new password, and confirmation');
-    }
-
-    if (newPassword.length < 6) {
-      res.status(400);
-      throw new Error('New password must be at least 6 characters');
-    }
-
-    if (newPassword !== confirmPassword) {
-      res.status(400);
-      throw new Error('New password and confirmation do not match');
-    }
-
-    const user = await User.findById(req.user.id).select('+password');
-    if (!user) {
-      res.status(404);
-      throw new Error('User not found');
-    }
-
-    const isMatch = await user.matchPassword(oldPassword);
-    if (!isMatch) {
-      res.status(401);
-      throw new Error('Incorrect current password');
-    }
-
-    user.password = newPassword;
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Password changed successfully',
-    });
-  } catch (error) {
-    next(error);
-  }
+  // We don't support password change via backend, frontend handles via localStorage
+  res.status(501).json({
+    success: false,
+    message: 'Password change is handled locally. Please update your .env file.',
+  });
 };
 
-// @desc    Update user profile (username, email)
+// @desc    Update user profile – NOT needed (single-cafe)
 // @route   PUT /api/auth/update-profile
 // @access  Private
 const updateProfile = async (req, res, next) => {
-  try {
-    const { username, email } = req.body;
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      res.status(404);
-      throw new Error('User not found');
-    }
+  // We don't support profile updates via backend
+  res.status(501).json({
+    success: false,
+    message: 'Profile updates are not supported in single-cafe mode.',
+  });
+};
 
-    if (username !== undefined) {
-      const trimmed = username.trim();
-      if (!trimmed || trimmed.length < 3 || trimmed.length > 30) {
-        res.status(400);
-        throw new Error('Username must be between 3 and 30 characters');
-      }
-      if (trimmed !== user.username) {
-        const existing = await User.findOne({ username: trimmed });
-        if (existing) {
-          res.status(400);
-          throw new Error('Username already taken');
-        }
-        user.username = trimmed;
-      }
-    }
-
-    if (email !== undefined) {
-      const trimmed = email.trim().toLowerCase();
-      if (!trimmed || !/^\S+@\S+\.\S+$/.test(trimmed)) {
-        res.status(400);
-        throw new Error('Please provide a valid email address');
-      }
-      if (trimmed !== user.email) {
-        const existing = await User.findOne({ email: trimmed });
-        if (existing) {
-          res.status(400);
-          throw new Error('Email already taken');
-        }
-        user.email = trimmed;
-      }
-    }
-
-    await user.save();
-    const updatedUser = await User.findById(user._id).select('-password');
-    res.status(200).json({
-      success: true,
-      data: updatedUser,
-    });
-  } catch (error) {
-    next(error);
-  }
+// @desc    Create owner – NOT needed (single-cafe)
+// @route   POST /api/auth/create-owner
+// @access  Private
+const createOwner = async (req, res, next) => {
+  res.status(501).json({
+    success: false,
+    message: 'Creating new owners is not supported in single-cafe mode.',
+  });
 };
 
 module.exports = {
   loginUser,
-  logoutUser, // 🆕 exported
+  logoutUser,
   getProfile,
   createOwner,
   changePassword,

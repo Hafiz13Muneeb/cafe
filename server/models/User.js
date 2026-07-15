@@ -1,10 +1,10 @@
-// models/User.js
+// models/User.js - Simplified for single-cafe (no superadmin, no subscription)
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema(
   {
-    // Common fields for all users (superadmin and owners)
+    // Only for the single cafe owner
     username: {
       type: String,
       required: [true, 'Username is required'],
@@ -13,44 +13,28 @@ const UserSchema = new mongoose.Schema(
       minlength: 3,
       maxlength: 30,
     },
-    email: {
-      type: String,
-      required: [true, 'Email is required'],
-      unique: true,
-      trim: true,
-      lowercase: true,
-    },
     password: {
       type: String,
       required: [true, 'Password is required'],
       minlength: 6,
       select: false,
     },
-    role: {
-      type: String,
-      enum: ['superadmin', 'owner'],
-      default: 'owner',
-    },
-    isBlocked: {
-      type: Boolean,
-      default: false,
-    },
-
-    // Cafe owner specific fields (only used when role === 'owner')
     cafeName: {
       type: String,
+      required: [true, 'Cafe name is required'],
       trim: true,
       maxlength: 100,
     },
     slug: {
       type: String,
+      required: [true, 'Slug is required'],
       unique: true,
-      sparse: true, // allows multiple nulls (superadmins don't have a slug)
       trim: true,
       lowercase: true,
     },
     whatsappNumber: {
       type: String,
+      required: [true, 'WhatsApp number is required'],
       match: [/^[0-9]{10,15}$/, 'WhatsApp number must be 10-15 digits, no special chars'],
     },
     logoUrl: {
@@ -65,7 +49,6 @@ const UserSchema = new mongoose.Schema(
       type: [String],
       default: ['1', '2', '3', '4', '5'],
     },
-
     // Theme settings for the public menu
     theme: {
       primaryColor: {
@@ -82,45 +65,6 @@ const UserSchema = new mongoose.Schema(
         default: 'light',
       },
     },
-
-    // ----------------------------------------------------
-    // 🆕 Subscription & Payment (Lemon Squeezy)
-    // ----------------------------------------------------
-    subscription: {
-      plan: {
-        type: String,
-        enum: ['free', 'pro', 'premium'],
-        default: 'free',
-      },
-      status: {
-        type: String,
-        enum: ['active', 'cancelled', 'expired', 'past_due'],
-        default: 'active',
-      },
-      // Lemon Squeezy customer ID (for webhook mapping)
-      lemonSqueezyId: {
-        type: String,
-        unique: true,
-        sparse: true,
-      },
-      // The variant ID (product) the user subscribed to
-      variantId: {
-        type: Number,
-      },
-      // When the current subscription period ends
-      currentPeriodEnd: {
-        type: Date,
-      },
-      // If cancellation is scheduled at period end
-      cancelAtPeriodEnd: {
-        type: Boolean,
-        default: false,
-      },
-      // Trial end date (if applicable)
-      trialEndsAt: {
-        type: Date,
-      },
-    },
   },
   {
     timestamps: true,
@@ -128,14 +72,11 @@ const UserSchema = new mongoose.Schema(
 );
 
 // ------------------------------------------------
-// Indexes for performance
+// Index for slug (already unique)
 // ------------------------------------------------
-UserSchema.index({ role: 1, isBlocked: 1 });
-// 🆕 Index for subscription queries (e.g., find all active subscribers)
-UserSchema.index({ 'subscription.status': 1, 'subscription.plan': 1 });
 
 // ------------------------------------------------
-// Pre-save: hash password and auto-generate slug
+// Pre-save: hash password and auto-generate slug if missing
 // ------------------------------------------------
 UserSchema.pre('save', async function (next) {
   // Hash password if modified
@@ -148,12 +89,13 @@ UserSchema.pre('save', async function (next) {
     }
   }
 
-  // Auto-generate slug from cafeName for owners if not provided
-  if (this.role === 'owner' && this.isModified('cafeName') && !this.slug) {
+  // Auto-generate slug from cafeName if not provided
+  if (this.isModified('cafeName') && !this.slug) {
     const baseSlug = this.cafeName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
+    // Make it unique if needed (but we'll rely on seed script to ensure uniqueness)
     this.slug = baseSlug;
   }
 
@@ -167,14 +109,7 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// ------------------------------------------------
-// Virtual: check if user is a superadmin
-// ------------------------------------------------
-UserSchema.virtual('isSuperAdmin').get(function () {
-  return this.role === 'superadmin';
-});
-
-// Ensure virtuals are included in JSON output
+// Ensure virtuals are included in JSON output (none left)
 UserSchema.set('toJSON', { virtuals: true });
 UserSchema.set('toObject', { virtuals: true });
 

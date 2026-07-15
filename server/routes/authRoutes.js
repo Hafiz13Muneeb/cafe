@@ -2,25 +2,18 @@ const express = require('express');
 const router = express.Router();
 const {
   loginUser,
-  logoutUser, // 🆕 imported
+  logoutUser,
   getProfile,
-  createOwner,
-  changePassword,
-  updateProfile,
 } = require('../controllers/authController');
-const { protect, restrictTo } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 // Public routes
 router.post('/login', loginUser);
-// 🆕 Logout route (public because it just clears the cookie)
 router.post('/logout', logoutUser);
 
-// Protected routes (any logged-in user)
+// Protected route – get profile (uses protect middleware)
 router.get('/me', protect, getProfile);
-router.put('/change-password', protect, changePassword);
-router.put('/update-profile', protect, updateProfile);
 
-// Super-admin only route – create a new cafe owner
-router.post('/create-owner', protect, restrictTo('superadmin'), createOwner);
+// All other auth routes are removed (create-owner, change-password, update-profile)
 
 module.exports = router;

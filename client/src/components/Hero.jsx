@@ -1,7 +1,7 @@
+// src/components/Hero.jsx - Simplified for single-cafe (removed SaaS marketing)
 import React, { useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Sparkles, Zap, Smartphone } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 const Hero = () => {
@@ -21,13 +21,8 @@ const Hero = () => {
     { name: 'French Fries', price: 'Rs.300' },
   ], []);
 
-  const handleDemoClick = () => {
+  const handleLoginClick = () => {
     navigate('/admin');
-  };
-
-  // 🆕 handler for "Blog" button
-  const handleBlogClick = () => {
-    navigate('/blog');
   };
 
   return (
@@ -40,33 +35,25 @@ const Hero = () => {
         
         {/* Text Content */}
         <div className="space-y-4 sm:space-y-6 text-center lg:text-left">
-          <span className="inline-block px-3 sm:px-4 py-1 border-2 border-dashed border-green-800 rounded-lg rotate-[-2deg] font-bold text-sm sm:text-base">
-            ⚡ Fast & Optimized
+          <span className="inline-block px-3 sm:px-4 py-1 border-2 border-dashed border-[#8A9A5B] rounded-lg rotate-[-2deg] font-bold text-sm sm:text-base">
+            ☕ Your Digital Menu
           </span>
           
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight" style={{ fontFamily: "'Permanent Marker', cursive" }}>
-            Transform Tables<br/>
-            <span style={{ color: colors.accent }}>Into Cashflow</span>
+            Welcome to<br/>
+            <span style={{ color: colors.accent }}>Your Cafe Dashboard</span>
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl max-w-lg mx-auto lg:mx-0 opacity-80">
-            Ditch the boring AI looks. Real, hand-crafted digital menus for your cafe. 
-            No commissions, just pure profit.
+            Manage your menu, track orders, and keep your customers happy – all from one place.
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
             <button 
-              onClick={handleDemoClick}
-              className="px-6 sm:px-8 py-2.5 sm:py-3 bg-[#3E2723] text-white rounded-none shadow-[8px_8px_0px_0px_rgba(138,154,91,1)] hover:shadow-none transition-all text-sm sm:text-base"
+              onClick={handleLoginClick}
+              className="px-6 sm:px-8 py-2.5 sm:py-3 bg-[#3E2723] text-white rounded-none shadow-[8px_8px_0px_0px_#8A9A5B] hover:shadow-none transition-all text-sm sm:text-base font-bold"
             >
-              See Demo
-            </button>
-            {/* 🆕 Blog button */}
-            <button 
-              onClick={handleBlogClick}
-              className="px-6 sm:px-8 py-2.5 sm:py-3 bg-white text-[#3E2723] border-2 border-[#3E2723] rounded-none shadow-[8px_8px_0px_0px_#8A9A5B] hover:shadow-none transition-all text-sm sm:text-base font-bold"
-            >
-              Read Blog
+              Login to Dashboard →
             </button>
           </div>
         </div>

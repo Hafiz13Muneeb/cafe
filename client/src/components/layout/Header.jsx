@@ -1,4 +1,4 @@
-// src/components/layout/Header.jsx
+// src/components/layout/Header.jsx - Single-cafe version (removed superadmin logic)
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Settings } from 'lucide-react';
@@ -6,11 +6,10 @@ import Button from '../common/Button';
 
 const Header = ({ title, subtitle, onLogout, user }) => {
   const navigate = useNavigate();
-  
-  const settingsPath = user?.role === 'superadmin' ? '/admin/settings' : '/admin/dashboard/settings';
 
+  // Single-cafe: always go to owner settings
   const handleSettingsClick = () => {
-    navigate(settingsPath);
+    navigate('/admin/dashboard/settings');
   };
 
   return (

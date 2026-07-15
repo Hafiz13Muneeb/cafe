@@ -1,4 +1,4 @@
-// src/pages/QRCodePage.jsx
+// src/pages/QRCodePage.jsx - Updated with correct slug
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -6,6 +6,9 @@ import QRCodeDisplay from '../components/owner/QRCodeDisplay';
 
 const QRCodePage = () => {
   const { user } = useAuth();
+
+  // Use user slug or fallback to 'cafe'
+  const slug = user?.slug || 'cafe';
 
   return (
     <DashboardLayout title="QR Code" subtitle={user?.cafeName}>
@@ -18,13 +21,16 @@ const QRCodePage = () => {
         </p>
         <QRCodeDisplay
           cafeName={user?.cafeName}
-          slug={user?.slug}
-          qrValue={`${window.location.origin}/menu/${user?.slug}`}
+          slug={slug}
+          qrValue={`${window.location.origin}/menu/${slug}`}
         />
         <div className="mt-6 bg-[#EAE0C8] border-2 border-[#3E2723] p-4">
           <h3 className="font-bold text-[#3E2723]">Pro Tip</h3>
           <p className="text-sm text-[#3E2723]/70">
             Print the QR code and place it on every table. Customers can scan it directly with their phone camera to view your menu and place orders.
+          </p>
+          <p className="text-xs text-[#3E2723]/50 mt-2">
+            Your menu URL: <span className="font-mono">{window.location.origin}/menu/{slug}</span>
           </p>
         </div>
       </div>
