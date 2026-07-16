@@ -23,20 +23,18 @@ const loginUser = async (req, res, next) => {
       throw new Error('Invalid credentials');
     }
 
-    // Fetch the first owner from database (or create dummy)
-    let owner = await User.findOne({ role: 'owner' });
-    
+    // Fetch the first owner from database (NO ROLE FILTER – field removed)
+    let owner = await User.findOne();
+
     if (!owner) {
-      // If no owner in DB, create a dummy one (but we should have seeded one)
-      // For now, we'll return a hardcoded owner object
+      // If no owner in DB, return a hardcoded owner object
       owner = {
         _id: '000000000000000000000001',
         username: OWNER_USERNAME,
-        role: 'owner',
-        isBlocked: false,
         cafeName: 'My Cafe',
         slug: 'cafe',
         whatsappNumber: '03001234567',
+        email: '',
         logoUrl: '',
         faviconUrl: '',
         tables: ['1', '2', '3', '4', '5'],
@@ -48,11 +46,10 @@ const loginUser = async (req, res, next) => {
     const userResponse = {
       id: owner._id,
       username: owner.username,
-      role: owner.role,
-      isBlocked: owner.isBlocked || false,
       cafeName: owner.cafeName || '',
       slug: owner.slug || '',
       whatsappNumber: owner.whatsappNumber || '',
+      email: owner.email || '', // 🆕 Support email
       logoUrl: owner.logoUrl || '',
       faviconUrl: owner.faviconUrl || '',
       tables: owner.tables || [],
@@ -63,7 +60,6 @@ const loginUser = async (req, res, next) => {
       success: true,
       data: {
         user: userResponse,
-        // No token – frontend will handle session via localStorage
       },
     });
   } catch (error) {
@@ -76,7 +72,6 @@ const loginUser = async (req, res, next) => {
 // @access  Public
 const logoutUser = async (req, res, next) => {
   try {
-    // No cookie to clear – just respond success
     res.status(200).json({
       success: true,
       message: 'Logged out successfully',
@@ -91,14 +86,11 @@ const logoutUser = async (req, res, next) => {
 // @access  Private (but protect middleware already attaches user)
 const getProfile = async (req, res, next) => {
   try {
-    // req.user is attached by protect middleware
     const user = req.user;
     if (!user) {
       res.status(401);
       throw new Error('Not authenticated');
     }
-
-    // If user is a dummy object, we might not have all fields, but it's fine
     res.status(200).json({
       success: true,
       data: user,
@@ -112,7 +104,6 @@ const getProfile = async (req, res, next) => {
 // @route   PUT /api/auth/change-password
 // @access  Private
 const changePassword = async (req, res, next) => {
-  // We don't support password change via backend, frontend handles via localStorage
   res.status(501).json({
     success: false,
     message: 'Password change is handled locally. Please update your .env file.',
@@ -123,7 +114,6 @@ const changePassword = async (req, res, next) => {
 // @route   PUT /api/auth/update-profile
 // @access  Private
 const updateProfile = async (req, res, next) => {
-  // We don't support profile updates via backend
   res.status(501).json({
     success: false,
     message: 'Profile updates are not supported in single-cafe mode.',

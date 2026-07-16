@@ -1,13 +1,12 @@
-// src/components/layout/Header.jsx - Single-cafe version (removed superadmin logic)
+// src/components/layout/Header.jsx - Hamburger menu for mobile
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut, Settings, Menu, X } from 'lucide-react';
 import Button from '../common/Button';
 
-const Header = ({ title, subtitle, onLogout, user }) => {
+const Header = ({ title, subtitle, onLogout, user, onToggleSidebar, isSidebarOpen }) => {
   const navigate = useNavigate();
 
-  // Single-cafe: always go to owner settings
   const handleSettingsClick = () => {
     navigate('/admin/dashboard/settings');
   };
@@ -16,6 +15,15 @@ const Header = ({ title, subtitle, onLogout, user }) => {
     <header className="bg-white border-b-4 border-[#3E2723] sticky top-0 z-20">
       <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          {/* Hamburger button – visible on mobile */}
+          <button
+            onClick={onToggleSidebar}
+            className="sm:hidden p-1.5 border-2 border-[#3E2723] bg-white hover:bg-[#EAE0C8] transition"
+            aria-label={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+          >
+            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+
           <h1 className="text-base sm:text-xl font-bold font-['Permanent_Marker'] text-[#3E2723] truncate">
             {title || 'Dashboard'}
           </h1>
@@ -25,6 +33,7 @@ const Header = ({ title, subtitle, onLogout, user }) => {
             </span>
           )}
         </div>
+
         <div className="flex items-center gap-1 sm:gap-2">
           <Button
             variant="secondary"

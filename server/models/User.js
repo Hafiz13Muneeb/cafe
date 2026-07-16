@@ -19,6 +19,13 @@ const UserSchema = new mongoose.Schema(
       minlength: 6,
       select: false,
     },
+    // 🆕 Support email – where customers send their questions
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
+    },
     cafeName: {
       type: String,
       required: [true, 'Cafe name is required'],
@@ -79,7 +86,6 @@ const UserSchema = new mongoose.Schema(
 // Pre-save: hash password and auto-generate slug if missing
 // ------------------------------------------------
 UserSchema.pre('save', async function (next) {
-  // Hash password if modified
   if (this.isModified('password')) {
     try {
       const salt = await bcrypt.genSalt(10);
@@ -89,13 +95,11 @@ UserSchema.pre('save', async function (next) {
     }
   }
 
-  // Auto-generate slug from cafeName if not provided
   if (this.isModified('cafeName') && !this.slug) {
     const baseSlug = this.cafeName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
-    // Make it unique if needed (but we'll rely on seed script to ensure uniqueness)
     this.slug = baseSlug;
   }
 
@@ -109,7 +113,7 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Ensure virtuals are included in JSON output (none left)
+// Ensure virtuals are included in JSON output
 UserSchema.set('toJSON', { virtuals: true });
 UserSchema.set('toObject', { virtuals: true });
 

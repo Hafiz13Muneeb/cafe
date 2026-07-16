@@ -1,45 +1,12 @@
-// src/components/common/ChatWidget.jsx - Single-cafe version (removed superadmin references, fixed footer & FAQ)
-import React, { useState } from 'react';
+// src/components/common/ChatWidget.jsx - Role-based FAQs with customer email support
+import React, { useState, useEffect } from 'react';
 import { MessageCircle, X, ChevronDown, ChevronUp, Send } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../api/axios';
+import { ownerFAQs } from '../../config/ownerFAQs';
 
-// Brand name and support email from .env
 const BRAND_NAME = import.meta.env.VITE_BRAND_NAME || 'CafeFlow';
 const SUPPORT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || 'support@cafeflow.com';
-
-// FAQ Data – updated for single-cafe
-const FAQS = [
-  {
-    id: 1,
-    question: 'How do I add a new menu item?',
-    answer:
-      'Go to your Dashboard, click "Add New" under Menu Items. Fill in the title, price, category, upload an image, and click "Add Item". Your new item will appear on the public menu instantly.',
-  },
-  {
-    id: 2,
-    question: 'How can I update my cafe details?',
-    answer:
-      'Click the Settings icon (gear) in the top‑right corner. In the "Cafe Settings" tab, you can update your cafe name, WhatsApp number, and table numbers.',
-  },
-  {
-    id: 3,
-    question: 'How do I change the theme colours?',
-    answer:
-      'Go to Settings → Appearance. You can set custom primary/secondary colours using the colour pickers. Toggle between Light and Dark mode as well.',
-  },
-  {
-    id: 4,
-    question: 'How do I generate a QR code for my menu?',
-    answer:
-      'Your QR code is displayed on the Dashboard. You can download it as a PNG or copy the menu link to share it. Place the QR code on your tables for customers to scan.',
-  },
-  {
-    id: 5,
-    question: 'How do I track orders and analytics?',
-    answer:
-      'You can track all your analytics (views, orders, revenue) directly from the Analytics section in your Dashboard. Everything is available at your fingertips – no need to contact anyone.',
-  },
-];
 
 const ChatWidget = () => {
   const { user } = useAuth();
@@ -47,15 +14,59 @@ const ChatWidget = () => {
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [userQuestion, setUserQuestion] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [faqs, setFaqs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [supportEmail, setSupportEmail] = useState('');
 
-  // Use cafe name in header if logged in, otherwise fallback to brand name
+  const isOwner = !!user;
   const displayName = user?.cafeName || BRAND_NAME;
+
+  // Fetch support email from global settings (for customers)
+  useEffect(() => {
+    const fetchSupportEmail = async () => {
+      try {
+        const res = await api.get('/settings/global');
+        if (res.data.success && res.data.data.supportEmail) {
+          setSupportEmail(res.data.data.supportEmail);
+        }
+      } catch (err) {
+        console.error('Failed to fetch support email:', err);
+      }
+    };
+    if (!isOwner) {
+      fetchSupportEmail();
+    }
+  }, [isOwner]);
+
+  // Load FAQs based on role
+  useEffect(() => {
+    if (isOwner) {
+      setFaqs(ownerFAQs);
+      setLoading(false);
+    } else {
+      const fetchFAQs = async () => {
+        try {
+          setLoading(true);
+          const res = await api.get('/faqs');
+          if (res.data.success) {
+            setFaqs(res.data.data);
+          } else {
+            setFaqs([]);
+          }
+        } catch (err) {
+          console.error('Failed to fetch FAQs:', err);
+          setFaqs([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchFAQs();
+    }
+  }, [isOwner]);
 
   const toggleWidget = () => {
     setIsOpen(!isOpen);
-    if (isOpen) {
-      setExpandedFaq(null);
-    }
+    if (isOpen) setExpandedFaq(null);
   };
 
   const toggleFaq = (id) => {
@@ -65,12 +76,14 @@ const ChatWidget = () => {
   const handleAskQuestion = () => {
     if (!userQuestion.trim()) return;
 
+    // Owner uses .env support email, customer uses owner's email
+    const targetEmail = isOwner ? SUPPORT_EMAIL : (supportEmail || SUPPORT_EMAIL);
     const subject = encodeURIComponent(`Question from ${displayName}`);
     const body = encodeURIComponent(
       `Hello Support Team,\n\nI have a question about my cafe dashboard:\n\n"${userQuestion.trim()}"\n\nPlease get back to me at your earliest convenience.\n\nThank you!`
     );
 
-    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:${targetEmail}?subject=${subject}&body=${body}`;
 
     setShowSuccess(true);
     setUserQuestion('');
@@ -109,7 +122,6 @@ const ChatWidget = () => {
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {/* Success message */}
             {showSuccess && (
               <div className="bg-[#EAE0C8] border-2 border-[#3E2723] p-2 text-sm font-bold text-[#3E2723] text-center">
                 ✅ Message ready! Check your email client.
@@ -121,29 +133,38 @@ const ChatWidget = () => {
               <p className="text-xs font-bold text-[#3E2723]/60 uppercase tracking-wider">
                 Frequently Asked Questions
               </p>
-              {FAQS.map((faq) => (
-                <div
-                  key={faq.id}
-                  className="border-2 border-[#3E2723]/20 hover:border-[#8A9A5B] transition overflow-hidden"
-                >
-                  <button
-                    onClick={() => toggleFaq(faq.id)}
-                    className="w-full flex items-center justify-between p-2 text-left text-sm font-bold text-[#3E2723] hover:bg-[#F5F5DC] transition"
-                  >
-                    <span className="flex-1">{faq.question}</span>
-                    {expandedFaq === faq.id ? (
-                      <ChevronUp size={16} className="flex-shrink-0 ml-2" />
-                    ) : (
-                      <ChevronDown size={16} className="flex-shrink-0 ml-2" />
-                    )}
-                  </button>
-                  {expandedFaq === faq.id && (
-                    <div className="p-3 bg-[#FAF9F6] border-t-2 border-[#3E2723]/10 text-sm text-[#3E2723]/80">
-                      {faq.answer}
+              {loading ? (
+                <div className="text-center py-4 text-[#3E2723]/50 text-sm">Loading FAQs...</div>
+              ) : faqs.length === 0 ? (
+                <div className="text-center py-4 text-[#3E2723]/50 text-sm">No FAQs available.</div>
+              ) : (
+                faqs.map((faq) => {
+                  const id = faq.id || faq._id;
+                  return (
+                    <div
+                      key={id}
+                      className="border-2 border-[#3E2723]/20 hover:border-[#8A9A5B] transition overflow-hidden"
+                    >
+                      <button
+                        onClick={() => toggleFaq(id)}
+                        className="w-full flex items-center justify-between p-2 text-left text-sm font-bold text-[#3E2723] hover:bg-[#F5F5DC] transition"
+                      >
+                        <span className="flex-1">{faq.question}</span>
+                        {expandedFaq === id ? (
+                          <ChevronUp size={16} className="flex-shrink-0 ml-2" />
+                        ) : (
+                          <ChevronDown size={16} className="flex-shrink-0 ml-2" />
+                        )}
+                      </button>
+                      {expandedFaq === id && (
+                        <div className="p-3 bg-[#FAF9F6] border-t-2 border-[#3E2723]/10 text-sm text-[#3E2723]/80">
+                          {faq.answer}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  );
+                })
+              )}
             </div>
 
             {/* Divider */}

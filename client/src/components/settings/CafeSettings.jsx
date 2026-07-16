@@ -13,6 +13,8 @@ const CafeSettings = ({
   setTables,
   slug,
   setSlug,
+  email,
+  setEmail,
   logoPreview,
   setLogoPreview,
   faviconPreview,
@@ -60,6 +62,13 @@ const CafeSettings = ({
         placeholder="e.g. 03001234567"
         required
         aria-label="WhatsApp number"
+      />
+      <Input
+        label="Support Email (for customer questions)"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="support@mycafe.com"
+        aria-label="Support email"
       />
       <Input
         label="Table Numbers / Names"

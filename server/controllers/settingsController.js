@@ -1,3 +1,4 @@
+// server/controllers/settingsController.js - Single-cafe settings with email support
 const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
 
@@ -12,7 +13,6 @@ const expandHex = (hex) => {
     const b = cleaned[3];
     return `#${r}${r}${g}${g}${b}${b}`;
   }
-  // If invalid, return original (will be caught by validation)
   return cleaned;
 };
 
@@ -56,7 +56,7 @@ const generateUniqueSlug = async (baseSlug, excludeId) => {
 const getSettings = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select(
-      'cafeName whatsappNumber logoUrl faviconUrl tables slug theme'
+      'cafeName whatsappNumber logoUrl faviconUrl tables slug theme email'
     );
     if (!user) {
       res.status(404);
@@ -72,6 +72,7 @@ const getSettings = async (req, res, next) => {
         faviconUrl: user.faviconUrl || '',
         tables: user.tables || [],
         slug: user.slug || '',
+        email: user.email || '',
         theme: user.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
       },
     });
@@ -80,12 +81,12 @@ const getSettings = async (req, res, next) => {
   }
 };
 
-// @desc    Update settings – supports partial updates (cafe, theme, images)
+// @desc    Update settings – supports partial updates (cafe, theme, images, email)
 // @route   PUT /api/settings
 // @access  Private (Owner)
 const updateSettings = async (req, res, next) => {
   try {
-    const { cafeName, whatsappNumber, tables, slug, primaryColor, secondaryColor, mode } = req.body;
+    const { cafeName, whatsappNumber, tables, slug, email, primaryColor, secondaryColor, mode } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -124,7 +125,6 @@ const updateSettings = async (req, res, next) => {
         throw new Error('Slug can only contain lowercase letters, numbers, and hyphens');
       }
       if (trimmedSlug !== user.slug) {
-        // Check uniqueness
         const existing = await User.findOne({ slug: trimmedSlug, _id: { $ne: user._id } });
         if (existing) {
           res.status(400);
@@ -134,7 +134,6 @@ const updateSettings = async (req, res, next) => {
         changes.slug = trimmedSlug;
       }
     } else if (cafeName !== undefined && cafeName.trim() !== user.cafeName && !slug) {
-      // Auto-generate slug if cafeName changed and no explicit slug provided
       const baseSlug = user.cafeName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -177,6 +176,17 @@ const updateSettings = async (req, res, next) => {
       }
       user.tables = tableArray;
       changes.tables = tableArray;
+    }
+
+    // --- Update Email (support email) ---
+    if (email !== undefined) {
+      const trimmed = email.trim();
+      if (trimmed && !/^\S+@\S+\.\S+$/.test(trimmed)) {
+        res.status(400);
+        throw new Error('Please provide a valid email address');
+      }
+      user.email = trimmed || '';
+      changes.email = trimmed;
     }
 
     // --- Update theme (with hex expansion) ---
@@ -267,6 +277,7 @@ const updateSettings = async (req, res, next) => {
       cafeName: user.cafeName,
       slug: user.slug,
       whatsappNumber: user.whatsappNumber,
+      email: user.email || '',
       logoUrl: user.logoUrl || '',
       faviconUrl: user.faviconUrl || '',
       tables: user.tables || [],
@@ -287,15 +298,15 @@ const updateSettings = async (req, res, next) => {
 };
 
 // ============================================================
-// GLOBAL SETTINGS (used by public pages for theme)
+// GLOBAL SETTINGS (used by public pages for theme & support email)
 // ============================================================
 
-// @desc    Get global app settings (theme + favicon) – returns owner's theme
+// @desc    Get global app settings (theme + favicon + support email)
 // @route   GET /api/settings/global
 // @access  Public
 const getGlobalSettings = async (req, res, next) => {
   try {
-    const owner = await User.findOne().select('theme faviconUrl');
+    const owner = await User.findOne().select('theme faviconUrl email');
     if (!owner) {
       return res.status(200).json({
         success: true,
@@ -304,6 +315,7 @@ const getGlobalSettings = async (req, res, next) => {
           secondaryColor: '#b8860b',
           mode: 'light',
           faviconUrl: '',
+          supportEmail: '',
         },
       });
     }
@@ -314,6 +326,7 @@ const getGlobalSettings = async (req, res, next) => {
         secondaryColor: owner.theme?.secondaryColor || '#b8860b',
         mode: owner.theme?.mode || 'light',
         faviconUrl: owner.faviconUrl || '',
+        supportEmail: owner.email || '',
       },
     });
   } catch (error) {

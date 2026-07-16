@@ -11,6 +11,8 @@ import OwnerSettings from './pages/OwnerSettings';
 import OwnerAnalytics from './pages/OwnerAnalytics';
 import QRCodePage from './pages/QRCodePage';
 import OnboardingSetup from './pages/OnboardingSetup';
+// 🆕 Import FAQ Management page
+import OwnerFAQManagement from './pages/OwnerFAQManagement';
 import ChatWidget from './components/common/ChatWidget';
 
 const PublicLayout = ({ children }) => {
@@ -143,6 +145,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <OwnerSettings />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 🆕 FAQ Management Page */}
+          <Route
+            path="/admin/faqs"
+            element={
+              <ProtectedRoute>
+                <OwnerFAQManagement />
               </ProtectedRoute>
             }
           />

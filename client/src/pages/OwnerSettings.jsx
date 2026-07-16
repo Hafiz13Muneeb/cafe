@@ -21,6 +21,7 @@ const OwnerSettings = () => {
   const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || '');
   const [tables, setTables] = useState((user?.tables || []).join(', '));
   const [slug, setSlug] = useState(user?.slug || '');
+  const [email, setEmail] = useState(user?.email || ''); // 🆕
 
   const [primaryColor, setPrimaryColor] = useState(user?.theme?.primaryColor || '#d4a843');
   const [secondaryColor, setSecondaryColor] = useState(user?.theme?.secondaryColor || '#b8860b');
@@ -51,6 +52,7 @@ const OwnerSettings = () => {
           setWhatsappNumber(data.whatsappNumber || '');
           setTables((data.tables || []).join(', '));
           setSlug(data.slug || '');
+          setEmail(data.email || '');
           setLogoPreview(data.logoUrl || '');
           setFaviconPreview(data.faviconUrl || '');
           if (data.theme) {
@@ -91,12 +93,17 @@ const OwnerSettings = () => {
       setLoading(false);
       return;
     }
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+      showMessage('Please enter a valid email address.', 'error');
+      setLoading(false);
+      return;
+    }
 
     try {
-      const payload = { cafeName, whatsappNumber, tables: trimmedTables, slug };
+      const payload = { cafeName, whatsappNumber, tables: trimmedTables, slug, email };
       const res = await api.put('/settings', payload);
       if (res.data.success) {
-        updateUserData({ cafeName, whatsappNumber, tables: trimmedTables, slug });
+        updateUserData({ cafeName, whatsappNumber, tables: trimmedTables, slug, email });
         showMessage('Cafe settings saved successfully!');
       }
     } catch (err) {
@@ -219,6 +226,8 @@ const OwnerSettings = () => {
             setTables={setTables}
             slug={slug}
             setSlug={setSlug}
+            email={email}
+            setEmail={setEmail}
             logoPreview={logoPreview}
             setLogoPreview={setLogoPreview}
             faviconPreview={faviconPreview}
