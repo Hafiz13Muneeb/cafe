@@ -1,16 +1,18 @@
-// src/pages/OwnerAnalytics.jsx - Uses 'fallback' as default cafeId
+// src/pages/OwnerAnalytics.jsx - Enhanced with insights & chart types
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import PeriodFilter from '../components/common/PeriodFilter';
-import StatCard from '../components/common/StatCard';
-import LineChart from '../components/common/LineChart';
-import { Eye, ShoppingBag, DollarSign, TrendingDown, BarChart3, AlertCircle } from 'lucide-react';
+import AnalyticsStats from '../components/analytics/AnalyticsStats';
+import AnalyticsCharts from '../components/analytics/AnalyticsCharts';
+import InsightsCards from '../components/analytics/InsightsCards';
+import { AlertCircle, BarChart3 } from 'lucide-react';
 
 const OwnerAnalytics = () => {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState(null);
+  const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [period, setPeriod] = useState('week');
@@ -22,21 +24,25 @@ const OwnerAnalytics = () => {
   ];
 
   const fetchAnalytics = useCallback(async () => {
+    const cafeId = user?._id || 'fallback';
     setLoading(true);
     setError('');
 
-    // ✅ Use actual user ID if available, else 'fallback' to trigger backend fallback
-    const cafeId = user?._id || 'fallback';
-
     try {
-      console.log('📊 Fetching analytics for cafeId:', cafeId);
-      const response = await api.get(`/analytics/cafe/${cafeId}?period=${period}`);
-      console.log('📊 Analytics response:', response.data);
+      // Fetch analytics data
+      const [analyticsRes, insightsRes] = await Promise.all([
+        api.get(`/analytics/cafe/${cafeId}?period=${period}`),
+        api.get(`/analytics/insights/${cafeId}?period=${period}`).catch(() => ({ data: { success: false } })),
+      ]);
 
-      if (response.data.success) {
-        setAnalytics(response.data.data);
+      if (analyticsRes.data.success) {
+        setAnalytics(analyticsRes.data.data);
       } else {
         setError('Failed to load analytics data');
+      }
+
+      if (insightsRes.data?.success) {
+        setInsights(insightsRes.data.data);
       }
     } catch (err) {
       console.error('❌ Analytics fetch error:', err);
@@ -57,10 +63,8 @@ const OwnerAnalytics = () => {
     fetchAnalytics();
   }, [fetchAnalytics]);
 
-  // Prepare chart data
   const prepareChartData = () => {
     if (!analytics?.charts) return null;
-
     const { views, orderAttempts, completedOrders } = analytics.charts;
 
     const allDates = new Set();
@@ -125,77 +129,9 @@ const OwnerAnalytics = () => {
 
       {analytics ? (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-            <StatCard icon={Eye} label="Total Views" value={analytics.summary?.totalViews || 0} />
-            <StatCard icon={ShoppingBag} label="Total Orders" value={analytics.summary?.totalOrders || 0} />
-            <StatCard
-              icon={DollarSign}
-              label="Revenue"
-              value={analytics.summary?.totalRevenue || 0}
-              prefix="$"
-            />
-            <StatCard
-              icon={TrendingDown}
-              label="Bounce Rate"
-              value={analytics.summary?.bounceRate || 0}
-              suffix="%"
-            />
-          </div>
-
-          {chartData && chartData.labels.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
-                <h3 className="text-md font-bold text-[#3E2723] mb-2">Views</h3>
-                <LineChart
-                  labels={chartData.labels}
-                  data={chartData.viewsData}
-                  label="Views"
-                  color="#8A9A5B"
-                  height={200}
-                />
-              </div>
-              <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
-                <h3 className="text-md font-bold text-[#3E2723] mb-2">Order Attempts</h3>
-                <LineChart
-                  labels={chartData.labels}
-                  data={chartData.attemptsData}
-                  label="Attempts"
-                  color="#d4a843"
-                  height={200}
-                />
-              </div>
-              <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
-                <h3 className="text-md font-bold text-[#3E2723] mb-2">Completed Orders</h3>
-                <LineChart
-                  labels={chartData.labels}
-                  data={chartData.ordersData}
-                  label="Orders"
-                  color="#10b981"
-                  height={200}
-                />
-              </div>
-              {chartData.revenueData?.some((v) => v > 0) && (
-                <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
-                  <h3 className="text-md font-bold text-[#3E2723] mb-2">Revenue Trend</h3>
-                  <LineChart
-                    labels={chartData.labels}
-                    data={chartData.revenueData}
-                    label="Revenue ($)"
-                    color="#3b82f6"
-                    height={200}
-                  />
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="bg-white border-2 border-[#3E2723] p-8 text-center shadow-[6px_6px_0px_0px_#EAE0C8]">
-              <BarChart3 size={48} className="mx-auto text-[#3E2723]/30 mb-2" />
-              <p className="text-[#3E2723]/60 font-bold">No analytics data available yet.</p>
-              <p className="text-sm text-[#3E2723]/40">
-                Data will appear once customers start viewing the menu and placing orders.
-              </p>
-            </div>
-          )}
+          <AnalyticsStats analytics={analytics} />
+          <InsightsCards insights={insights} />
+          <AnalyticsCharts chartData={chartData} />
         </>
       ) : (
         <div className="bg-white border-2 border-[#3E2723] p-8 text-center shadow-[6px_6px_0px_0px_#EAE0C8]">

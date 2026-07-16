@@ -206,9 +206,71 @@ const trackOrderCompleted = async (req, res, next) => {
   }
 };
 
+// ============================================================
+// 🆕 INSIGHTS: Busiest Days & Top Items
+// ============================================================
+
+// @desc    Get insights: busiest days & top items (single-cafe mode)
+// @route   GET /api/analytics/insights/:cafeId
+// @access  Private (Owner)
+const getInsights = async (req, res, next) => {
+  try {
+    let { cafeId } = req.params;
+
+    // Fallback to first user if cafeId invalid or not found
+    if (!mongoose.Types.ObjectId.isValid(cafeId)) {
+      const firstUser = await User.findOne();
+      if (!firstUser) {
+        return res.status(200).json({
+          success: true,
+          data: { busiestDays: [], topItems: [] },
+        });
+      }
+      cafeId = firstUser._id.toString();
+    }
+
+    const objectId = new mongoose.Types.ObjectId(cafeId);
+
+    // 1. Busiest days – group completed orders by day of week (1=Sunday, 7=Saturday)
+    const busiestDays = await Analytics.aggregate([
+      {
+        $match: {
+          cafeId: objectId,
+          eventType: 'order_completed',
+        },
+      },
+      {
+        $group: {
+          _id: { $dayOfWeek: '$date' },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { count: -1 } },
+    ]);
+
+    // 2. Top items – for now, we return an empty array.
+    // To enable this, you would need to store cart items in the order_completed event.
+    // For now, we'll just return an empty array as a placeholder.
+    // In the future, you can extend the Analytics model to store items.
+    const topItems = [];
+
+    res.status(200).json({
+      success: true,
+      data: {
+        busiestDays,
+        topItems,
+      },
+    });
+  } catch (error) {
+    console.error('Error in getInsights:', error);
+    next(error);
+  }
+};
+
 module.exports = {
   getCafeAnalytics,
   trackView,
   trackOrderAttempt,
   trackOrderCompleted,
+  getInsights, // 🆕
 };
