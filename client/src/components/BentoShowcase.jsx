@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const BentoCard = ({ icon: Icon, title, description, className }) => {
   const { theme } = useTheme();
-  const shadowStyle = "8px 8px 0px 0px rgba(138, 154, 91, 1)";
+  const shadowStyle = "8px 8px 0px 0px var(--primary-color)";
   
   return (
     <motion.div

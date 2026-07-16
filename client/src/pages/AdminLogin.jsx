@@ -116,28 +116,61 @@ const AdminLogin = () => {
   const tooltipStyle = getTooltipPosition();
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F5DC] relative">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-[var(--bg-color)] relative">
       {showTour && targetRect && (
         <div className="fixed inset-0 z-50 pointer-events-none">
-          <div className="absolute pointer-events-none" style={{ top: targetRect.top - 8, left: targetRect.left - 8, width: targetRect.width + 16, height: targetRect.height + 16, borderRadius: '6px', boxShadow: '0 0 0 4px #8A9A5B, 0 0 20px rgba(138, 154, 91, 0.6)', transition: 'all 0.3s ease' }} />
-          <div className="absolute bg-white border-4 border-[#3E2723] shadow-[8px_8px_0px_0px_#8A9A5B] p-5 max-w-xs w-72 pointer-events-auto" style={{ top: tooltipStyle.top, left: tooltipStyle.left, transform: tooltipStyle.transform || 'none' }}>
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              top: targetRect.top - 8,
+              left: targetRect.left - 8,
+              width: targetRect.width + 16,
+              height: targetRect.height + 16,
+              borderRadius: '6px',
+              boxShadow: `0 0 0 4px var(--primary-color), 0 0 20px rgba(var(--primary-color-rgb, 212, 168, 67), 0.6)`,
+              transition: 'all 0.3s ease'
+            }}
+          />
+          <div
+            className="absolute bg-[var(--card-bg)] border-4 border-[var(--border-color)] p-5 max-w-xs w-72 pointer-events-auto"
+            style={{
+              top: tooltipStyle.top,
+              left: tooltipStyle.left,
+              transform: tooltipStyle.transform || 'none',
+              boxShadow: '8px 8px 0px 0px var(--primary-color)'
+            }}
+          >
             <div className="flex items-center gap-1.5 mb-3">
               {Array.from({ length: totalSteps }).map((_, idx) => (
-                <div key={idx} className={`h-1 flex-1 rounded-full transition ${idx === tourStep ? 'bg-[#8A9A5B]' : 'bg-[#EAE0C8]'}`} />
+                <div
+                  key={idx}
+                  className={`h-1 flex-1 rounded-full transition ${idx === tourStep ? 'bg-primary' : 'bg-[var(--bg-color)]'}`}
+                />
               ))}
             </div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-1.5 bg-[#8A9A5B] rounded-full border-2 border-[#3E2723]">
+              <div className="p-1.5 bg-primary rounded-full border-2 border-[var(--border-color)]">
                 <currentStepData.icon size={18} className="text-white" />
               </div>
-              <h3 className="font-bold text-[#3E2723] text-base">{currentStepData.title}</h3>
+              <h3 className="font-bold text-[var(--text-color)] text-base">{currentStepData.title}</h3>
             </div>
-            <p className="text-sm text-[#3E2723]/70 mb-4">{currentStepData.description}</p>
+            <p className="text-sm text-[var(--text-color)]/70 mb-4">{currentStepData.description}</p>
             <div className="flex justify-between items-center">
-              <button onClick={handlePrev} disabled={tourStep === 0} className={`text-sm font-bold transition ${tourStep === 0 ? 'text-[#3E2723]/30 cursor-not-allowed' : 'text-[#3E2723] hover:text-[#8A9A5B]'}`}>Back</button>
+              <button
+                onClick={handlePrev}
+                disabled={tourStep === 0}
+                className={`text-sm font-bold transition ${tourStep === 0 ? 'text-[var(--text-color)]/30 cursor-not-allowed' : 'text-[var(--text-color)] hover:text-primary'}`}
+              >
+                Back
+              </button>
               <div className="flex gap-2">
-                <button onClick={handleSkip} className="text-xs font-bold text-[#3E2723]/50 hover:text-[#3E2723] transition">Skip</button>
-                <button onClick={handleNext} className="px-4 py-1.5 bg-[#8A9A5B] text-white font-bold border-2 border-[#3E2723] shadow-[3px_3px_0px_0px_#3E2723] hover:shadow-none transition text-xs">
+                <button onClick={handleSkip} className="text-xs font-bold text-[var(--text-color)]/50 hover:text-[var(--text-color)] transition">
+                  Skip
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="px-4 py-1.5 bg-primary text-white font-bold border-2 border-[var(--border-color)] shadow-[3px_3px_0px_0px_var(--border-color)] hover:shadow-none transition text-xs"
+                >
                   {tourStep === totalSteps - 1 ? 'Finish' : 'Next'}
                   {tourStep < totalSteps - 1 && <ChevronRight size={14} className="inline ml-0.5" />}
                 </button>
@@ -147,13 +180,13 @@ const AdminLogin = () => {
         </div>
       )}
 
-      <div className="w-full max-w-md bg-white border-2 border-[#3E2723] shadow-[8px_8px_0px_0px_#3E2723] p-6 sm:p-8">
+      <div className="w-full max-w-md bg-[var(--card-bg)] border-2 border-[var(--border-color)] shadow-[8px_8px_0px_0px_var(--border-color)] p-6 sm:p-8">
         <div className="text-center mb-6">
-          <div className="inline-block p-4 rounded-full bg-[#8A9A5B] border-2 border-[#3E2723] mb-4">
+          <div className="inline-block p-4 rounded-full bg-primary border-2 border-[var(--border-color)] mb-4">
             <Lock size={32} className="text-white" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#3E2723]">Admin Login</h1>
-          <p className="text-xs sm:text-sm text-[#3E2723]/60 mt-1">Enter your credentials to access the dashboard</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-color)]">Admin Login</h1>
+          <p className="text-xs sm:text-sm text-[var(--text-color)]/60 mt-1">Enter your credentials to access the dashboard</p>
         </div>
 
         {error && (
@@ -170,7 +203,7 @@ const AdminLogin = () => {
             <Input label="Password" value={password} onChange={(e) => setPassword(e.target.value)} type="password" leftIcon={Lock} required disabled={loading} autoComplete="current-password" />
           </div>
           <div ref={loginBtnRef}>
-            <Button type="submit" fullWidth disabled={loading} className="bg-[#8A9A5B] border-2 border-[#3E2723] text-white hover:bg-[#78884d]">
+            <Button type="submit" variant="primary" fullWidth disabled={loading}>
               {loading ? (
                 <>
                   <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" /> Logging in...

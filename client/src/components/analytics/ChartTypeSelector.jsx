@@ -10,7 +10,7 @@ const CHART_TYPES = [
 
 const ChartTypeSelector = ({ selected, onSelect }) => {
   return (
-    <div className="flex gap-1 bg-[#EAE0C8] border-2 border-[#3E2723] p-1 w-max">
+    <div className="flex gap-1 bg-[var(--bg-color)] border-2 border-[var(--border-color)] p-1 w-max">
       {CHART_TYPES.map((type) => {
         const Icon = type.icon;
         return (
@@ -19,8 +19,8 @@ const ChartTypeSelector = ({ selected, onSelect }) => {
             onClick={() => onSelect(type.value)}
             className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs sm:text-sm font-bold transition-all ${
               selected === type.value
-                ? 'bg-[#8A9A5B] text-white border-2 border-[#3E2723]'
-                : 'text-[#3E2723] hover:bg-[#3E2723]/10'
+                ? 'bg-primary text-white border-2 border-[var(--border-color)]'
+                : 'text-[var(--text-color)] hover:bg-[var(--text-color)]/10'
             }`}
           >
             <Icon size={14} className="sm:w-4 sm:h-4" />

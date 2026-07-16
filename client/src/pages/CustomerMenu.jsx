@@ -108,9 +108,9 @@ const CustomerMenu = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F5DC] text-[#3E2723]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-color)] text-[var(--text-color)]">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-[#8A9A5B]" />
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary" />
           <p className="mt-4 font-bold font-['Permanent_Marker'] text-lg sm:text-xl">Loading menu...</p>
         </div>
       </div>
@@ -119,12 +119,15 @@ const CustomerMenu = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F5DC] text-[#3E2723] px-4">
-        <div className="text-center p-6 sm:p-8 border-4 border-[#3E2723] bg-white shadow-[8px_8px_0px_0px_#8A9A5B] max-w-sm w-full">
-          <AlertCircle size={48} className="mx-auto mb-4 text-[#8A9A5B]" />
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-color)] text-[var(--text-color)] px-4">
+        <div className="text-center p-6 sm:p-8 border-4 border-[var(--border-color)] bg-[var(--card-bg)] shadow-primary max-w-sm w-full">
+          <AlertCircle size={48} className="mx-auto mb-4 text-primary" />
           <h2 className="text-2xl font-bold font-['Permanent_Marker'] mb-2">Menu Not Found</h2>
-          <p className="text-sm text-[#3E2723]/80">{error}</p>
-          <a href="/" className="inline-block mt-4 px-4 py-2 bg-[#8A9A5B] text-white font-bold border-2 border-[#3E2723] hover:bg-[#78884d] transition">
+          <p className="text-sm text-[var(--text-color)]/80">{error}</p>
+          <a
+            href="/"
+            className="inline-block mt-4 px-4 py-2 bg-primary text-white font-bold border-2 border-[var(--border-color)] hover:opacity-80 transition"
+          >
             Back to Home
           </a>
         </div>
@@ -135,11 +138,11 @@ const CustomerMenu = () => {
   // If no menu items, show empty state
   if (menuItems.length === 0) {
     return (
-      <div className="min-h-screen bg-[#F5F5DC] text-[#3E2723] flex items-center justify-center px-4">
-        <div className="text-center p-6 sm:p-8 border-4 border-[#3E2723] bg-white shadow-[8px_8px_0px_0px_#8A9A5B] max-w-sm w-full">
-          <Utensils size={48} className="mx-auto mb-4 text-[#3E2723]/30" />
+      <div className="min-h-screen bg-[var(--bg-color)] text-[var(--text-color)] flex items-center justify-center px-4">
+        <div className="text-center p-6 sm:p-8 border-4 border-[var(--border-color)] bg-[var(--card-bg)] shadow-primary max-w-sm w-full">
+          <Utensils size={48} className="mx-auto mb-4 text-[var(--text-color)]/30" />
           <h2 className="text-2xl font-bold font-['Permanent_Marker'] mb-2">No Items Yet</h2>
-          <p className="text-sm text-[#3E2723]/80">This cafe hasn't added any menu items yet. Check back soon!</p>
+          <p className="text-sm text-[var(--text-color)]/80">This cafe hasn't added any menu items yet. Check back soon!</p>
         </div>
       </div>
     );
@@ -149,13 +152,13 @@ const CustomerMenu = () => {
   const totalPrice = getTotalPrice();
 
   return (
-    <div className="min-h-screen bg-[#F5F5DC] text-[#3E2723] pb-28">
+    <div className="min-h-screen bg-[var(--bg-color)] text-[var(--text-color)] pb-28">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-white border-b-4 border-[#3E2723] shadow-[4px_4px_0px_0px_#8A9A5B] py-2 sm:py-3 px-3 sm:px-4 flex items-center gap-3 sm:gap-4">
+      <header className="sticky top-0 z-20 bg-[var(--card-bg)] border-b-4 border-[var(--border-color)] shadow-primary py-2 sm:py-3 px-3 sm:px-4 flex items-center gap-3 sm:gap-4">
         {cafeData?.logoUrl ? (
-          <img src={cafeData.logoUrl} alt="Cafe logo" className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-2 border-[#3E2723] object-cover" />
+          <img src={cafeData.logoUrl} alt="Cafe logo" className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-2 border-[var(--border-color)] object-cover" />
         ) : (
-          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-2 border-[#3E2723] bg-[#8A9A5B] flex items-center justify-center">
+          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-2 border-[var(--border-color)] bg-primary flex items-center justify-center">
             <Coffee size={24} className="text-white" />
           </div>
         )}
@@ -164,26 +167,26 @@ const CustomerMenu = () => {
             {cafeData?.name || 'Cafe Menu'}
           </h1>
           {cafeData?.whatsappNumber && (
-            <p className="text-xs font-bold text-[#3E2723]/60">📱 Order via WhatsApp</p>
+            <p className="text-xs font-bold text-[var(--text-color)]/60">📱 Order via WhatsApp</p>
           )}
         </div>
-        <div className="border-2 border-[#3E2723] bg-[#EAE0C8] px-2 sm:px-3 py-1 font-bold text-xs sm:text-sm">
+        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-color)] px-2 sm:px-3 py-1 font-bold text-xs sm:text-sm">
           {menuItems.length} items
         </div>
       </header>
 
       {/* Category Filter */}
       {categories.length > 1 && (
-        <div className="sticky top-[68px] sm:top-[76px] z-10 bg-[#F5F5DC] border-b-2 border-[#3E2723] py-1 sm:py-2 px-3 sm:px-4">
-          <div className="flex gap-1 bg-[#EAE0C8] border-2 border-[#3E2723] p-1 w-max overflow-x-auto max-w-full">
+        <div className="sticky top-[68px] sm:top-[76px] z-10 bg-[var(--bg-color)] border-b-2 border-[var(--border-color)] py-1 sm:py-2 px-3 sm:px-4">
+          <div className="flex gap-1 bg-[var(--bg-color)] border-2 border-[var(--border-color)] p-1 w-max overflow-x-auto max-w-full">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
                   selectedCategory === cat
-                    ? 'bg-[#8A9A5B] text-white border-2 border-[#3E2723]'
-                    : 'text-[#3E2723] hover:bg-[#3E2723]/10'
+                    ? 'bg-primary text-white border-2 border-[var(--border-color)]'
+                    : 'text-[var(--text-color)] hover:bg-[var(--text-color)]/10'
                 }`}
               >
                 {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -197,7 +200,7 @@ const CustomerMenu = () => {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
         {filteredItems.length === 0 ? (
           <div className="text-center py-12 sm:py-16">
-            <p className="text-base sm:text-lg font-bold text-[#3E2723]/50">No items in this category</p>
+            <p className="text-base sm:text-lg font-bold text-[var(--text-color)]/50">No items in this category</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">

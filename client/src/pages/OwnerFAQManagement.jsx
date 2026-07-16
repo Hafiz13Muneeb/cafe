@@ -62,7 +62,6 @@ const OwnerFAQManagement = () => {
 
   const openAddModal = () => {
     resetForm();
-    // Set initial order to the highest order + 1 (or current count)
     const nextOrder = faqs.length > 0 ? Math.max(...faqs.map(f => f.order || 0)) + 1 : 0;
     setFormData({ question: '', answer: '', order: nextOrder });
     setIsModalOpen(true);
@@ -142,7 +141,6 @@ const OwnerFAQManagement = () => {
     const newIndex = direction === 'up' ? index - 1 : index + 1;
     const otherFaq = faqs[newIndex];
 
-    // Swap orders
     const faqOrder = faq.order || 0;
     const otherOrder = otherFaq.order || 0;
 
@@ -159,18 +157,18 @@ const OwnerFAQManagement = () => {
   return (
     <DashboardLayout title="FAQ Management" subtitle={user?.cafeName}>
       {error && (
-        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-red-300 text-[#3E2723] font-bold text-sm sm:text-base">
+        <div className="mb-4 p-3 border-2 border-[var(--border-color)] bg-red-300 text-[var(--text-color)] font-bold text-sm sm:text-base">
           {error}
         </div>
       )}
       {success && (
-        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold text-sm sm:text-base">
+        <div className="mb-4 p-3 border-2 border-[var(--border-color)] bg-primary text-white font-bold text-sm sm:text-base">
           {success}
         </div>
       )}
 
       <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
-        <h2 className="text-xl font-bold font-['Permanent_Marker'] text-[#3E2723]">
+        <h2 className="text-xl font-bold font-['Permanent_Marker'] text-[var(--text-color)]">
           Manage Customer FAQs
         </h2>
         <Button variant="primary" onClick={openAddModal}>
@@ -179,9 +177,9 @@ const OwnerFAQManagement = () => {
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-[#3E2723]/60">Loading FAQs...</div>
+        <div className="text-center py-8 text-[var(--text-color)]/60">Loading FAQs...</div>
       ) : faqs.length === 0 ? (
-        <div className="text-center py-8 border-2 border-dashed border-[#3E2723] text-[#3E2723]/60">
+        <div className="text-center py-8 border-2 border-dashed border-[var(--border-color)] text-[var(--text-color)]/60">
           No FAQs yet. Click "Add FAQ" to create one.
         </div>
       ) : (
@@ -189,30 +187,30 @@ const OwnerFAQManagement = () => {
           {faqs.map((faq, index) => (
             <div
               key={faq._id}
-              className={`border-2 border-[#3E2723] p-4 bg-white shadow-[4px_4px_0px_0px_#EAE0C8] ${
+              className={`border-2 border-[var(--border-color)] p-4 bg-[var(--card-bg)] shadow-[4px_4px_0px_0px_var(--border-color)] ${
                 !faq.isActive ? 'opacity-60' : ''
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-bold text-[#3E2723]">{faq.question}</h3>
+                    <h3 className="font-bold text-[var(--text-color)]">{faq.question}</h3>
                     <span
-                      className={`text-xs px-2 py-0.5 border-2 border-[#3E2723] font-bold ${
-                        faq.isActive ? 'bg-[#8A9A5B] text-white' : 'bg-gray-300'
+                      className={`text-xs px-2 py-0.5 border-2 border-[var(--border-color)] font-bold ${
+                        faq.isActive ? 'bg-primary text-white' : 'bg-gray-300'
                       }`}
                     >
                       {faq.isActive ? 'Active' : 'Disabled'}
                     </span>
                   </div>
-                  <p className="text-sm text-[#3E2723]/70 mt-1">{faq.answer}</p>
-                  <p className="text-xs text-[#3E2723]/40 mt-1">Order: {faq.order || 0}</p>
+                  <p className="text-sm text-[var(--text-color)]/70 mt-1">{faq.answer}</p>
+                  <p className="text-xs text-[var(--text-color)]/40 mt-1">Order: {faq.order || 0}</p>
                 </div>
                 <div className="flex flex-wrap gap-1 flex-shrink-0">
                   <button
                     onClick={() => moveFAQ(faq, 'up')}
                     disabled={index === 0}
-                    className="p-1 border-2 border-[#3E2723] hover:bg-[#EAE0C8] disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="p-1 border-2 border-[var(--border-color)] hover:bg-[var(--bg-color)] disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Move up"
                   >
                     <ChevronUp size={16} />
@@ -220,27 +218,27 @@ const OwnerFAQManagement = () => {
                   <button
                     onClick={() => moveFAQ(faq, 'down')}
                     disabled={index === faqs.length - 1}
-                    className="p-1 border-2 border-[#3E2723] hover:bg-[#EAE0C8] disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="p-1 border-2 border-[var(--border-color)] hover:bg-[var(--bg-color)] disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Move down"
                   >
                     <ChevronDown size={16} />
                   </button>
                   <button
                     onClick={() => handleToggleActive(faq)}
-                    className="p-1 border-2 border-[#3E2723] hover:bg-[#EAE0C8]"
+                    className="p-1 border-2 border-[var(--border-color)] hover:bg-[var(--bg-color)]"
                     title={faq.isActive ? 'Disable' : 'Enable'}
                   >
                     {faq.isActive ? '🔇' : '🔊'}
                   </button>
                   <button
                     onClick={() => openEditModal(faq)}
-                    className="p-1 border-2 border-[#3E2723] hover:bg-[#EAE0C8]"
+                    className="p-1 border-2 border-[var(--border-color)] hover:bg-[var(--bg-color)]"
                   >
                     <Edit size={16} />
                   </button>
                   <button
                     onClick={() => handleDelete(faq._id)}
-                    className="p-1 border-2 border-[#3E2723] hover:bg-red-400"
+                    className="p-1 border-2 border-[var(--border-color)] hover:bg-red-400"
                   >
                     <Trash2 size={16} />
                   </button>

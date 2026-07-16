@@ -11,12 +11,12 @@ const Button = ({
   fullWidth = false,
   ...props 
 }) => {
-  const baseStyle = "font-bold transition-all border-2 border-[#3E2723] active:translate-y-1";
+  const baseStyle = "font-bold transition-all border-2 border-[var(--border-color)] active:translate-y-1";
   const variants = {
-    primary: "bg-[#8A9A5B] text-white",
-    secondary: "bg-[#EAE0C8] text-[#3E2723]",
+    primary: "bg-primary text-white",
+    secondary: "bg-[var(--bg-color)] text-[var(--text-color)]",
     danger: "bg-red-400 text-white",
-    outline: "bg-transparent text-[#3E2723]"
+    outline: "bg-transparent text-[var(--text-color)]"
   };
 
   const widthClass = fullWidth ? 'w-full' : '';
@@ -27,7 +27,7 @@ const Button = ({
       onClick={onClick} 
       disabled={disabled}
       className={`${baseStyle} ${variants[variant]} ${widthClass} ${className} ${size === 'lg' ? 'px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base' : 'px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base'}`}
-      style={{ boxShadow: "3px 3px 0px 0px #3E2723" }}
+      style={{ boxShadow: "3px 3px 0px 0px var(--border-color)" }}
       {...props}
     >
       {children}

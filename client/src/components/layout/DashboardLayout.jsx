@@ -25,7 +25,7 @@ const DashboardLayout = ({ children, title, subtitle, showSidebar = true }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5DC] text-[#3E2723] flex flex-col">
+    <div className="min-h-screen bg-[var(--bg-color)] text-[var(--text-color)] flex flex-col">
       <Header
         title={title}
         subtitle={subtitle}
@@ -52,7 +52,7 @@ const DashboardLayout = ({ children, title, subtitle, showSidebar = true }) => {
                 fixed sm:sticky top-0 z-40
                 w-64 sm:w-56 md:w-64
                 h-screen sm:h-screen
-                bg-white border-r-4 border-[#3E2723]
+                bg-[var(--card-bg)] border-r-4 border-[var(--border-color)]
                 transform transition-transform duration-300 ease-in-out
                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
                 sm:translate-x-0

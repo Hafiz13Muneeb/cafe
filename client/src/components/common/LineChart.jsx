@@ -5,7 +5,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
 
-const LineChart = ({ data, labels, label, color = '#8A9A5B', height = 220, chartType = 'line' }) => {
+const LineChart = ({ data, labels, label, color = 'var(--primary-color)', height = 220, chartType = 'line' }) => {
   const chartData = {
     labels: labels || [],
     datasets: [
@@ -23,10 +23,10 @@ const LineChart = ({ data, labels, label, color = '#8A9A5B', height = 220, chart
     ],
   };
 
-  // For pie chart, use different colors
+  // For pie chart, use different colors (keep as before, but first color could be primary)
   if (chartType === 'pie') {
     const colors = [
-      '#8A9A5B', '#d4a843', '#10b981', '#3b82f6', '#ef4444',
+      'var(--primary-color)', '#d4a843', '#10b981', '#3b82f6', '#ef4444',
       '#8b5cf6', '#f59e0b', '#ec4899', '#14b8a6', '#f97316',
     ];
     chartData.datasets[0].backgroundColor = colors.slice(0, data.length);

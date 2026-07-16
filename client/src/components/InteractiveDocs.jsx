@@ -46,7 +46,7 @@ const InteractiveDocs = () => {
                 key={step.id}
                 onClick={() => setActiveStep(index)}
                 className={`w-full p-4 sm:p-6 border-4 transition-all ${activeStep === index ? 'border-[#3E2723] bg-[#EAE0C8]' : 'border-[#3E2723]/20 bg-white hover:border-[#3E2723]/50'}`}
-                style={{ boxShadow: activeStep === index ? "6px 6px 0px 0px #8A9A5B" : "none" }}
+                style={{ boxShadow: activeStep === index ? "6px 6px 0px 0px var(--primary-color)" : "none" }}
               >
                 <div className="flex items-center gap-3 sm:gap-4">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center border-2 border-[#3E2723] bg-white font-bold text-sm sm:text-base">
@@ -77,7 +77,7 @@ const InteractiveDocs = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {steps[activeStep].benefits.map((benefit, i) => (
                     <div key={i} className="flex items-center gap-2 font-bold text-[#3E2723] text-sm sm:text-base">
-                      <Check className="text-[#8A9A5B] w-4 h-4 sm:w-5 sm:h-5" /> {benefit}
+                      <Check className="text-primary w-4 h-4 sm:w-5 sm:h-5" /> {benefit}
                     </div>
                   ))}
                 </div>

@@ -44,17 +44,17 @@ const QRCodeDisplay = ({ cafeName, slug, qrValue }) => {
 
   if (!qrValue) {
     return (
-      <div className="bg-white border-2 border-[#3E2723] p-6 shadow-[6px_6px_0px_0px_#3E2723] text-center">
-        <QrCode size={40} className="mx-auto text-[#3E2723]/30 mb-2" />
-        <p className="text-[#3E2723]/60">No QR code available. Please save cafe settings first.</p>
+      <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] p-6 shadow-[6px_6px_0px_0px_var(--border-color)] text-center">
+        <QrCode size={40} className="mx-auto text-[var(--text-color)]/30 mb-2" />
+        <p className="text-[var(--text-color)]/60">No QR code available. Please save cafe settings first.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border-2 border-[#3E2723] p-4 sm:p-6 shadow-[6px_6px_0px_0px_#3E2723] flex flex-col md:flex-row items-center gap-4 sm:gap-6">
+    <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] p-4 sm:p-6 shadow-[6px_6px_0px_0px_var(--border-color)] flex flex-col md:flex-row items-center gap-4 sm:gap-6">
       <div className="flex-shrink-0">
-        <div ref={qrRef} className="p-2 border-2 border-[#3E2723] bg-white">
+        <div ref={qrRef} className="p-2 border-2 border-[var(--border-color)] bg-[var(--card-bg)]">
           <QRCodeSVG
             value={qrValue}
             size={140}
@@ -67,10 +67,10 @@ const QRCodeDisplay = ({ cafeName, slug, qrValue }) => {
         </div>
       </div>
       <div className="flex-1 text-center md:text-left">
-        <h3 className="text-base sm:text-lg font-bold text-[#3E2723] font-['Permanent_Marker']">
+        <h3 className="text-base sm:text-lg font-bold text-[var(--text-color)] font-['Permanent_Marker']">
           {cafeName || 'Cafe'} QR Code
         </h3>
-        <p className="text-xs sm:text-sm text-[#3E2723]/70 mt-1">
+        <p className="text-xs sm:text-sm text-[var(--text-color)]/70 mt-1">
           Scan to view menu
         </p>
         <div className="flex flex-wrap gap-2 mt-3 justify-center md:justify-start">
@@ -87,7 +87,7 @@ const QRCodeDisplay = ({ cafeName, slug, qrValue }) => {
           href={qrValue}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[10px] sm:text-xs text-[#8A9A5B] hover:underline mt-2 break-all inline-block"
+          className="text-[10px] sm:text-xs text-primary hover:underline mt-2 break-all inline-block"
         >
           {qrValue}
         </a>

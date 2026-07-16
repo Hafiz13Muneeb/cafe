@@ -77,54 +77,54 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center bg-[#3E2723]/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-t-2xl md:rounded-2xl max-h-[90vh] flex flex-col bg-white border-4 border-[#3E2723] shadow-[12px_12px_0px_0px_#8A9A5B]">
+      <div className="w-full max-w-lg rounded-t-2xl md:rounded-2xl max-h-[90vh] flex flex-col bg-[var(--card-bg)] border-4 border-[var(--border-color)] shadow-primary">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b-4 border-[#3E2723] bg-[#F5F5DC]">
-          <h2 className="text-xl font-bold font-['Permanent_Marker'] text-[#3E2723]">
+        <div className="flex items-center justify-between p-4 border-b-4 border-[var(--border-color)] bg-[var(--bg-color)]">
+          <h2 className="text-xl font-bold font-['Permanent_Marker'] text-[var(--text-color)]">
             Your Order ({getTotalItems()} items)
           </h2>
           <button
             onClick={onClose}
-            className="p-1 border-2 border-[#3E2723] bg-white hover:bg-[#EAE0C8] transition"
+            className="p-1 border-2 border-[var(--border-color)] bg-[var(--card-bg)] hover:bg-[var(--bg-color)] transition"
           >
-            <X size={22} className="text-[#3E2723]" />
+            <X size={22} className="text-[var(--text-color)]" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FAF9F6]">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[var(--bg-color)]">
           {cart.map((item) => (
             <div
               key={item._id}
-              className="flex items-center gap-3 border-2 border-[#3E2723] p-3 bg-white shadow-[4px_4px_0px_0px_#EAE0C8]"
+              className="flex items-center gap-3 border-2 border-[var(--border-color)] p-3 bg-[var(--card-bg)] shadow-[4px_4px_0px_0px_var(--border-color)]"
             >
               <img
                 src={item.imageUrl}
                 alt={item.title}
-                className="w-14 h-14 rounded-lg object-cover border-2 border-[#3E2723]"
+                className="w-14 h-14 rounded-lg object-cover border-2 border-[var(--border-color)]"
               />
               <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-[#3E2723] truncate">{item.title}</h4>
-                <p className="text-sm font-bold text-[#8A9A5B]">Rs. {item.price}</p>
+                <h4 className="font-bold text-[var(--text-color)] truncate">{item.title}</h4>
+                <p className="text-sm font-bold text-primary">Rs. {item.price}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => removeFromCart(item._id)}
-                  className="p-1 border-2 border-[#3E2723] bg-white hover:bg-[#EAE0C8] transition"
+                  className="p-1 border-2 border-[var(--border-color)] bg-[var(--card-bg)] hover:bg-[var(--bg-color)] transition"
                 >
                   {item.quantity === 1 ? (
                     <Trash2 size={14} className="text-red-500" />
                   ) : (
-                    <Minus size={14} className="text-[#3E2723]" />
+                    <Minus size={14} className="text-[var(--text-color)]" />
                   )}
                 </button>
-                <span className="w-8 text-center font-bold text-[#3E2723]">{item.quantity}</span>
+                <span className="w-8 text-center font-bold text-[var(--text-color)]">{item.quantity}</span>
                 <button
                   onClick={() => addToCart(item)}
-                  className="p-1 border-2 border-[#3E2723] bg-white hover:bg-[#EAE0C8] transition disabled:opacity-40"
+                  className="p-1 border-2 border-[var(--border-color)] bg-[var(--card-bg)] hover:bg-[var(--bg-color)] transition disabled:opacity-40"
                   disabled={!item.isAvailable}
                 >
-                  <Plus size={14} className="text-[#3E2723]" />
+                  <Plus size={14} className="text-[var(--text-color)]" />
                 </button>
               </div>
             </div>
@@ -140,9 +140,9 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
         </div>
 
         {/* Footer */}
-        <div className="border-t-4 border-[#3E2723] p-4 space-y-3 bg-white">
+        <div className="border-t-4 border-[var(--border-color)] p-4 space-y-3 bg-[var(--card-bg)]">
           <div>
-            <label className="block text-sm font-bold text-[#3E2723] mb-1">
+            <label className="block text-sm font-bold text-[var(--text-color)] mb-1">
               Select Table <span className="text-red-500">*</span>
             </label>
             <select
@@ -151,7 +151,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
                 setSelectedTable(e.target.value);
                 setError('');
               }}
-              className="w-full px-3 py-2 border-2 border-[#3E2723] bg-white text-[#3E2723] focus:outline-none focus:ring-2 focus:ring-[#8A9A5B]"
+              className="w-full px-3 py-2 border-2 border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">-- Choose your table --</option>
               {tableOptions.map((table) => (
@@ -163,9 +163,9 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
             {error && <p className="mt-1 text-sm text-red-500 font-bold">{error}</p>}
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t-2 border-[#3E2723]/20">
-            <span className="font-bold text-[#3E2723]">Total:</span>
-            <span className="text-2xl font-bold font-['Permanent_Marker'] text-[#8A9A5B]">
+          <div className="flex items-center justify-between pt-2 border-t-2 border-[var(--border-color)]/20">
+            <span className="font-bold text-[var(--text-color)]">Total:</span>
+            <span className="text-2xl font-bold font-['Permanent_Marker'] text-primary">
               Rs. {getTotalPrice()}
             </span>
           </div>
@@ -173,7 +173,7 @@ const CartModal = ({ isOpen, onClose, cafeName, whatsappNumber, tables = [], slu
           <button
             onClick={handlePlaceOrder}
             disabled={isSubmitting}
-            className="w-full py-3 bg-[#8A9A5B] text-white font-bold border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] hover:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+            className="w-full py-3 bg-primary text-white font-bold border-2 border-[var(--border-color)] shadow-[6px_6px_0px_0px_var(--border-color)] hover:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
           >
             {isSubmitting ? (
               <>

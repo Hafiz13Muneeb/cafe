@@ -197,23 +197,23 @@ const AdminDashboard = () => {
   return (
     <DashboardLayout title="Menu Manager" subtitle={user?.cafeName}>
       {error && (
-        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-red-300 text-[#3E2723] font-bold text-sm sm:text-base">
+        <div className="mb-4 p-3 border-2 border-[var(--border-color)] bg-red-300 text-[var(--text-color)] font-bold text-sm sm:text-base">
           {error}
         </div>
       )}
       {success && (
-        <div className="mb-4 p-3 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold text-sm sm:text-base">
+        <div className="mb-4 p-3 border-2 border-[var(--border-color)] bg-primary text-white font-bold text-sm sm:text-base">
           {success}
         </div>
       )}
 
       {/* 🆕 QR Code Banner / Call-to-Action */}
-      <div className="bg-white border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] p-4 sm:p-6 mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] shadow-[6px_6px_0px_0px_var(--border-color)] p-4 sm:p-6 mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-[#3E2723] flex items-center gap-2">
-            <QrCode size={24} className="text-[#8A9A5B]" /> Your QR Code
+          <h2 className="text-lg font-bold text-[var(--text-color)] flex items-center gap-2">
+            <QrCode size={24} className="text-primary" /> Your QR Code
           </h2>
-          <p className="text-sm text-[#3E2723]/70">
+          <p className="text-sm text-[var(--text-color)]/70">
             Download or copy your cafe menu QR code to place on tables.
           </p>
         </div>
@@ -223,9 +223,9 @@ const AdminDashboard = () => {
       </div>
 
       {/* Menu Items Table */}
-      <div className="bg-white border-2 border-[#3E2723] shadow-[6px_6px_0px_0px_#3E2723] overflow-hidden">
-        <div className="p-3 sm:p-4 border-b-2 border-[#3E2723] flex flex-wrap justify-between items-center gap-3">
-          <h2 className="text-base sm:text-lg font-bold text-[#3E2723] flex items-center gap-2">
+      <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] shadow-[6px_6px_0px_0px_var(--border-color)] overflow-hidden">
+        <div className="p-3 sm:p-4 border-b-2 border-[var(--border-color)] flex flex-wrap justify-between items-center gap-3">
+          <h2 className="text-base sm:text-lg font-bold text-[var(--text-color)] flex items-center gap-2">
             <Menu size={20} /> Menu Items ({menuItems.length})
           </h2>
           <Button variant="primary" onClick={openAddForm} className="text-sm sm:text-base">
@@ -244,12 +244,12 @@ const AdminDashboard = () => {
       </div>
 
       {isFormOpen && (
-        <div className="mt-6 bg-white border-2 border-[#3E2723] p-4 sm:p-6 shadow-[6px_6px_0px_0px_#3E2723]">
+        <div className="mt-6 bg-[var(--card-bg)] border-2 border-[var(--border-color)] p-4 sm:p-6 shadow-[6px_6px_0px_0px_var(--border-color)]">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold font-['Permanent_Marker'] text-[#3E2723]">
+            <h3 className="text-xl font-bold font-['Permanent_Marker'] text-[var(--text-color)]">
               {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
             </h3>
-            <button onClick={resetForm} className="p-1 hover:bg-[#EAE0C8] border-2 border-[#3E2723]">
+            <button onClick={resetForm} className="p-1 hover:bg-[var(--bg-color)] border-2 border-[var(--border-color)]">
               <X size={20} />
             </button>
           </div>
@@ -296,12 +296,12 @@ const AdminDashboard = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[#3E2723] mb-1">
+              <label className="block text-sm font-bold text-[var(--text-color)] mb-1">
                 Image {!editingItem && <span className="text-red-500">*</span>}
               </label>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 flex-wrap">
                 {imagePreview && (
-                  <div className="relative w-20 h-20 border-2 border-[#3E2723] overflow-hidden flex-shrink-0">
+                  <div className="relative w-20 h-20 border-2 border-[var(--border-color)] overflow-hidden flex-shrink-0">
                     <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                     <button
                       type="button"
@@ -333,18 +333,18 @@ const AdminDashboard = () => {
                   {editingItem && !imageFile ? 'Change Image' : 'Upload Image'}
                 </Button>
                 {editingItem && !imageFile && imagePreview && (
-                  <span className="text-xs text-[#3E2723]/60">(Keep current image)</span>
+                  <span className="text-xs text-[var(--text-color)]/60">(Keep current image)</span>
                 )}
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <label className="text-sm font-bold text-[#3E2723]">Available:</label>
+              <label className="text-sm font-bold text-[var(--text-color)]">Available:</label>
               <button
                 type="button"
                 onClick={() => setFormData((prev) => ({ ...prev, isAvailable: !prev.isAvailable }))}
                 className={`relative w-12 h-6 rounded-full transition-colors ${
-                  formData.isAvailable ? 'bg-[#8A9A5B]' : 'bg-gray-300'
+                  formData.isAvailable ? 'bg-primary' : 'bg-gray-300'
                 }`}
               >
                 <span
@@ -353,7 +353,7 @@ const AdminDashboard = () => {
                   }`}
                 />
               </button>
-              <span className="text-sm font-bold text-[#3E2723]">
+              <span className="text-sm font-bold text-[var(--text-color)]">
                 {formData.isAvailable ? 'Available' : 'Unavailable'}
               </span>
             </div>

@@ -24,7 +24,7 @@ const faqData = [
 
 const FAQItem = ({ question, answer, isOpen, onClick }) => (
   <div className="border-4 border-[#3E2723] mb-4 bg-white transition-all" 
-       style={{ boxShadow: isOpen ? "4px 4px 0px 0px #8A9A5B" : "none" }}>
+       style={{ boxShadow: isOpen ? "4px 4px 0px 0px var(--primary-color)" : "none" }}>
     <button
       onClick={onClick}
       className="w-full px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between text-left font-bold text-[#3E2723] text-sm sm:text-base"

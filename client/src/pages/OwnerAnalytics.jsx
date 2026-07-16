@@ -98,9 +98,9 @@ const OwnerAnalytics = () => {
   if (loading) {
     return (
       <DashboardLayout title="Analytics" subtitle={user?.cafeName}>
-        <div className="bg-[#F5F5DC] p-6 border-2 border-[#3E2723] text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-t-transparent border-[#8A9A5B] mb-2" />
-          <p className="text-[#3E2723]/60">Loading analytics...</p>
+        <div className="bg-[var(--bg-color)] p-6 border-2 border-[var(--border-color)] text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-t-transparent border-primary mb-2" />
+          <p className="text-[var(--text-color)]/60">Loading analytics...</p>
         </div>
       </DashboardLayout>
     );
@@ -123,7 +123,7 @@ const OwnerAnalytics = () => {
   return (
     <DashboardLayout title="Analytics" subtitle={user?.cafeName}>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 className="text-lg font-bold text-[#3E2723]">Performance Overview</h2>
+        <h2 className="text-lg font-bold text-[var(--text-color)]">Performance Overview</h2>
         <PeriodFilter periods={periods} selected={period} onSelect={setPeriod} />
       </div>
 
@@ -134,10 +134,10 @@ const OwnerAnalytics = () => {
           <AnalyticsCharts chartData={chartData} />
         </>
       ) : (
-        <div className="bg-white border-2 border-[#3E2723] p-8 text-center shadow-[6px_6px_0px_0px_#EAE0C8]">
-          <BarChart3 size={48} className="mx-auto text-[#3E2723]/30 mb-2" />
-          <p className="text-[#3E2723]/60 font-bold">No analytics data available.</p>
-          <p className="text-sm text-[#3E2723]/40">
+        <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] p-8 text-center shadow-[6px_6px_0px_0px_var(--border-color)]">
+          <BarChart3 size={48} className="mx-auto text-[var(--text-color)]/30 mb-2" />
+          <p className="text-[var(--text-color)]/60 font-bold">No analytics data available.</p>
+          <p className="text-sm text-[var(--text-color)]/40">
             Start by sharing your menu QR code with customers.
           </p>
         </div>

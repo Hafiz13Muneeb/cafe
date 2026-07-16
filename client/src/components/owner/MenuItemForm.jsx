@@ -25,14 +25,14 @@ const MenuItemForm = ({
 
   return (
     <div
-      className="p-4 sm:p-6 border-2 border-[#3E2723] bg-[#F5F5DC] mb-6"
-      style={{ boxShadow: '4px 4px 0px 0px #8A9A5B' }}
+      className="p-4 sm:p-6 border-2 border-[var(--border-color)] bg-[var(--bg-color)] mb-6"
+      style={{ boxShadow: '4px 4px 0px 0px var(--primary-color)' }}
     >
       <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-4">
         {/* 🆕 Display error message inside the form */}
         {error && (
           <div
-            className="p-3 border-2 border-[#3E2723] bg-red-300 text-[#3E2723] font-bold text-sm sm:text-base"
+            className="p-3 border-2 border-[var(--border-color)] bg-red-300 text-[var(--text-color)] font-bold text-sm sm:text-base"
             role="alert"
             aria-live="polite"
           >

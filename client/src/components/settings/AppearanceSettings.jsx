@@ -69,7 +69,7 @@ const AppearanceSettings = ({
               type="button"
               onClick={() => setMode(m)}
               className={`px-3 sm:px-4 py-2 border-2 border-[#3E2723] font-bold transition text-sm sm:text-base ${
-                mode === m ? 'bg-[#8A9A5B] text-white' : 'bg-white text-[#3E2723]'
+                mode === m ? 'bg-primary text-white' : 'bg-white text-[#3E2723]'
               }`}
               aria-label={`Switch to ${m} mode`}
               aria-pressed={mode === m}

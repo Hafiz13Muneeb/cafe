@@ -5,7 +5,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const BarChart = ({ data, labels, label, color = '#8A9A5B', height = 220 }) => {
+const BarChart = ({ data, labels, label, color = 'var(--primary-color)', height = 220 }) => {
   const chartData = {
     labels: labels || [],
     datasets: [

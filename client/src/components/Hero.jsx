@@ -12,7 +12,6 @@ const Hero = () => {
   const colors = {
     bg: theme === 'dark' ? '#2c2621' : '#F5F5DC',
     text: theme === 'dark' ? '#EAE0C8' : '#3E2723',
-    accent: '#8A9A5B',
   };
 
   const phoneItems = useMemo(() => [
@@ -35,13 +34,16 @@ const Hero = () => {
         
         {/* Text Content */}
         <div className="space-y-4 sm:space-y-6 text-center lg:text-left">
-          <span className="inline-block px-3 sm:px-4 py-1 border-2 border-dashed border-[#8A9A5B] rounded-lg rotate-[-2deg] font-bold text-sm sm:text-base">
+          <span 
+            className="inline-block px-3 sm:px-4 py-1 border-2 border-dashed rounded-lg rotate-[-2deg] font-bold text-sm sm:text-base"
+            style={{ borderColor: 'var(--primary-color)' }}
+          >
             ☕ Your Digital Menu
           </span>
           
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight" style={{ fontFamily: "'Permanent Marker', cursive" }}>
             Welcome to<br/>
-            <span style={{ color: colors.accent }}>Your Cafe Dashboard</span>
+            <span style={{ color: 'var(--primary-color)' }}>Your Cafe Dashboard</span>
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl max-w-lg mx-auto lg:mx-0 opacity-80">
@@ -51,7 +53,8 @@ const Hero = () => {
           <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
             <button 
               onClick={handleLoginClick}
-              className="px-6 sm:px-8 py-2.5 sm:py-3 bg-[#3E2723] text-white rounded-none shadow-[8px_8px_0px_0px_#8A9A5B] hover:shadow-none transition-all text-sm sm:text-base font-bold"
+              className="px-6 sm:px-8 py-2.5 sm:py-3 bg-[#3E2723] text-white rounded-none hover:shadow-none transition-all text-sm sm:text-base font-bold"
+              style={{ boxShadow: '8px 8px 0px 0px var(--primary-color)' }}
             >
               Login to Dashboard →
             </button>
@@ -60,7 +63,8 @@ const Hero = () => {
 
         {/* 2D/3D Artistic Phone Card */}
         <motion.div 
-          className="relative w-64 sm:w-72 md:w-80 h-[380px] sm:h-[420px] md:h-[450px] mx-auto bg-white p-4 sm:p-6 border-4 border-[#3E2723] shadow-[12px_12px_0px_0px_#8A9A5B]"
+          className="relative w-64 sm:w-72 md:w-80 h-[380px] sm:h-[420px] md:h-[450px] mx-auto bg-white p-4 sm:p-6 border-4 border-[#3E2723]"
+          style={{ boxShadow: '12px 12px 0px 0px var(--primary-color)' }}
           whileHover={{ rotate: 2 }}
         >
           <div className="border-b-2 border-black pb-3 sm:pb-4 mb-3 sm:mb-4 font-bold text-lg sm:text-xl">My Cafe Menu</div>
@@ -72,7 +76,10 @@ const Hero = () => {
               </div>
             ))}
           </div>
-          <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6 py-2.5 sm:py-3 bg-[#8A9A5B] text-white text-center font-bold text-sm sm:text-base">
+          <div 
+            className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6 py-2.5 sm:py-3 text-white text-center font-bold text-sm sm:text-base"
+            style={{ backgroundColor: 'var(--primary-color)' }}
+          >
             Order Now
           </div>
         </motion.div>

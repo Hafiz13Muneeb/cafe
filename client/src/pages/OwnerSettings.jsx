@@ -21,7 +21,7 @@ const OwnerSettings = () => {
   const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || '');
   const [tables, setTables] = useState((user?.tables || []).join(', '));
   const [slug, setSlug] = useState(user?.slug || '');
-  const [email, setEmail] = useState(user?.email || ''); // 🆕
+  const [email, setEmail] = useState(user?.email || '');
 
   const [primaryColor, setPrimaryColor] = useState(user?.theme?.primaryColor || '#d4a843');
   const [secondaryColor, setSecondaryColor] = useState(user?.theme?.secondaryColor || '#b8860b');
@@ -188,8 +188,8 @@ const OwnerSettings = () => {
     <DashboardLayout title="Settings" subtitle={user?.cafeName}>
       {message.text && (
         <div
-          className={`mb-4 p-3 border-2 border-[#3E2723] font-bold text-sm sm:text-base ${
-            message.type === 'success' ? 'bg-[#8A9A5B] text-white' : 'bg-red-300 text-[#3E2723]'
+          className={`mb-4 p-3 border-2 border-[var(--border-color)] font-bold text-sm sm:text-base ${
+            message.type === 'success' ? 'bg-primary text-white' : 'bg-red-300 text-[var(--text-color)]'
           }`}
           role="alert"
           aria-live="polite"
@@ -198,15 +198,15 @@ const OwnerSettings = () => {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-1 bg-[#EAE0C8] border-2 border-[#3E2723] p-1 mb-6">
+      <div className="flex flex-wrap gap-1 bg-[var(--bg-color)] border-2 border-[var(--border-color)] p-1 mb-6">
         {tabItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
             className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm sm:text-base font-bold transition-all ${
               activeTab === item.id
-                ? 'bg-[#8A9A5B] text-white border-2 border-[#3E2723]'
-                : 'text-[#3E2723] hover:bg-[#3E2723]/10'
+                ? 'bg-primary text-white border-2 border-[var(--border-color)]'
+                : 'text-[var(--text-color)] hover:bg-[var(--text-color)]/10'
             }`}
           >
             <item.icon size={16} />
@@ -215,7 +215,7 @@ const OwnerSettings = () => {
         ))}
       </div>
 
-      <div className="bg-[#F5F5DC] p-4 sm:p-6 border-2 border-[#3E2723] min-h-[400px]">
+      <div className="bg-[var(--bg-color)] p-4 sm:p-6 border-2 border-[var(--border-color)] min-h-[400px]">
         {activeTab === 'cafe' && (
           <CafeSettings
             cafeName={cafeName}

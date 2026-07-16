@@ -13,10 +13,10 @@ const AnalyticsCharts = ({ chartData }) => {
 
   if (!chartData || chartData.labels.length === 0) {
     return (
-      <div className="bg-white border-2 border-[#3E2723] p-8 text-center shadow-[6px_6px_0px_0px_#EAE0C8]">
-        <BarChart3 size={48} className="mx-auto text-[#3E2723]/30 mb-2" />
-        <p className="text-[#3E2723]/60 font-bold">No analytics data available yet.</p>
-        <p className="text-sm text-[#3E2723]/40">
+      <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] p-8 text-center shadow-[6px_6px_0px_0px_var(--border-color)]">
+        <BarChart3 size={48} className="mx-auto text-[var(--text-color)]/30 mb-2" />
+        <p className="text-[var(--text-color)]/60 font-bold">No analytics data available yet.</p>
+        <p className="text-sm text-[var(--text-color)]/40">
           Data will appear once customers start viewing the menu and placing orders.
         </p>
       </div>
@@ -26,25 +26,25 @@ const AnalyticsCharts = ({ chartData }) => {
   return (
     <div className="space-y-4">
       {/* Views Chart */}
-      <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
+      <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] p-4 shadow-[6px_6px_0px_0px_var(--border-color)]">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <h3 className="text-md font-bold text-[#3E2723]">Views</h3>
+          <h3 className="text-md font-bold text-[var(--text-color)]">Views</h3>
           <ChartTypeSelector selected={viewsChartType} onSelect={setViewsChartType} />
         </div>
         <LineChart
           labels={chartData.labels}
           data={chartData.viewsData}
           label="Views"
-          color="#8A9A5B"
+          color="var(--primary-color)"
           height={220}
           chartType={viewsChartType}
         />
       </div>
 
       {/* Order Attempts Chart */}
-      <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
+      <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] p-4 shadow-[6px_6px_0px_0px_var(--border-color)]">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <h3 className="text-md font-bold text-[#3E2723]">Order Attempts</h3>
+          <h3 className="text-md font-bold text-[var(--text-color)]">Order Attempts</h3>
           <ChartTypeSelector selected={attemptsChartType} onSelect={setAttemptsChartType} />
         </div>
         <LineChart
@@ -58,9 +58,9 @@ const AnalyticsCharts = ({ chartData }) => {
       </div>
 
       {/* Completed Orders Chart */}
-      <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
+      <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] p-4 shadow-[6px_6px_0px_0px_var(--border-color)]">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <h3 className="text-md font-bold text-[#3E2723]">Completed Orders</h3>
+          <h3 className="text-md font-bold text-[var(--text-color)]">Completed Orders</h3>
           <ChartTypeSelector selected={ordersChartType} onSelect={setOrdersChartType} />
         </div>
         <LineChart
@@ -75,9 +75,9 @@ const AnalyticsCharts = ({ chartData }) => {
 
       {/* Revenue Chart */}
       {chartData.revenueData?.some((v) => v > 0) && (
-        <div className="bg-white border-2 border-[#3E2723] p-4 shadow-[6px_6px_0px_0px_#EAE0C8]">
+        <div className="bg-[var(--card-bg)] border-2 border-[var(--border-color)] p-4 shadow-[6px_6px_0px_0px_var(--border-color)]">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <h3 className="text-md font-bold text-[#3E2723]">Revenue Trend</h3>
+            <h3 className="text-md font-bold text-[var(--text-color)]">Revenue Trend</h3>
             <ChartTypeSelector selected={revenueChartType} onSelect={setRevenueChartType} />
           </div>
           <LineChart

@@ -12,23 +12,23 @@ const Header = ({ title, subtitle, onLogout, user, onToggleSidebar, isSidebarOpe
   };
 
   return (
-    <header className="bg-white border-b-4 border-[#3E2723] sticky top-0 z-20">
+    <header className="bg-[var(--card-bg)] border-b-4 border-[var(--border-color)] sticky top-0 z-20">
       <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {/* Hamburger button – visible on mobile */}
           <button
             onClick={onToggleSidebar}
-            className="sm:hidden p-1.5 border-2 border-[#3E2723] bg-white hover:bg-[#EAE0C8] transition"
+            className="sm:hidden p-1.5 border-2 border-[var(--border-color)] bg-[var(--card-bg)] hover:bg-[var(--bg-color)] transition"
             aria-label={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
           >
             {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
-          <h1 className="text-base sm:text-xl font-bold font-['Permanent_Marker'] text-[#3E2723] truncate">
+          <h1 className="text-base sm:text-xl font-bold font-['Permanent_Marker'] text-[var(--text-color)] truncate">
             {title || 'Dashboard'}
           </h1>
           {subtitle && (
-            <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-[#8A9A5B] text-white font-bold border-2 border-[#3E2723] whitespace-nowrap">
+            <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-primary text-white font-bold border-2 border-[var(--border-color)] whitespace-nowrap">
               {subtitle}
             </span>
           )}

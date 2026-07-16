@@ -156,9 +156,9 @@ const OnboardingSetup = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-[#F5F5DC] py-8">
-      <div className="w-full max-w-2xl bg-white border-4 border-[#3E2723] shadow-[12px_12px_0px_0px_#8A9A5B] p-6 sm:p-10">
+      <div className="w-full max-w-2xl bg-white border-4 border-[#3E2723] shadow-primary p-6 sm:p-10">
         <div className="text-center mb-8">
-          <div className="inline-block p-4 rounded-full bg-[#8A9A5B] border-2 border-[#3E2723] mb-4">
+          <div className="inline-block p-4 rounded-full bg-primary border-2 border-[#3E2723] mb-4">
             <Coffee size={32} className="text-white" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold font-['Permanent_Marker'] text-[#3E2723]">
@@ -176,7 +176,7 @@ const OnboardingSetup = () => {
         )}
 
         {success && (
-          <div className="mb-4 p-3 border-2 border-[#3E2723] bg-[#8A9A5B] text-white font-bold text-sm">
+          <div className="mb-4 p-3 border-2 border-[#3E2723] bg-primary text-white font-bold text-sm">
             {success}
           </div>
         )}
@@ -323,7 +323,7 @@ const OnboardingSetup = () => {
                   type="button"
                   onClick={() => setMode(m)}
                   className={`px-4 py-2 border-2 border-[#3E2723] font-bold transition ${
-                    mode === m ? 'bg-[#8A9A5B] text-white' : 'bg-white text-[#3E2723]'
+                    mode === m ? 'bg-primary text-white' : 'bg-white text-[#3E2723]'
                   }`}
                 >
                   {m.charAt(0).toUpperCase() + m.slice(1)}
