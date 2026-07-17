@@ -1,388 +1,783 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QR Menu SaaS – Documentation</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>README · CafeFlow · Digital Menu System</title>
+
+  <!-- Prism.js for syntax highlighting -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,600;14..32,700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
   <style>
-    /* --- Reset & Base --- */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f8fafc;
-      color: #0f172a;
-      line-height: 1.6;
-      padding: 2rem 1rem;
-    }
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      background: #ffffff;
-      border-radius: 1.5rem;
-      padding: 2.5rem 3rem;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.06);
-    }
-    @media (max-width: 640px) {
-      .container { padding: 1.5rem; }
+    /* ----- Reset & Base ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    /* --- Typography --- */
-    h1, h2, h3, h4 {
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0b0b12;
+      color: #e2e8f0;
+      line-height: 1.7;
+      padding: 2rem 1.5rem;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ----- Scrollable Table of Contents (Sticky) ----- */
+    .toc {
+      position: sticky;
+      top: 1.5rem;
+      float: right;
+      width: 260px;
+      margin-left: 2.5rem;
+      margin-bottom: 2rem;
+      background: #14141e;
+      border: 1px solid #2a2a3a;
+      border-radius: 12px;
+      padding: 1.25rem 1.25rem 0.75rem 1.25rem;
+      font-size: 0.875rem;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    }
+    .toc strong {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin-bottom: 0.5rem;
+    }
+    .toc a {
+      display: block;
+      color: #cbd5e1;
+      text-decoration: none;
+      padding: 0.2rem 0;
+      border-bottom: 1px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .toc a:hover {
+      color: #d4a843;
+      border-bottom-color: #d4a843;
+    }
+    .toc .sub {
+      padding-left: 1rem;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    @media (max-width: 900px) {
+      .toc {
+        float: none;
+        width: 100%;
+        margin-left: 0;
+        position: relative;
+        top: 0;
+      }
+    }
+
+    /* ----- Typography & spacing ----- */
+    h1,
+    h2,
+    h3,
+    h4 {
       font-weight: 600;
-      line-height: 1.3;
-      margin-top: 2rem;
+      letter-spacing: -0.01em;
+      margin-top: 2.2rem;
       margin-bottom: 0.75rem;
     }
-    h1 { font-size: 2.4rem; margin-top: 0; color: #0f172a; }
-    h2 { font-size: 1.8rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.4rem; color: #1e293b; }
-    h3 { font-size: 1.3rem; color: #334155; }
-    h4 { font-size: 1.1rem; color: #475569; }
-    p { margin-bottom: 1rem; }
-    a { color: #d4a843; text-decoration: none; }
-    a:hover { text-decoration: underline; }
 
-    /* --- Badges --- */
+    h1 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      margin-top: 0;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #f1f5f9 0%, #d4a843 80%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 2px solid #2a2a3a;
+    }
+
+    h3 {
+      font-size: 1.3rem;
+      color: #f1f5f9;
+    }
+
+    p,
+    li {
+      color: #cbd5e1;
+    }
+
+    a {
+      color: #d4a843;
+      text-decoration: none;
+      border-bottom: 1px dotted #d4a84340;
+    }
+    a:hover {
+      border-bottom-color: #d4a843;
+    }
+
+    hr {
+      border: 0;
+      height: 1px;
+      background: linear-gradient(90deg, #2a2a3a, #d4a84360, #2a2a3a);
+      margin: 2.5rem 0;
+    }
+
+    /* ----- Badges ----- */
+    .badge-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 0.75rem;
+      margin: 0.5rem 0 1.5rem 0;
+    }
     .badge {
       display: inline-block;
-      background: #e2e8f0;
-      color: #1e293b;
+      padding: 0.2rem 0.9rem;
+      border-radius: 40px;
       font-size: 0.75rem;
       font-weight: 600;
-      padding: 0.2rem 0.7rem;
-      border-radius: 999px;
-      margin-right: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: #1e1e2e;
+      border: 1px solid #2e2e42;
+      color: #cbd5e1;
     }
-    .badge.green { background: #dcfce7; color: #166534; }
-    .badge.blue { background: #dbeafe; color: #1e40af; }
-    .badge.purple { background: #ede9fe; color: #5b21b6; }
-    .badge.gold { background: #fef3c7; color: #92400e; }
+    .badge.gold {
+      background: #d4a84320;
+      border-color: #d4a843;
+      color: #d4a843;
+    }
+    .badge.green {
+      background: #10b98120;
+      border-color: #10b981;
+      color: #10b981;
+    }
+    .badge.blue {
+      background: #3b82f620;
+      border-color: #3b82f6;
+      color: #3b82f6;
+    }
 
-    /* --- Code blocks --- */
-    pre {
-      background: #1e293b;
-      color: #e2e8f0;
-      padding: 1.2rem;
-      border-radius: 0.8rem;
+    /* ----- Code blocks ----- */
+    pre[class*="language-"] {
+      border-radius: 10px;
+      border: 1px solid #2a2a3a;
+      background: #14141e !important;
+      padding: 1.25rem !important;
+      margin: 1.2rem 0;
+      font-size: 0.85rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    code[class*="language-"] {
+      font-family: 'Fira Code', 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+    :not(pre)>code {
+      background: #1e1e2e;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      color: #d4a843;
+      border: 1px solid #2a2a3a;
+    }
+
+    /* ----- Lists & Tables ----- */
+    ul,
+    ol {
+      padding-left: 1.5rem;
+      margin: 0.75rem 0 1.25rem 0;
+    }
+    li {
+      margin-bottom: 0.25rem;
+    }
+
+    .table-wrap {
       overflow-x: auto;
-      font-size: 0.9rem;
-      margin: 1rem 0;
-      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      margin: 1.5rem 0;
+      border-radius: 10px;
+      border: 1px solid #2a2a3a;
     }
-    code {
-      background: #f1f5f9;
-      padding: 0.1rem 0.4rem;
-      border-radius: 0.3rem;
-      font-size: 0.9rem;
-      font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    }
-    pre code {
-      background: transparent;
-      padding: 0;
-      color: inherit;
-    }
-
-    /* --- Tables --- */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 1.5rem 0;
-      font-size: 0.95rem;
-    }
-    th, td {
-      border: 1px solid #e2e8f0;
-      padding: 0.6rem 1rem;
-      text-align: left;
+      font-size: 0.9rem;
     }
     th {
-      background: #f1f5f9;
+      background: #1a1a28;
+      color: #e2e8f0;
       font-weight: 600;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 2px solid #2a2a3a;
+    }
+    td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid #1e1e2e;
+      color: #cbd5e1;
+    }
+    tr:last-child td {
+      border-bottom: 0;
+    }
+    td code {
+      font-size: 0.8rem;
     }
 
-    /* --- Lists --- */
-    ul, ol { margin: 0.8rem 0 1rem 1.8rem; }
-    li { margin-bottom: 0.3rem; }
-
-    /* --- HR --- */
-    hr {
-      border: 0;
-      border-top: 2px solid #e2e8f0;
-      margin: 2rem 0;
+    /* ----- Feature grid ----- */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
     }
-
-    /* --- Header / Footer --- */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 2rem;
+    .feature-card {
+      background: #14141e;
+      border: 1px solid #2a2a3a;
+      border-radius: 10px;
+      padding: 1.25rem 1.25rem 1rem 1.25rem;
+      transition: border-color 0.2s, transform 0.15s;
     }
-    .header .version {
+    .feature-card:hover {
+      border-color: #d4a84360;
+      transform: translateY(-2px);
+    }
+    .feature-card h4 {
+      margin-top: 0;
+      color: #f1f5f9;
+      font-size: 1.05rem;
+    }
+    .feature-card p {
       font-size: 0.9rem;
-      color: #64748b;
-      background: #f1f5f9;
-      padding: 0.3rem 1rem;
-      border-radius: 999px;
-    }
-    .footer {
-      margin-top: 3rem;
-      border-top: 1px solid #e2e8f0;
-      padding-top: 1.5rem;
-      text-align: center;
       color: #94a3b8;
-      font-size: 0.9rem;
+      margin: 0;
     }
 
-    /* Responsive tweaks */
+    /* ----- Utilities ----- */
+    .mt-0 {
+      margin-top: 0;
+    }
+    .mb-0 {
+      margin-bottom: 0;
+    }
+    .text-muted {
+      color: #94a3b8;
+    }
+    .text-gold {
+      color: #d4a843;
+    }
+
+    /* Responsive */
     @media (max-width: 600px) {
-      table { font-size: 0.8rem; }
-      th, td { padding: 0.4rem 0.6rem; }
-      .container { padding: 1rem; }
+      body {
+        padding: 1rem 0.75rem;
+      }
+      h1 {
+        font-size: 2rem;
+      }
+      h2 {
+        font-size: 1.4rem;
+      }
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+      pre[class*="language-"] {
+        font-size: 0.75rem;
+        padding: 0.75rem !important;
+      }
     }
   </style>
 </head>
 <body>
-<div class="container">
+  <div class="container">
 
-  <div class="header">
-    <h1>📱 QR Menu SaaS</h1>
-    <span class="version">v2.0 – Multi‑Tenant Lite</span>
+    <!-- ============================================================ -->
+    <!-- HEADER                                                        -->
+    <!-- ============================================================ -->
+    <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; margin-bottom:0.25rem;">
+      <span style="font-size:2.5rem;">☕</span>
+      <h1 style="display:inline-block; margin:0;">CafeFlow</h1>
+    </div>
+    <p style="font-size:1.25rem; color:#94a3b8; margin-top:-0.25rem; font-weight:400;">
+      Contactless QR Menu · WhatsApp Ordering · Single‑Cafe Edition
+    </p>
+
+    <div class="badge-group">
+      <span class="badge gold">v1.0.0</span>
+      <span class="badge green">Production Ready</span>
+      <span class="badge blue">MIT License</span>
+      <span class="badge">MongoDB + Cloudinary</span>
+      <span class="badge">React + Node.js</span>
+    </div>
+
+    <hr />
+
+    <!-- ============================================================ -->
+    <!-- TABLE OF CONTENTS (Sticky Sidebar)                            -->
+    <!-- ============================================================ -->
+    <nav class="toc" aria-label="Table of Contents">
+      <strong>📖 Contents</strong>
+      <a href="#overview">Overview</a>
+      <a href="#features">Features</a>
+      <a href="#tech-stack">Tech Stack</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#getting-started">Getting Started</a>
+      <a href="#env-vars" class="sub">Environment Variables</a>
+      <a href="#api-reference">API Reference</a>
+      <a href="#project-structure">Project Structure</a>
+      <a href="#deployment">Deployment</a>
+      <a href="#troubleshooting">Troubleshooting</a>
+      <a href="#license">License</a>
+    </nav>
+
+    <!-- ============================================================ -->
+    <!-- 1. OVERVIEW                                                   -->
+    <!-- ============================================================ -->
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>
+        <strong>CafeFlow</strong> is a turnkey digital menu solution designed for
+        independent cafés and restaurants. It replaces physical menus with a
+        <strong>QR‑code‑powered web experience</strong> — customers scan, browse,
+        and place orders directly via WhatsApp. The owner manages everything
+        through a secure admin dashboard.
+      </p>
+      <p>
+        This repository contains the <strong>full‑stack implementation</strong>
+        for a <em>single‑cafe deployment</em>. It eliminates complex multi‑tenancy,
+        subscription fees, and third‑party ordering commissions. The system
+        auto‑seeds a default cafe on first boot, so you can be live in minutes.
+      </p>
+      <div style="background:#14141e; border-left:4px solid #d4a843; padding:1rem 1.25rem; border-radius:0 8px 8px 0; margin:1.25rem 0;">
+        <p style="margin:0; color:#e2e8f0; font-weight:500;">
+          ⚡ <span class="text-gold">Key differentiator</span> — orders are sent
+          directly to the owner’s WhatsApp. No middleware, no per‑order fees,
+          zero commission.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 2. FEATURES                                                   -->
+    <!-- ============================================================ -->
+    <section id="features">
+      <h2>Features</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>📱 Digital Menu</h4>
+          <p>Real‑time menu updates, category filtering, and availability toggles. Instantly reflects changes.</p>
+        </div>
+        <div class="feature-card">
+          <h4>🧾 WhatsApp Ordering</h4>
+          <p>Customers select a table, review their cart, and send a formatted order directly to the cafe WhatsApp.</p>
+        </div>
+        <div class="feature-card">
+          <h4>📊 Built‑in Analytics</h4>
+          <p>Track views, order attempts, completed orders, and revenue. Busiest days &amp; top items insights included.</p>
+        </div>
+        <div class="feature-card">
+          <h4>🎨 Full Theming</h4>
+          <p>Customise primary/secondary colours, light/dark mode, logo, and favicon — all from the admin panel.</p>
+        </div>
+        <div class="feature-card">
+          <h4>🔐 Secure Admin</h4>
+          <p>Environment‑based authentication with password change &amp; session persistence via <code>localStorage</code>.</p>
+        </div>
+        <div class="feature-card">
+          <h4>🖨️ QR Code Generator</h4>
+          <p>Generate and download high‑resolution QR codes for your menu. Place them on every table.</p>
+        </div>
+        <div class="feature-card">
+          <h4>📋 FAQ Manager</h4>
+          <p>Create, edit, reorder, and enable/disable customer FAQs. Shown in the public help widget.</p>
+        </div>
+        <div class="feature-card">
+          <h4>📦 Auto‑Seed</h4>
+          <p>On first start, the database is seeded with a default cafe owner and sample menu items. Zero manual setup.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 3. TECH STACK                                                 -->
+    <!-- ============================================================ -->
+    <section id="tech-stack">
+      <h2>Tech Stack</h2>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin:1rem 0;">
+        <div style="background:#14141e; padding:1.25rem; border-radius:10px; border:1px solid #2a2a3a;">
+          <h3 style="margin-top:0; font-size:1.1rem; color:#d4a843;">Frontend</h3>
+          <ul style="margin:0; padding-left:1.25rem;">
+            <li>React 19 (Hooks + Context API)</li>
+            <li>React Router v6</li>
+            <li>Tailwind CSS + CSS Variables</li>
+            <li>Chart.js / react-chartjs-2</li>
+            <li>Framer Motion</li>
+            <li>qrcode.react</li>
+            <li>Axios (with interceptors)</li>
+          </ul>
+        </div>
+        <div style="background:#14141e; padding:1.25rem; border-radius:10px; border:1px solid #2a2a3a;">
+          <h3 style="margin-top:0; font-size:1.1rem; color:#d4a843;">Backend</h3>
+          <ul style="margin:0; padding-left:1.25rem;">
+            <li>Node.js / Express 4</li>
+            <li>MongoDB + Mongoose ODM</li>
+            <li>Cloudinary (image hosting)</li>
+            <li>Multer / multer-storage-cloudinary</li>
+            <li>bcryptjs (password hashing)</li>
+            <li>Helmet, Compression, CORS</li>
+            <li>express-rate-limit</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 4. ARCHITECTURE                                               -->
+    <!-- ============================================================ -->
+    <section id="architecture">
+      <h2>Architecture Overview</h2>
+      <p>
+        The system follows a <strong>decoupled client‑server</strong> pattern.
+        The frontend is a single‑page application served statically; the backend
+        provides a RESTful API. Both communicate via HTTP, with credentials
+        (cookies) used for session affinity.
+      </p>
+      <ul>
+        <li><strong>Authentication</strong>: Compares credentials against <code>.env</code>.
+          No JWT is issued; the backend relies on the <code>protect</code> middleware
+          which attaches the first (and only) cafe owner from the database to <code>req.user</code>.</li>
+        <li><strong>Public Menu Resolution</strong>: The <code>GET /api/menu/:slug</code>
+          endpoint uses a smart fallback: try exact slug → first cafe with items → first cafe in DB.</li>
+        <li><strong>Analytics Pipeline</strong>: Events (<code>view</code>, <code>order_attempt</code>,
+          <code>order_completed</code>) are stored in a lightweight MongoDB collection.
+          Aggregations are performed on‑the‑fly for the dashboard charts.</li>
+        <li><strong>Image Lifecycle</strong>: Uploaded images are stored on Cloudinary.
+          On update or deletion, the old image is automatically purged from the CDN.</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 5. GETTING STARTED                                            -->
+    <!-- ============================================================ -->
+    <section id="getting-started">
+      <h2>Getting Started</h2>
+
+      <h3>Prerequisites</h3>
+      <ul>
+        <li><strong>Node.js</strong> ≥ 18.x</li>
+        <li><strong>MongoDB</strong> (Atlas or local)</li>
+        <li><strong>Cloudinary</strong> account (for image uploads)</li>
+        <li>Package manager: <code>npm</code> or <code>yarn</code></li>
+      </ul>
+
+      <h3>1. Clone the Repository</h3>
+      <pre><code class="language-bash">git clone https://github.com/your-org/cafe-flow.git
+cd cafe-flow</code></pre>
+
+      <h3>2. Backend Setup</h3>
+      <pre><code class="language-bash">cd server
+cp .env.example .env        # or create .env manually
+npm install</code></pre>
+      <p>
+        Edit <code>.env</code> with your MongoDB URI, Cloudinary credentials, and
+        owner credentials. See the <a href="#env-vars">Environment Variables</a>
+        section for details.
+      </p>
+      <pre><code class="language-bash">npm run dev     # starts backend on http://localhost:5000</code></pre>
+
+      <h3>3. Frontend Setup</h3>
+      <pre><code class="language-bash">cd ../client
+cp .env.example .env
+npm install
+npm run dev     # starts Vite dev server on http://localhost:5173</code></pre>
+
+      <h3>4. First Boot &amp; Seeding</h3>
+      <p>
+        The backend automatically seeds a default cafe owner and sample menu
+        items if the database is empty. You’ll see this in the console:
+      </p>
+      <pre><code class="language-bash">🔄 Seeding default cafe owner...
+✅ Cafe owner created: admin (My Cafe)
+✅ 8 sample menu items added.
+🔑 Login: admin / admin123
+🔗 Public Menu: /menu/cafe</code></pre>
+      <p>
+        You can change the default credentials via the <code>.env</code> file
+        <em>before</em> the first start.
+      </p>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 6. ENVIRONMENT VARIABLES                                      -->
+    <!-- ============================================================ -->
+    <section id="env-vars">
+      <h2>Environment Variables</h2>
+
+      <h3>Backend (<code>/server/.env</code>)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Variable</th><th>Description</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>MONGO_URI</code></td><td>MongoDB connection string</td><td><span class="text-muted">(required)</span></td></tr>
+            <tr><td><code>PORT</code></td><td>Server port</td><td>5000</td></tr>
+            <tr><td><code>OWNER_USERNAME</code></td><td>Admin login username</td><td>admin</td></tr>
+            <tr><td><code>OWNER_PASSWORD</code></td><td>Admin login password</td><td>admin123</td></tr>
+            <tr><td><code>CAFE_NAME</code></td><td>Default cafe name</td><td>My Cafe</td></tr>
+            <tr><td><code>WHATSAPP_NUMBER</code></td><td>Default WhatsApp (digits only)</td><td>03001234567</td></tr>
+            <tr><td><code>CLOUDINARY_CLOUD_NAME</code></td><td>Cloudinary cloud name</td><td><span class="text-muted">(required)</span></td></tr>
+            <tr><td><code>CLOUDINARY_API_KEY</code></td><td>Cloudinary API key</td><td><span class="text-muted">(required)</span></td></tr>
+            <tr><td><code>CLOUDINARY_API_SECRET</code></td><td>Cloudinary API secret</td><td><span class="text-muted">(required)</span></td></tr>
+            <tr><td><code>CLIENT_URL</code></td><td>CORS allowed origin</td><td>http://localhost:5173</td></tr>
+            <tr><td><code>NODE_ENV</code></td><td>Environment mode</td><td>development</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Frontend (<code>/client/.env</code>)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Variable</th><th>Description</th><th>Default</th></tr></thead>
+          <tbody>
+            <tr><td><code>VITE_OWNER_USERNAME</code></td><td>Admin username (matches backend)</td><td>admin</td></tr>
+            <tr><td><code>VITE_OWNER_PASSWORD</code></td><td>Admin password (matches backend)</td><td>admin123</td></tr>
+            <tr><td><code>VITE_DEFAULT_CAFE_SLUG</code></td><td>Fallback slug for public menu</td><td>cafe</td></tr>
+            <tr><td><code>VITE_BRAND_NAME</code></td><td>Brand name shown in UI</td><td>CafeFlow</td></tr>
+            <tr><td><code>VITE_CONTACT_EMAIL</code></td><td>Support email fallback</td><td>support@cafeflow.com</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 7. API REFERENCE                                              -->
+    <!-- ============================================================ -->
+    <section id="api-reference">
+      <h2>API Reference</h2>
+      <p>
+        All endpoints are prefixed with <code>/api</code>. Public routes do not
+        require authentication; protected routes require a valid session (handled
+        via cookies).
+      </p>
+
+      <h3>Authentication</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>POST</td><td><code>/auth/login</code></td><td>Public</td><td>Login using .env credentials</td></tr>
+            <tr><td>POST</td><td><code>/auth/logout</code></td><td>Public</td><td>Clears session (client handled)</td></tr>
+            <tr><td>GET</td><td><code>/auth/me</code></td><td>Protected</td><td>Returns the owner profile</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Menu</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>GET</td><td><code>/menu/:slug</code></td><td>Public</td><td>Public menu + cafe details</td></tr>
+            <tr><td>GET</td><td><code>/menu</code></td><td>Protected</td><td>Owner’s items (filterable)</td></tr>
+            <tr><td>POST</td><td><code>/menu</code></td><td>Protected</td><td>Create item (multipart/form-data)</td></tr>
+            <tr><td>PUT</td><td><code>/menu/:id</code></td><td>Protected</td><td>Update item (multipart/form-data)</td></tr>
+            <tr><td>DELETE</td><td><code>/menu/:id</code></td><td>Protected</td><td>Delete item + Cloudinary image</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Settings</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>GET</td><td><code>/settings/global</code></td><td>Public</td><td>Theme + favicon + support email</td></tr>
+            <tr><td>GET</td><td><code>/settings</code></td><td>Protected</td><td>Owner settings</td></tr>
+            <tr><td>PUT</td><td><code>/settings</code></td><td>Protected</td><td>Update settings (multipart for logo/favicon)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Analytics</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>POST</td><td><code>/analytics/:slug/view</code></td><td>Public</td><td>Track a menu view</td></tr>
+            <tr><td>POST</td><td><code>/analytics/:slug/order-attempt</code></td><td>Public</td><td>Track order initiation</td></tr>
+            <tr><td>POST</td><td><code>/analytics/:slug/order-completed</code></td><td>Public</td><td>Track completed order (+ revenue)</td></tr>
+            <tr><td>GET</td><td><code>/analytics/cafe/:cafeId</code></td><td>Protected</td><td>Summary + chart data (period)</td></tr>
+            <tr><td>GET</td><td><code>/analytics/insights/:cafeId</code></td><td>Protected</td><td>Busiest days &amp; top items</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>FAQs</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Access</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>GET</td><td><code>/faqs</code></td><td>Public</td><td>Active FAQs (customer facing)</td></tr>
+            <tr><td>GET</td><td><code>/faqs/all</code></td><td>Protected</td><td>All FAQs (incl. inactive)</td></tr>
+            <tr><td>POST</td><td><code>/faqs</code></td><td>Protected</td><td>Create a new FAQ</td></tr>
+            <tr><td>PUT</td><td><code>/faqs/:id</code></td><td>Protected</td><td>Update an FAQ</td></tr>
+            <tr><td>DELETE</td><td><code>/faqs/:id</code></td><td>Protected</td><td>Delete an FAQ</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 8. PROJECT STRUCTURE                                          -->
+    <!-- ============================================================ -->
+    <section id="project-structure">
+      <h2>Project Structure</h2>
+      <p>
+        The repository is split into two main workspaces:
+        <code>client/</code> (React frontend) and <code>server/</code>
+        (Node.js backend).
+      </p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:0.5rem;">
+        <div>
+          <h4 style="margin-bottom:0.25rem;">📁 client/</h4>
+          <pre style="background:#0b0b12; padding:0.75rem; border-radius:8px; border:1px solid #2a2a3a; font-size:0.8rem; line-height:1.6; overflow-x:auto;"><code>client/
+├── src/
+│   ├── api/          axios instance
+│   ├── components/   common, layout, analytics, settings, owner
+│   ├── config/       homeData, ownerFAQs
+│   ├── context/      Auth, Cart, Theme
+│   └── pages/        Home, CustomerMenu, AdminDashboard, ...
+├── index.html
+├── package.json
+└── vite.config.js</code></pre>
+        </div>
+        <div>
+          <h4 style="margin-bottom:0.25rem;">📁 server/</h4>
+          <pre style="background:#0b0b12; padding:0.75rem; border-radius:8px; border:1px solid #2a2a3a; font-size:0.8rem; line-height:1.6; overflow-x:auto;"><code>server/
+├── config/          db, cloudinary, multer
+├── controllers/     auth, menu, settings, analytics, faq
+├── middleware/      auth, upload
+├── models/          User, MenuItem, Analytics, FAQ
+├── routes/          *Routes.js
+├── scripts/         seedCafe.js
+├── utils/           errorHandler, seed (auto)
+├── .env.example
+├── package.json
+└── server.js</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 9. DEPLOYMENT                                                 -->
+    <!-- ============================================================ -->
+    <section id="deployment">
+      <h2>Deployment</h2>
+
+      <h3>Production Build</h3>
+      <pre><code class="language-bash"># Build frontend
+cd client
+npm run build        # outputs to client/dist
+
+# Backend serves the built frontend in production
+cd ../server
+NODE_ENV=production npm start</code></pre>
+      <p>
+        The backend is configured to serve static files from
+        <code>client/dist</code> when <code>NODE_ENV=production</code>.
+        All routes except <code>/api/*</code> fall back to <code>index.html</code>.
+      </p>
+
+      <h3>Hosting Recommendations</h3>
+      <ul>
+        <li><strong>Backend</strong>: Railway, Render, Heroku, or any Node.js hosting.</li>
+        <li><strong>Database</strong>: MongoDB Atlas (preferred for production).</li>
+        <li><strong>Media</strong>: Cloudinary (already integrated).</li>
+        <li><strong>Frontend</strong>: Can be served by the backend itself, or separately on Netlify/Vercel (ensure API base URL is configured).</li>
+      </ul>
+      <div style="background:#14141e; padding:0.75rem 1.25rem; border-radius:8px; border-left:3px solid #d4a843; margin:1rem 0;">
+        <p style="margin:0; font-size:0.9rem;">
+          <strong>Pro‑tip:</strong> For production, set
+          <code>NODE_ENV=production</code>, enable MongoDB Atlas IP whitelist,
+          and ensure Cloudinary environment variables are properly set.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 10. TROUBLESHOOTING                                           -->
+    <!-- ============================================================ -->
+    <section id="troubleshooting">
+      <h2>Troubleshooting</h2>
+      <div style="background:#14141e; border:1px solid #2a2a3a; border-radius:10px; padding:1rem 1.5rem; margin-top:1rem;">
+        <dl style="margin:0;">
+          <dt style="font-weight:600; color:#d4a843; margin-top:0.75rem;">❌ <code>MongoDB connection string is missing</code></dt>
+          <dd style="margin-left:1.5rem; color:#cbd5e1;">Ensure <code>MONGO_URI</code>, <code>MONGODB_URI</code>, or <code>MONGO_URL</code> is set in your <code>.env</code>.</dd>
+
+          <dt style="font-weight:600; color:#d4a843; margin-top:0.75rem;">❌ Public menu returns 404 even with DB seeded</dt>
+          <dd style="margin-left:1.5rem; color:#cbd5e1;">Check the <code>slug</code> in the URL. Default is <code>/menu/cafe</code>. Verify the owner has a <code>slug</code> field.</dd>
+
+          <dt style="font-weight:600; color:#d4a843; margin-top:0.75rem;">❌ Cloudinary upload fails with <code>401</code></dt>
+          <dd style="margin-left:1.5rem; color:#cbd5e1;">Double‑check <code>CLOUDINARY_CLOUD_NAME</code>, <code>API_KEY</code>, and <code>API_SECRET</code>. Ensure the cloud name is correct.</dd>
+
+          <dt style="font-weight:600; color:#d4a843; margin-top:0.75rem;">❌ Login fails even with correct credentials</dt>
+          <dd style="margin-left:1.5rem; color:#cbd5e1;">Make sure the frontend <code>VITE_OWNER_USERNAME</code> and <code>VITE_OWNER_PASSWORD</code> exactly match the backend variables. If you changed them after seeding, update both.</dd>
+
+          <dt style="font-weight:600; color:#d4a843; margin-top:0.75rem;">❌ Cart doesn't sync across tabs</dt>
+          <dd style="margin-left:1.5rem; color:#cbd5e1;">The app uses <code>localStorage</code> with <code>storage</code> events. Ensure both tabs are on the same origin and no browser extensions block storage events.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 11. LICENSE & FINAL                                           -->
+    <!-- ============================================================ -->
+    <section id="license">
+      <h2>License &amp; Contribution</h2>
+      <p>
+        This project is licensed under the <strong>MIT License</strong> — you
+        are free to use, modify, and distribute it for commercial and personal
+        purposes. Attribution is appreciated but not required.
+      </p>
+      <p>
+        Built with ❤️ for cafe owners who value simplicity and direct customer
+        relationships. If you encounter issues or have feature requests,
+        feel free to open an issue or contribute via pull requests.
+      </p>
+      <hr />
+      <p style="text-align:center; color:#64748b; font-size:0.85rem; margin:1rem 0 0 0;">
+        &copy; 2026 CafeFlow · Documentation crafted with precision.
+      </p>
+    </section>
+
   </div>
 
-  <p>
-    A closed B2B SaaS platform for cafés and restaurants. Each café gets its own
-    <strong>isolated menu, theme, and QR code</strong> – all powered by a super‑admin
-    control panel. Customers order via WhatsApp with zero commission.
-  </p>
-
-  <hr>
-
-  <h2>✨ Key Features</h2>
-  <ul>
-    <li><strong>Multi‑Tenancy</strong> – every café owner has isolated data (menu items, settings, orders).</li>
-    <li><strong>Super‑Admin Dashboard</strong> – create, block, edit, and delete café owners.</li>
-    <li><strong>Dynamic Customer Routing</strong> – each café gets a unique slug (<code>/menu/:slug</code>).</li>
-    <li><strong>QR Code Generation</strong> – QR codes encode the café’s specific slug URL.</li>
-    <li><strong>Database‑Driven Theming</strong> – owners choose primary/secondary colors and dark/light mode; CSS variables update instantly.</li>
-    <li><strong>WhatsApp Ordering</strong> – customers select a table and the order is sent directly to the café’s WhatsApp.</li>
-    <li><strong>Zero Commission</strong> – no per‑transaction fees; pure WhatsApp routing.</li>
-  </ul>
-
-  <hr>
-
-  <h2>🏗️ Tech Stack</h2>
-  <table>
-    <tr><th>Layer</th><th>Technology</th></tr>
-    <tr><td>Frontend</td><td>React 18, Vite, Tailwind CSS, Framer Motion, Lucide Icons</td></tr>
-    <tr><td>Backend</td><td>Node.js, Express, MongoDB, Mongoose, JWT</td></tr>
-    <tr><td>Storage</td><td>Cloudinary (image hosting for menu items, logos, favicons)</td></tr>
-    <tr><td>Deployment</td><td>Any Node.js hosting (Vercel, Railway, AWS, etc.)</td></tr>
-  </table>
-
-  <hr>
-
-  <h2>🧩 Architecture Overview</h2>
-  <p>
-    The system is built around a single <strong>User</strong> model that supports two roles:
-    <code>superadmin</code> and <code>owner</code>. Owners have café‑specific fields such as
-    <code>cafeName</code>, <code>slug</code>, <code>whatsappNumber</code>, <code>tables</code>,
-    and a <code>theme</code> object. All menu items are linked to an <code>ownerId</code> to ensure
-    strict data isolation.
-  </p>
-  <p>
-    The frontend uses <strong>React Context</strong> for auth, cart, and theme state.
-    The <code>ThemeContext</code> applies CSS variables to the root element, so the customer
-    menu dynamically adapts to each café’s theme.
-  </p>
-
-  <hr>
-
-  <h2>🔐 Authentication & Roles</h2>
-  <ul>
-    <li><strong>Login</strong> – <code>/api/auth/login</code> (username + password).</li>
-    <li><strong>JWT</strong> – stored in <code>localStorage</code> as <code>adminToken</code>.</li>
-    <li><strong>Middleware</strong> – <code>protect</code> verifies token and attaches user; <code>restrictTo</code> limits access by role.</li>
-    <li><strong>Blocking</strong> – if <code>isBlocked: true</code>, the <code>protect</code> middleware returns 403 and the customer menu shows a “cafe unavailable” message.</li>
-  </ul>
-
-  <hr>
-
-  <h2>🗄️ Database Models (Mongoose)</h2>
-
-  <h3>User (covers both superadmin and owners)</h3>
-  <pre><code>{
-  username: String, unique
-  email: String, unique
-  password: String (hashed)
-  role: 'superadmin' | 'owner'
-  isBlocked: Boolean
-  // Owner-specific
-  cafeName: String
-  slug: String (unique, used for public URL)
-  whatsappNumber: String
-  logoUrl: String
-  faviconUrl: String
-  tables: [String]
-  theme: {
-    primaryColor: String (hex)
-    secondaryColor: String (hex)
-    mode: 'light' | 'dark'
-  }
-}</code></pre>
-
-  <h3>MenuItem</h3>
-  <pre><code>{
-  ownerId: ObjectId (ref: User)
-  title: String
-  description: String
-  price: Number
-  category: String
-  imageUrl: String (Cloudinary URL)
-  isAvailable: Boolean
-}</code></pre>
-
-  <hr>
-
-  <h2>📡 API Endpoints</h2>
-
-  <h4>Authentication</h4>
-  <table>
-    <tr><th>Method</th><th>Path</th><th>Access</th><th>Description</th></tr>
-    <tr><td>POST</td><td>/api/auth/login</td><td>Public</td><td>Login (returns token & user)</td></tr>
-    <tr><td>GET</td><td>/api/auth/me</td><td>Private</td><td>Get current user profile</td></tr>
-    <tr><td>POST</td><td>/api/auth/create-owner</td><td>Superadmin</td><td>Create a new café owner</td></tr>
-  </table>
-
-  <h4>Super‑Admin: User Management</h4>
-  <table>
-    <tr><th>Method</th><th>Path</th><th>Description</th></tr>
-    <tr><td>GET</td><td>/api/users/owners</td><td>List all café owners</td></tr>
-    <tr><td>GET</td><td>/api/users/owners/:id</td><td>Get owner by ID</td></tr>
-    <tr><td>PUT</td><td>/api/users/owners/:id/toggle-block</td><td>Block/unblock owner</td></tr>
-    <tr><td>PUT</td><td>/api/users/owners/:id</td><td>Update owner details</td></tr>
-    <tr><td>DELETE</td><td>/api/users/owners/:id</td><td>Delete owner</td></tr>
-  </table>
-
-  <h4>Menu (Owner)</h4>
-  <table>
-    <tr><th>Method</th><th>Path</th><th>Description</th></tr>
-    <tr><td>GET</td><td>/api/menu</td><td>Get owner’s menu (with filters)</td></tr>
-    <tr><td>GET</td><td>/api/menu/:slug</td><td>Public: get café menu by slug</td></tr>
-    <tr><td>POST</td><td>/api/menu</td><td>Create item (image upload)</td></tr>
-    <tr><td>PUT</td><td>/api/menu/:id</td><td>Update item (optional image)</td></tr>
-    <tr><td>DELETE</td><td>/api/menu/:id</td><td>Delete item</td></tr>
-  </table>
-
-  <h4>Settings (Owner)</h4>
-  <table>
-    <tr><th>Method</th><th>Path</th><th>Description</th></tr>
-    <tr><td>GET</td><td>/api/settings</td><td>Get café settings</td></tr>
-    <tr><td>PUT</td><td>/api/settings</td><td>Update settings (theme, WhatsApp, tables, logo, favicon)</td></tr>
-  </table>
-
-  <hr>
-
-  <h2>🚀 Installation & Setup</h2>
-
-  <h3>Prerequisites</h3>
-  <ul>
-    <li>Node.js ≥ 18</li>
-    <li>MongoDB (local or Atlas)</li>
-    <li>Cloudinary account (for image uploads)</li>
-  </ul>
-
-  <h3>1. Clone & Install</h3>
-  <pre><code>git clone &lt;your-repo&gt;
-cd cafe-menu
-npm install --prefix backend
-npm install --prefix frontend</code></pre>
-
-  <h3>2. Environment Variables</h3>
-  <p>Create <code>backend/.env</code>:</p>
-  <pre><code>PORT=5000
-MONGO_URI=mongodb://localhost:27017/cafe-saas
-JWT_SECRET=your-super-secret-key
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-CLIENT_URL=http://localhost:5173</code></pre>
-
-  <h3>3. Seed Superadmin</h3>
-  <p>On first start, the server auto‑creates a superadmin with:</p>
-  <pre><code>Username: superadmin
-Password: SuperAdmin@2026!</code></pre>
-  <p><strong>⚠️ Change this password immediately after first login.</strong></p>
-
-  <h3>4. Run Development</h3>
-  <pre><code># Backend (port 5000)
-cd backend
-npm run dev
-
-# Frontend (port 5173)
-cd frontend
-npm run dev</code></pre>
-
-  <p>Access the app at <a href="http://localhost:5173">http://localhost:5173</a>.</p>
-
-  <hr>
-
-  <h2>🧭 Frontend Routing</h2>
-  <table>
-    <tr><th>Path</th><th>Component</th><th>Access</th></tr>
-    <tr><td>/</td><td>Home (marketing landing)</td><td>Public</td></tr>
-    <tr><td>/menu/:slug</td><td>CustomerMenu</td><td>Public</td></tr>
-    <tr><td>/admin</td><td>AdminLogin</td><td>Public</td></tr>
-    <tr><td>/admin/dashboard</td><td>AdminDashboard</td><td>Owner only</td></tr>
-    <tr><td>/admin/super</td><td>SuperAdminDashboard</td><td>Superadmin only</td></tr>
-  </table>
-
-  <hr>
-
-  <h2>🎨 Dynamic Theming</h2>
-  <p>
-    The customer menu fetches the café’s theme from the backend and injects CSS variables:
-  </p>
-  <pre><code>--primary-color: #d4a843;
---secondary-color: #b8860b;
---bg-color: #f8fafc;
---text-color: #0f172a;
---card-bg: #ffffff;
---border-color: #e2e8f0;</code></pre>
-  <p>
-    All components use these variables, so changing the database values instantly updates
-    the entire customer experience.
-  </p>
-
-  <hr>
-
-  <h2>🔧 Customization & Extending</h2>
-  <ul>
-    <li><strong>Add new theme properties</strong> – extend the <code>theme</code> object in <code>User</code> schema and update <code>ThemeContext</code>.</li>
-    <li><strong>Add additional roles</strong> – modify the <code>role</code> enum and update the <code>restrictTo</code> middleware.</li>
-    <li><strong>Integrate payment gateway</strong> – extend the cart/order flow to support online payments.</li>
-    <li><strong>Multi‑language support</strong> – use i18n libraries and store language preference in settings.</li>
-  </ul>
-
-  <hr>
-
-  <h2>📦 Deployment</h2>
-  <p>
-    Build the frontend and serve it via the backend:
-  </p>
-  <pre><code>cd frontend
-npm run build
-# The backend server.js will serve the built files in production</code></pre>
-  <p>Set <code>NODE_ENV=production</code> and deploy the backend to your hosting provider.</p>
-
-  <hr>
-
-  <h2>📝 License</h2>
-  <p>This project is proprietary and intended for internal use only. All rights reserved.</p>
-
-  <div class="footer">
-    &copy; 2026 – Built with ❤️ for cafés everywhere.
-  </div>
-
-</div>
+  <!-- Prism.js for syntax highlighting -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script>
+    // Smooth anchor scroll
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
 </body>
 </html>
