@@ -4,3 +4,5 @@ build/
 .env
 .mvp
 .main
+.env.example.mvp
+.env.main

@@ -11,19 +11,18 @@ import OwnerSettings from './pages/OwnerSettings';
 import OwnerAnalytics from './pages/OwnerAnalytics';
 import QRCodePage from './pages/QRCodePage';
 import OnboardingSetup from './pages/OnboardingSetup';
-// 🆕 Import FAQ Management page
 import OwnerFAQManagement from './pages/OwnerFAQManagement';
 import ChatWidget from './components/common/ChatWidget';
 
-const PublicLayout = ({ children }) => {
-  return (
-    <>
-      {children}
-      <ChatWidget />
-    </>
-  );
-};
+// ------------------- Layouts -------------------
+const PublicLayout = ({ children }) => (
+  <>
+    {children}
+    <ChatWidget />
+  </>
+);
 
+// ------------------- Route Guards -------------------
 const ProtectedRoute = ({ children }) => {
   const { user, isAuthenticated, loading } = useAuth();
   const location = useLocation();
@@ -43,43 +42,70 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/admin" replace />;
   }
 
-  // Check if user has completed onboarding
+  // Check if onboarding is complete
   const isOnboardingComplete =
     user?.cafeName &&
     user?.whatsappNumber &&
     user?.tables &&
     user.tables.length > 0;
 
+  // Redirect to onboarding if not complete (except when already on onboarding page)
   if (!isOnboardingComplete && location.pathname !== '/admin/onboarding') {
     return <Navigate to="/admin/onboarding" replace />;
+  }
+
+  // If onboarding is complete and user tries to access onboarding page, redirect to dashboard
+  if (isOnboardingComplete && location.pathname === '/admin/onboarding') {
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return children;
 };
 
+// Guard for routes that should only be accessible when NOT authenticated (e.g., login)
+const PublicOnlyRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5DC]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-t-transparent border-[#8A9A5B]" />
+          <p className="mt-4 text-[#3E2723]">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  return children;
+};
+
+// ------------------- Favicon Manager -------------------
 const FaviconManager = ({ children }) => {
   const location = useLocation();
   const { theme } = useTheme();
   const isMenuRoute = location.pathname.startsWith('/menu/');
 
   useEffect(() => {
-    if (!isMenuRoute) {
-      const faviconUrl = theme?.faviconUrl || '';
-      const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-      link.rel = 'icon';
-      link.href = faviconUrl || '/vite.svg';
-      if (!document.querySelector("link[rel*='icon']")) {
-        document.head.appendChild(link);
-      }
+    const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+    link.rel = 'icon';
+    // For menu routes, use the theme favicon; otherwise fallback to default
+    const faviconUrl = isMenuRoute ? theme?.faviconUrl : (theme?.faviconUrl || '/vite.svg');
+    link.href = faviconUrl || '/vite.svg';
+    if (!document.querySelector("link[rel*='icon']")) {
+      document.head.appendChild(link);
     }
   }, [theme, isMenuRoute]);
 
   return children;
 };
 
+// ------------------- App -------------------
 function App() {
-  const { isAuthenticated } = useAuth();
-
   return (
     <Router>
       <FaviconManager>
@@ -89,20 +115,48 @@ function App() {
             path="/"
             element={
               <PublicLayout>
-                {isAuthenticated ? <Navigate to="/admin/dashboard" replace /> : <Home />}
+                <Home />
               </PublicLayout>
             }
           />
-          <Route path="/home" element={<PublicLayout><Home /></PublicLayout>} />
-          
-          {/* 🆕 Public menu routes – with and without slug */}
-          <Route path="/menu/:slug" element={<PublicLayout><CustomerMenu /></PublicLayout>} />
-          <Route path="/menu" element={<PublicLayout><CustomerMenu /></PublicLayout>} />
+          <Route
+            path="/home"
+            element={
+              <PublicLayout>
+                <Home />
+              </PublicLayout>
+            }
+          />
 
-          {/* Login (no ChatWidget) */}
-          <Route path="/admin" element={<AdminLogin />} />
+          {/* Public menu routes */}
+          <Route
+            path="/menu/:slug"
+            element={
+              <PublicLayout>
+                <CustomerMenu />
+              </PublicLayout>
+            }
+          />
+          <Route
+            path="/menu"
+            element={
+              <PublicLayout>
+                <CustomerMenu />
+              </PublicLayout>
+            }
+          />
 
-          {/* Onboarding (protected) */}
+          {/* Login – only accessible when not authenticated */}
+          <Route
+            path="/admin"
+            element={
+              <PublicOnlyRoute>
+                <AdminLogin />
+              </PublicOnlyRoute>
+            }
+          />
+
+          {/* Onboarding – protected, but will redirect if already complete */}
           <Route
             path="/admin/onboarding"
             element={
@@ -121,7 +175,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/admin/analytics"
             element={
@@ -130,7 +183,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/admin/qr"
             element={
@@ -139,7 +191,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/admin/dashboard/settings"
             element={
@@ -148,8 +199,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
-          {/* 🆕 FAQ Management Page */}
           <Route
             path="/admin/faqs"
             element={
@@ -159,6 +208,7 @@ function App() {
             }
           />
 
+          {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </FaviconManager>
