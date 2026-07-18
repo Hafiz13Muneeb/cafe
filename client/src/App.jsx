@@ -42,19 +42,18 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/admin" replace />;
   }
 
-  // Check if onboarding is complete
   const isOnboardingComplete =
     user?.cafeName &&
     user?.whatsappNumber &&
     user?.tables &&
     user.tables.length > 0;
 
-  // Redirect to onboarding if not complete (except when already on onboarding page)
+  // Redirect to onboarding if not complete (and not already there)
   if (!isOnboardingComplete && location.pathname !== '/admin/onboarding') {
     return <Navigate to="/admin/onboarding" replace />;
   }
 
-  // If onboarding is complete and user tries to access onboarding page, redirect to dashboard
+  // If onboarding is complete and user tries to access onboarding page, send to dashboard
   if (isOnboardingComplete && location.pathname === '/admin/onboarding') {
     return <Navigate to="/admin/dashboard" replace />;
   }
@@ -62,7 +61,6 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Guard for routes that should only be accessible when NOT authenticated (e.g., login)
 const PublicOnlyRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -93,7 +91,7 @@ const FaviconManager = ({ children }) => {
   useEffect(() => {
     const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
     link.rel = 'icon';
-    // For menu routes, use the theme favicon; otherwise fallback to default
+    // Use theme favicon on menu pages, otherwise fallback to default
     const faviconUrl = isMenuRoute ? theme?.faviconUrl : (theme?.faviconUrl || '/vite.svg');
     link.href = faviconUrl || '/vite.svg';
     if (!document.querySelector("link[rel*='icon']")) {
@@ -156,7 +154,7 @@ function App() {
             }
           />
 
-          {/* Onboarding – protected, but will redirect if already complete */}
+          {/* Onboarding – protected, but redirects if already complete */}
           <Route
             path="/admin/onboarding"
             element={
@@ -208,7 +206,7 @@ function App() {
             }
           />
 
-          {/* Catch-all redirect */}
+          {/* Catch‑all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </FaviconManager>
