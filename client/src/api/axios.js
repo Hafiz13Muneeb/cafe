@@ -3,12 +3,12 @@ import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: '/api', // Proxied to backend in development
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // 🆕 Send cookies (httpOnly JWT) with every request
-});
+  withCredentials: true,
+});;
 
 // 🆕 Request interceptor – no need to add token manually; cookie is sent automatically
 api.interceptors.request.use(
