@@ -14,6 +14,7 @@ import OnboardingSetup from './pages/OnboardingSetup';
 import OwnerFAQManagement from './pages/OwnerFAQManagement';
 import ChatWidget from './components/common/ChatWidget';
 
+
 // ------------------- Layouts -------------------
 const PublicLayout = ({ children }) => (
   <>
