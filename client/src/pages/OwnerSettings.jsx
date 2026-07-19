@@ -1,4 +1,3 @@
-// src/pages/OwnerSettings.jsx - Modularized with child components
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -16,12 +15,23 @@ const OwnerSettings = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
-  // --- Shared states ---
   const [cafeName, setCafeName] = useState(user?.cafeName || '');
   const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || '');
-  const [tables, setTables] = useState((user?.tables || []).join(', '));
   const [slug, setSlug] = useState(user?.slug || '');
   const [email, setEmail] = useState(user?.email || '');
+
+  // 🚀 ULTIMATE CLEANER: Ye purane DB kachre (brackets/quotes) ko saaf kar dega
+  const cleanTablesData = (data) => {
+    if (!data) return [];
+    // Agar array hai toh string banayen, phir saaf karein
+    let str = Array.isArray(data) ? data.join(',') : String(data);
+    // Regex se brackets [, ], quotes ", ', aur slashes \ nikal dein
+    str = str.replace(/[\[\]"'\\]/g, '');
+    // Wapas clean array mein convert karein
+    return str.split(',').map(t => t.trim()).filter(Boolean);
+  };
+
+  const [tables, setTables] = useState(() => cleanTablesData(user?.tables));
 
   const [primaryColor, setPrimaryColor] = useState(user?.theme?.primaryColor || '#d4a843');
   const [secondaryColor, setSecondaryColor] = useState(user?.theme?.secondaryColor || '#b8860b');
@@ -30,7 +40,16 @@ const OwnerSettings = () => {
   const [logoPreview, setLogoPreview] = useState(user?.logoUrl || '');
   const [faviconPreview, setFaviconPreview] = useState(user?.faviconUrl || '');
 
-  // Auto-generate slug when cafeName changes
+  useEffect(() => {
+    if (user) {
+      setTables(cleanTablesData(user.tables));
+      setCafeName(user.cafeName || '');
+      setWhatsappNumber(user.whatsappNumber || '');
+      setSlug(user.slug || '');
+      setEmail(user.email || '');
+    }
+  }, [user]);
+
   useEffect(() => {
     if (cafeName) {
       const generatedSlug = cafeName
@@ -41,7 +60,6 @@ const OwnerSettings = () => {
     }
   }, [cafeName]);
 
-  // Fetch settings on mount
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -50,11 +68,14 @@ const OwnerSettings = () => {
           const data = res.data.data;
           setCafeName(data.cafeName || '');
           setWhatsappNumber(data.whatsappNumber || '');
-          setTables((data.tables || []).join(', '));
           setSlug(data.slug || '');
           setEmail(data.email || '');
           setLogoPreview(data.logoUrl || '');
           setFaviconPreview(data.faviconUrl || '');
+          
+          // Data fetch hotay hi clean karein
+          setTables(cleanTablesData(data.tables));
+          
           if (data.theme) {
             setPrimaryColor(data.theme.primaryColor || '#d4a843');
             setSecondaryColor(data.theme.secondaryColor || '#b8860b');
@@ -68,42 +89,28 @@ const OwnerSettings = () => {
     fetchSettings();
   }, []);
 
-  // ----- Helper: Set message and auto-clear -----
   const showMessage = (text, type = 'success') => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: '', type: '' }), 5000);
   };
 
-  // ----- Cafe Settings Submit -----
   const handleCafeSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const trimmedTables = tables
-      .split(',')
-      .map(t => t.trim())
-      .filter(t => t.length > 0);
 
-    if (trimmedTables.length === 0) {
+    if (tables.length === 0) {
       showMessage('Please enter at least one table number/name.', 'error');
-      setLoading(false);
-      return;
-    }
-    if (!slug) {
-      showMessage('Slug is required. Please enter a valid cafe name.', 'error');
-      setLoading(false);
-      return;
-    }
-    if (email && !/^\S+@\S+\.\S+$/.test(email)) {
-      showMessage('Please enter a valid email address.', 'error');
       setLoading(false);
       return;
     }
 
     try {
-      const payload = { cafeName, whatsappNumber, tables: trimmedTables, slug, email };
+      // Backend par 100% clean array bhej rahay hain
+      const payload = { cafeName, whatsappNumber, tables, slug, email };
       const res = await api.put('/settings', payload);
+      
       if (res.data.success) {
-        updateUserData({ cafeName, whatsappNumber, tables: trimmedTables, slug, email });
+        updateUserData({ cafeName, whatsappNumber, tables, slug, email });
         showMessage('Cafe settings saved successfully!');
       }
     } catch (err) {
@@ -113,7 +120,7 @@ const OwnerSettings = () => {
     }
   };
 
-  // ----- Appearance Submit -----
+  // ... (Baqi functions waisay hi)
   const handleAppearanceSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -132,7 +139,6 @@ const OwnerSettings = () => {
     }
   };
 
-  // ----- Image Upload (Logo / Favicon) -----
   const handleImageUpload = async (file, type, setPreview) => {
     if (!file) return;
     const formData = new FormData();
@@ -156,14 +162,9 @@ const OwnerSettings = () => {
     }
   };
 
-  // ----- Security (Password Change) -----
   const handleSecuritySubmit = async (oldPass, newPass, confirmPass, clearFields) => {
     if (newPass !== confirmPass) {
       showMessage('New password and confirmation do not match', 'error');
-      return;
-    }
-    if (newPass.length < 6) {
-      showMessage('New password must be at least 6 characters', 'error');
       return;
     }
     setLoading(true);
@@ -189,10 +190,9 @@ const OwnerSettings = () => {
       {message.text && (
         <div
           className={`mb-4 p-3 border-2 border-[var(--border-color)] font-bold text-sm sm:text-base ${
-            message.type === 'success' ? 'bg-primary text-white' : 'bg-red-300 text-[var(--text-color)]'
+            message.type === 'success' ? 'bg-[#222] text-white' : 'bg-red-300 text-[#222]'
           }`}
           role="alert"
-          aria-live="polite"
         >
           {message.text}
         </div>
@@ -205,7 +205,7 @@ const OwnerSettings = () => {
             onClick={() => setActiveTab(item.id)}
             className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm sm:text-base font-bold transition-all ${
               activeTab === item.id
-                ? 'bg-primary text-white border-2 border-[var(--border-color)]'
+                ? 'bg-[#222] text-white border-2 border-[#222]'
                 : 'text-[var(--text-color)] hover:bg-[var(--text-color)]/10'
             }`}
           >
@@ -218,44 +218,26 @@ const OwnerSettings = () => {
       <div className="bg-[var(--bg-color)] p-4 sm:p-6 border-2 border-[var(--border-color)] min-h-[400px]">
         {activeTab === 'cafe' && (
           <CafeSettings
-            cafeName={cafeName}
-            setCafeName={setCafeName}
-            whatsappNumber={whatsappNumber}
-            setWhatsappNumber={setWhatsappNumber}
-            tables={tables}
-            setTables={setTables}
-            slug={slug}
-            setSlug={setSlug}
-            email={email}
-            setEmail={setEmail}
-            logoPreview={logoPreview}
-            setLogoPreview={setLogoPreview}
-            faviconPreview={faviconPreview}
-            setFaviconPreview={setFaviconPreview}
-            loading={loading}
-            onSubmit={handleCafeSubmit}
-            onImageUpload={handleImageUpload}
+            cafeName={cafeName} setCafeName={setCafeName}
+            whatsappNumber={whatsappNumber} setWhatsappNumber={setWhatsappNumber}
+            tables={tables} setTables={setTables}
+            slug={slug} setSlug={setSlug}
+            email={email} setEmail={setEmail}
+            logoPreview={logoPreview} setLogoPreview={setLogoPreview}
+            faviconPreview={faviconPreview} setFaviconPreview={setFaviconPreview}
+            loading={loading} onSubmit={handleCafeSubmit} onImageUpload={handleImageUpload}
           />
         )}
-
         {activeTab === 'appearance' && (
           <AppearanceSettings
-            primaryColor={primaryColor}
-            setPrimaryColor={setPrimaryColor}
-            secondaryColor={secondaryColor}
-            setSecondaryColor={setSecondaryColor}
-            mode={mode}
-            setMode={setMode}
-            loading={loading}
-            onSubmit={handleAppearanceSubmit}
+            primaryColor={primaryColor} setPrimaryColor={setPrimaryColor}
+            secondaryColor={secondaryColor} setSecondaryColor={setSecondaryColor}
+            mode={mode} setMode={setMode}
+            loading={loading} onSubmit={handleAppearanceSubmit}
           />
         )}
-
         {activeTab === 'security' && (
-          <SecuritySettings
-            loading={loading}
-            onSubmit={handleSecuritySubmit}
-          />
+          <SecuritySettings loading={loading} onSubmit={handleSecuritySubmit} />
         )}
       </div>
     </DashboardLayout>
