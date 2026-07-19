@@ -15,7 +15,7 @@ import ChatWidget from './components/common/ChatWidget';
 
 // ------------------- Layouts -------------------
 const PublicLayout = ({ children }) => (
-  <>
+  <> 
     {children}
     <ChatWidget />
   </>
