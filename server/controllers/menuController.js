@@ -1,3 +1,4 @@
+// server/controllers/menuController.js
 const MenuItem = require('../models/MenuItem');
 const User = require('../models/User');
 const cloudinary = require('../config/cloudinary');
@@ -15,6 +16,10 @@ const extractPublicId = (imageUrl) => {
   const publicIdWithExt = parts.join('/');
   return publicIdWithExt.replace(/\.[^/.]+$/, '');
 };
+
+// ============================================================
+// PROTECTED ROUTES (Owner only)
+// ============================================================
 
 // @desc    Get menu items for the logged-in owner
 // @route   GET /api/menu
@@ -48,7 +53,11 @@ const getMenuItems = async (req, res, next) => {
   }
 };
 
-// @desc    Get public menu – smart fallback: find cafe that has items
+// ============================================================
+// PUBLIC ROUTE – get menu by cafe slug (with fallback creation)
+// ============================================================
+
+// @desc    Get public menu – smart fallback: find cafe that has items, or create default
 // @route   GET /api/menu/:slug
 // @access  Public
 const getPublicMenu = async (req, res, next) => {
@@ -64,7 +73,6 @@ const getPublicMenu = async (req, res, next) => {
 
     // 2. If not found by slug, get the first user that has menu items
     if (!cafe) {
-      // Find any menu item to get an ownerId
       const anyItem = await MenuItem.findOne().select('ownerId');
       if (anyItem) {
         cafe = await User.findById(anyItem.ownerId).select(
@@ -80,10 +88,32 @@ const getPublicMenu = async (req, res, next) => {
       );
     }
 
-    // 4. If no cafe at all, return 404
+    // 4. If no cafe at all, create one with default settings (ensures the app never 404s)
     if (!cafe) {
-      res.status(404);
-      throw new Error('Cafe not found');
+      console.warn('⚠️ No cafe found in database. Creating a default one...');
+      try {
+        const defaultCafe = await User.create({
+          username: process.env.OWNER_USERNAME || 'admin',
+          password: process.env.OWNER_PASSWORD || 'admin123',
+          cafeName: process.env.CAFE_NAME || 'My Cafe',
+          slug: 'cafe',
+          whatsappNumber: process.env.WHATSAPP_NUMBER || '03001234567',
+          tables: ['1', '2', '3', '4', '5'],
+          logoUrl: '',
+          faviconUrl: '',
+          theme: {
+            primaryColor: '#d4a843',
+            secondaryColor: '#b8860b',
+            mode: 'light',
+          },
+        });
+        cafe = defaultCafe;
+        console.log('✅ Default cafe created with slug "cafe".');
+      } catch (createError) {
+        console.error('❌ Failed to create default cafe:', createError.message);
+        res.status(500);
+        throw new Error('Unable to initialize cafe data. Please check server configuration.');
+      }
     }
 
     // Fetch ALL menu items for this cafe (ignore availability)
@@ -113,6 +143,10 @@ const getPublicMenu = async (req, res, next) => {
     next(error);
   }
 };
+
+// ============================================================
+// CRUD OPERATIONS (Owner only)
+// ============================================================
 
 // @desc    Create a new menu item
 // @route   POST /api/menu

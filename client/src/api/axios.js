@@ -1,24 +1,20 @@
-// src/api/axios.js - Axios instance with base URL, interceptors, and dynamic menu support
+// src/api/axios.js - Axios instance with base URL including /api
 import axios from 'axios';
 
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  // ✅ Include /api in the base URL
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
-});;
+});
 
-// 🆕 Request interceptor – no need to add token manually; cookie is sent automatically
+// Request interceptor – no need to add token manually; cookie is sent automatically
 api.interceptors.request.use(
-  (config) => {
-    // We no longer inject Authorization header; the cookie is sent by the browser
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (config) => config,
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor for error handling
@@ -34,35 +30,24 @@ api.interceptors.response.use(
 
     // Handle 401 Unauthorized (token expired or invalid)
     if (status === 401) {
-      // Clear any leftover user data from localStorage (if still present)
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminData');
-
-      // Only redirect if we're on a protected admin page (not login, not public)
       if (typeof window !== 'undefined') {
         const isAdminRoute = currentPath.startsWith('/admin');
         const isLoginPage = currentPath === '/admin';
         const isPublicRoute = currentPath.startsWith('/menu/') || currentPath === '/';
-
-        // If on a protected admin page (not login and not public), redirect to login
         if (isAdminRoute && !isLoginPage && !isPublicRoute) {
-          // Store the attempted URL for redirect after login
           sessionStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
           window.location.href = '/admin';
         }
-        // If already on login page, just stay there (no redirect loop)
-        // If on public route, do nothing – let the component handle it
       }
     }
 
     // Handle 403 Forbidden (account blocked)
     if (status === 403) {
-      // If it's a public request, just reject and let component handle
       if (isPublicRequest) {
         return Promise.reject(error);
       }
-
-      // For all other 403 errors, treat as account blocked (admin panel)
       const message = response?.data?.message || 'Your account has been blocked. Please contact support.';
       if (typeof window !== 'undefined') {
         localStorage.removeItem('adminToken');
@@ -90,7 +75,6 @@ export const fetchPublicMenu = async (slug) => {
 // Helper: Get cafe settings by slug (for dynamic theming)
 export const fetchCafeSettings = async (slug) => {
   try {
-    // We can reuse the public menu endpoint which returns cafe data
     const response = await api.get(`/menu/${slug}`);
     return response.data.data.cafe;
   } catch (error) {

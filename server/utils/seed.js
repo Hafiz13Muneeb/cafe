@@ -1,4 +1,4 @@
-// server/utils/seed.js - Auto-seed database if no owner exists
+// server/utils/seed.js - Auto-seed database with default cafe, ensuring slug is 'cafe'
 const User = require('../models/User');
 const MenuItem = require('../models/MenuItem');
 
@@ -8,42 +8,54 @@ const seedIfNeeded = async () => {
     const OWNER_PASSWORD = process.env.OWNER_PASSWORD || 'admin123';
     const CAFE_NAME = process.env.CAFE_NAME || 'My Cafe';
     const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER || '03001234567';
-    // ✅ Use fixed slug 'cafe' to match frontend default
-    const SLUG = 'cafe';
+    const SLUG = 'cafe'; // fixed default slug for single‑cafe setup
 
+    // 1. Find or create the cafe owner
     let owner = await User.findOne({ username: OWNER_USERNAME });
+
     if (owner) {
-      console.log(`✅ Cafe owner "${owner.username}" already exists. Skipping seed.`);
-      return;
+      console.log(`✅ Cafe owner "${owner.username}" already exists.`);
+
+      // 🔧 Ensure the slug is exactly 'cafe'
+      if (owner.slug !== SLUG) {
+        console.log(`🔄 Updating slug from "${owner.slug}" to "${SLUG}"...`);
+        owner.slug = SLUG;
+        await owner.save();
+        console.log(`✅ Slug updated successfully.`);
+      } else {
+        console.log(`   Slug is already "${SLUG}".`);
+      }
+    } else {
+      console.log('🔄 Seeding default cafe owner...');
+
+      owner = await User.create({
+        username: OWNER_USERNAME,
+        password: OWNER_PASSWORD,
+        cafeName: CAFE_NAME,
+        slug: SLUG,
+        whatsappNumber: WHATSAPP_NUMBER,
+        tables: ['1', '2', '3', '4', '5'],
+        logoUrl: '',
+        faviconUrl: '',
+        theme: {
+          primaryColor: '#d4a843',
+          secondaryColor: '#b8860b',
+          mode: 'light',
+        },
+      });
+
+      console.log(`✅ Cafe owner created: ${owner.username} (${owner.cafeName})`);
+      console.log(`   Slug: ${owner.slug}`);
     }
 
-    console.log('🔄 Seeding default cafe owner...');
-
-    owner = await User.create({
-      username: OWNER_USERNAME,
-      password: OWNER_PASSWORD,
-      cafeName: CAFE_NAME,
-      slug: SLUG,
-      whatsappNumber: WHATSAPP_NUMBER,
-      tables: ['1', '2', '3', '4', '5'],
-      logoUrl: '',
-      faviconUrl: '',
-      theme: {
-        primaryColor: '#d4a843',
-        secondaryColor: '#b8860b',
-        mode: 'light',
-      },
-    });
-
-    console.log(`✅ Cafe owner created: ${owner.username} (${owner.cafeName})`);
-    console.log(`   Slug: ${owner.slug}`);
-
+    // 2. Check for existing menu items
     const existingItems = await MenuItem.find({ ownerId: owner._id });
     if (existingItems.length > 0) {
       console.log(`✅ ${existingItems.length} menu items already exist. Skipping menu seed.`);
       return;
     }
 
+    // 3. Add sample menu items
     console.log('🔄 Adding sample menu items...');
 
     const sampleItems = [
@@ -127,10 +139,11 @@ const seedIfNeeded = async () => {
     console.log('');
     console.log('🎉 Seeding complete!');
     console.log(`🔑 Login: ${OWNER_USERNAME} / ${OWNER_PASSWORD}`);
-    console.log(`☕ Cafe: ${CAFE_NAME}`);
-    console.log(`🔗 Public Menu: /menu/${SLUG}`);
+    console.log(`☕ Cafe: ${owner.cafeName}`);
+    console.log(`🔗 Public Menu: /menu/${owner.slug}`);
   } catch (error) {
     console.error('❌ Seeding error:', error.message);
+    // Do not throw – let the server continue
   }
 };
 

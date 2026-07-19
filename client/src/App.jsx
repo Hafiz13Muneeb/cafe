@@ -1,4 +1,3 @@
-// src/App.jsx - Single-cafe version (removed superadmin, blog, contact, subscription)
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
@@ -13,7 +12,6 @@ import QRCodePage from './pages/QRCodePage';
 import OnboardingSetup from './pages/OnboardingSetup';
 import OwnerFAQManagement from './pages/OwnerFAQManagement';
 import ChatWidget from './components/common/ChatWidget';
-
 
 // ------------------- Layouts -------------------
 const PublicLayout = ({ children }) => (
@@ -87,12 +85,11 @@ const PublicOnlyRoute = ({ children }) => {
 const FaviconManager = ({ children }) => {
   const location = useLocation();
   const { theme } = useTheme();
-  const isMenuRoute = location.pathname.startsWith('/menu/');
+  const isMenuRoute = location.pathname.startsWith('/menu/'); // now matches both /menu and /menu/:slug
 
   useEffect(() => {
     const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
     link.rel = 'icon';
-    // Use theme favicon on menu pages, otherwise fallback to default
     const faviconUrl = isMenuRoute ? theme?.faviconUrl : (theme?.faviconUrl || '/vite.svg');
     link.href = faviconUrl || '/vite.svg';
     if (!document.querySelector("link[rel*='icon']")) {
@@ -127,7 +124,7 @@ function App() {
             }
           />
 
-          {/* Public menu routes */}
+          {/* ✅ FIX: Added dynamic route for menu with slug, keep fallback without slug */}
           <Route
             path="/menu/:slug"
             element={

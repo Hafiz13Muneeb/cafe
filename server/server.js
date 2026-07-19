@@ -1,4 +1,4 @@
-// server/server.js - Single-cafe version with auto-seed
+// server/server.js - Single-cafe version with auto-seed and enhanced logging
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -11,8 +11,6 @@ const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const { errorHandler } = require('./utils/errorHandler');
 const mongoose = require('mongoose');
-
-// 🆕 Import auto-seed function
 const seedIfNeeded = require('./utils/seed');
 
 // Load .env
@@ -59,15 +57,12 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // ----------------------------
-// 2. Body parsers (JSON & URL‑encoded)
+// 2. Body parsers & CORS
 // ----------------------------
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Cookie parser
 app.use(cookieParser());
 
-// CORS configuration
 const allowedOrigins = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(
   cors({
@@ -86,7 +81,7 @@ const cacheControl = (req, res, next) => {
 app.use(cacheControl);
 
 // ----------------------------
-// 3. Routes (No payment, no user routes)
+// 3. Routes
 // ----------------------------
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/menu', require('./routes/menuRoutes'));
@@ -120,7 +115,6 @@ app.get('/favicon.ico', (req, res) => {
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../client/dist');
   app.use(express.static(distPath));
-
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
     res.sendFile(path.join(distPath, 'index.html'));
@@ -138,10 +132,11 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
-    // 🆕 Auto-seed if needed
+    console.log('🔄 Running auto‑seed...');
     await seedIfNeeded();
     app.listen(PORT, () => {
       console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      console.log(`🔗 API base: http://localhost:${PORT}/api`);
     });
   } catch (err) {
     console.error('❌ Failed to start server:', err);

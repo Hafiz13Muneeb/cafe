@@ -10,7 +10,7 @@ import CartModal from '../components/CartModal';
 import { Coffee, Utensils, AlertCircle } from 'lucide-react';
 import api from '../api/axios';
 
-// 🆕 Read default slug from environment variables
+// Default slug from environment variables
 const DEFAULT_SLUG = import.meta.env.VITE_DEFAULT_CAFE_SLUG || 'cafe';
 
 const CustomerMenu = () => {
@@ -19,7 +19,7 @@ const CustomerMenu = () => {
   const navigate = useNavigate();
   const { getTotalItems, getTotalPrice } = useCart();
 
-  // 🆕 Use user's slug, URL slug, or default from .env
+  // Use user's slug, URL slug, or default from .env
   const slug = user?.slug || urlSlug || DEFAULT_SLUG;
 
   const [cafeData, setCafeData] = useState(null);
@@ -69,7 +69,6 @@ const CustomerMenu = () => {
         setCategories(['all', ...(catList || [])]);
       } catch (err) {
         console.error('Error loading menu:', err);
-        // If cafe not found (404) and user is logged in, redirect to onboarding
         if (err.response?.status === 404) {
           if (user && !user.cafeName) {
             navigate('/admin/onboarding');
@@ -86,25 +85,26 @@ const CustomerMenu = () => {
     loadMenu();
   }, [slug, user, navigate]);
 
+  // ✅ FIX: Apply theme CSS variables with cleanup
   useEffect(() => {
+    const root = document.documentElement;
+    const originalPrimary = root.style.getPropertyValue('--primary-color');
+    const originalSecondary = root.style.getPropertyValue('--secondary-color');
+
     if (cafeData?.theme) {
-      const root = document.documentElement;
       const { primaryColor, secondaryColor, mode } = cafeData.theme;
       root.style.setProperty('--primary-color', primaryColor || '#d4a843');
       root.style.setProperty('--secondary-color', secondaryColor || '#b8860b');
     }
+
+    return () => {
+      // Restore original values (if any) to avoid style leakage
+      root.style.setProperty('--primary-color', originalPrimary || '');
+      root.style.setProperty('--secondary-color', originalSecondary || '');
+    };
   }, [cafeData]);
 
-  useEffect(() => {
-    if (cafeData?.faviconUrl) {
-      const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-      link.rel = 'icon';
-      link.href = cafeData.faviconUrl;
-      if (!document.querySelector("link[rel*='icon']")) {
-        document.head.appendChild(link);
-      }
-    }
-  }, [cafeData]);
+  // ✅ FIX: Removed the favicon useEffect – now handled globally in App.jsx
 
   if (loading) {
     return (
