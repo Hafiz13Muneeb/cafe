@@ -1,4 +1,3 @@
-// src/pages/AdminLogin.jsx
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { selectUser, selectIsAuthenticated } from '../store/slices/authSlice';
