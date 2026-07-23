@@ -8,7 +8,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
+  withCredentials: true, // ✅ Required for session cookies
 });
 
 // Request interceptor – no need to add token manually; cookie is sent automatically
@@ -28,7 +28,7 @@ api.interceptors.response.use(
     // Helper: check if a request is public (no auth required)
     const isPublicRequest = config?.url?.startsWith('/menu/') || config?.url === '/settings/global';
 
-    // Handle 401 Unauthorized (token expired or invalid)
+    // Handle 401 Unauthorized (session expired or invalid)
     if (status === 401) {
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminData');

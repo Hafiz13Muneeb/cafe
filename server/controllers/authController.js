@@ -1,11 +1,7 @@
-// server/controllers/authController.js - Single-cafe, .env credentials, no JWT
+// server/controllers/authController.js - Database-driven authentication
 const User = require('../models/User');
 
-// Read owner credentials from .env
-const OWNER_USERNAME = process.env.OWNER_USERNAME || 'admin';
-const OWNER_PASSWORD = process.env.OWNER_PASSWORD || 'admin123';
-
-// @desc    Login user – compare with .env credentials
+// @desc    Login user – authenticate with MongoDB
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res, next) => {
@@ -13,43 +9,42 @@ const loginUser = async (req, res, next) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      res.status(400);
-      throw new Error('Please provide username and password');
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide username and password',
+      });
     }
 
-    // Compare with .env
-    if (username.trim() !== OWNER_USERNAME || password.trim() !== OWNER_PASSWORD) {
-      res.status(401);
-      throw new Error('Invalid credentials');
-    }
-
-    // Fetch the first owner from database (NO ROLE FILTER – field removed)
-    let owner = await User.findOne();
+    // Find owner by username – include password field
+    const owner = await User.findOne({ username: username.trim() }).select('+password');
 
     if (!owner) {
-      // If no owner in DB, return a hardcoded owner object
-      owner = {
-        _id: '000000000000000000000001',
-        username: OWNER_USERNAME,
-        cafeName: 'My Cafe',
-        slug: 'cafe',
-        whatsappNumber: '03001234567',
-        email: '',
-        logoUrl: '',
-        faviconUrl: '',
-        tables: ['1', '2', '3', '4', '5'],
-        theme: { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
-      };
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+      });
     }
+
+    // Check password using model method
+    const isMatch = await owner.matchPassword(password.trim());
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+      });
+    }
+
+    // Store user ID in session
+    req.session.userId = owner._id;
 
     // Prepare user response (without password)
     const userResponse = {
-      id: owner._id,
+      _id: owner._id,
       username: owner.username,
       cafeName: owner.cafeName || '',
       slug: owner.slug || '',
       whatsappNumber: owner.whatsappNumber || '',
-      email: owner.email || '', // 🆕 Support email
+      email: owner.email || '',
       logoUrl: owner.logoUrl || '',
       faviconUrl: owner.faviconUrl || '',
       tables: owner.tables || [],
@@ -58,83 +53,138 @@ const loginUser = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      data: {
-        user: userResponse,
-      },
+      data: userResponse,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Logout user – clear session (just responds success)
+// @desc    Logout user – destroy session
 // @route   POST /api/auth/logout
-// @access  Public
+// @access  Private
 const logoutUser = async (req, res, next) => {
   try {
-    res.status(200).json({
-      success: true,
-      message: 'Logged out successfully',
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          message: 'Could not log out',
+        });
+      }
+      res.clearCookie('connect.sid');
+      res.status(200).json({
+        success: true,
+        message: 'Logged out successfully',
+      });
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Get logged-in user profile – returns the owner from DB or dummy
+// @desc    Get logged-in user profile
 // @route   GET /api/auth/me
-// @access  Private (but protect middleware already attaches user)
+// @access  Private (protect middleware attaches user)
 const getProfile = async (req, res, next) => {
   try {
-    const user = req.user;
-    if (!user) {
-      res.status(401);
-      throw new Error('Not authenticated');
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authenticated',
+      });
     }
+    const userResponse = {
+      _id: req.user._id,
+      username: req.user.username,
+      cafeName: req.user.cafeName || '',
+      slug: req.user.slug || '',
+      whatsappNumber: req.user.whatsappNumber || '',
+      email: req.user.email || '',
+      logoUrl: req.user.logoUrl || '',
+      faviconUrl: req.user.faviconUrl || '',
+      tables: req.user.tables || [],
+      theme: req.user.theme || { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
+    };
     res.status(200).json({
       success: true,
-      data: user,
+      data: userResponse,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Change password – NOT needed for .env auth
+// @desc    Change password – database-driven
 // @route   PUT /api/auth/change-password
 // @access  Private
 const changePassword = async (req, res, next) => {
-  res.status(501).json({
-    success: false,
-    message: 'Password change is handled locally. Please update your .env file.',
-  });
-};
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
 
-// @desc    Update user profile – NOT needed (single-cafe)
-// @route   PUT /api/auth/update-profile
-// @access  Private
-const updateProfile = async (req, res, next) => {
-  res.status(501).json({
-    success: false,
-    message: 'Profile updates are not supported in single-cafe mode.',
-  });
-};
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields are required',
+      });
+    }
 
-// @desc    Create owner – NOT needed (single-cafe)
-// @route   POST /api/auth/create-owner
-// @access  Private
-const createOwner = async (req, res, next) => {
-  res.status(501).json({
-    success: false,
-    message: 'Creating new owners is not supported in single-cafe mode.',
-  });
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password and confirmation do not match',
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters',
+      });
+    }
+
+    // Get user from session
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized. Please log in again.',
+      });
+    }
+
+    const user = await User.findById(userId).select('+password');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Verify current password
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect',
+      });
+    }
+
+    // Update password (pre-save hook will hash it)
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password changed successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 module.exports = {
   loginUser,
   logoutUser,
   getProfile,
-  createOwner,
   changePassword,
-  updateProfile,
 };

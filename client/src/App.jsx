@@ -85,7 +85,7 @@ const PublicOnlyRoute = ({ children }) => {
 const FaviconManager = ({ children }) => {
   const location = useLocation();
   const { theme } = useTheme();
-  const isMenuRoute = location.pathname.startsWith('/menu/'); // now matches both /menu and /menu/:slug
+  const isMenuRoute = location.pathname.startsWith('/menu/');
 
   useEffect(() => {
     const link = document.querySelector("link[rel*='icon']") || document.createElement('link');

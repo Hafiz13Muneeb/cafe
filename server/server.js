@@ -1,4 +1,4 @@
-// server/server.js - Single-cafe version with auto-seed and enhanced logging
+// server/server.js - Single-cafe version with session-based authentication
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -7,7 +7,7 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
-const cookieParser = require('cookie-parser');
+const session = require('express-session');
 const connectDB = require('./config/db');
 const { errorHandler } = require('./utils/errorHandler');
 const mongoose = require('mongoose');
@@ -61,8 +61,32 @@ app.use('/api', limiter);
 // ----------------------------
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
 
+// ----------------------------
+// 3. Session Middleware (MongoDB store)
+// Use the v3-compatible syntax (works with both v3 and v4)
+// ----------------------------
+const MongoStore = require('connect-mongo')(session);
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'cafeflow-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    store: new MongoStore({
+      mongooseConnection: mongoose.connection,
+      collection: 'sessions',
+    }),
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    },
+  })
+);
+
+// CORS – allow credentials
 const allowedOrigins = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(
   cors({
@@ -81,7 +105,7 @@ const cacheControl = (req, res, next) => {
 app.use(cacheControl);
 
 // ----------------------------
-// 3. Routes
+// 4. Routes
 // ----------------------------
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/menu', require('./routes/menuRoutes'));
@@ -103,14 +127,14 @@ app.get('/api/health', async (req, res) => {
 });
 
 // ----------------------------
-// 4. Favicon handler
+// 5. Favicon handler
 // ----------------------------
 app.get('/favicon.ico', (req, res) => {
   res.status(204).end();
 });
 
 // ----------------------------
-// 5. Serve Frontend (Production)
+// 6. Serve Frontend (Production)
 // ----------------------------
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '../client/dist');
@@ -122,12 +146,12 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // ----------------------------
-// 6. Error Handler
+// 7. Error Handler
 // ----------------------------
 app.use(errorHandler);
 
 // ----------------------------
-// 7. Start Server
+// 8. Start Server
 // ----------------------------
 const startServer = async () => {
   try {

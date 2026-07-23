@@ -1,5 +1,6 @@
-// src/context/AuthContext.jsx - Single-cafe, no DB, .env + localStorage password
+// src/context/AuthContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import api from '../api/axios';
 
 const AuthContext = createContext();
 
@@ -16,11 +17,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Read credentials from .env
-  const OWNER_USERNAME = import.meta.env.VITE_OWNER_USERNAME || 'admin';
-  const OWNER_PASSWORD = import.meta.env.VITE_OWNER_PASSWORD || 'admin123';
-
-  // On mount: check localStorage for existing session
+  // On mount: restore session from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('adminData');
     if (storedUser) {
@@ -34,88 +31,65 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Login – compare with .env or localStorage saved password
+  // Login – now calls backend API
   const login = async (username, password) => {
     setError('');
-
-    const trimmedUsername = username.trim();
-    const trimmedPassword = password.trim();
-
-    if (!trimmedUsername || !trimmedPassword) {
-      setError('Please enter both username and password');
-      return { success: false, error: 'Missing credentials' };
-    }
-
-    // Check against .env or saved password
-    const savedPassword = localStorage.getItem('ownerPassword');
-    const validPassword = savedPassword || OWNER_PASSWORD;
-
-    if (trimmedUsername === OWNER_USERNAME && trimmedPassword === validPassword) {
-      const userData = {
-        username: OWNER_USERNAME,
-        role: 'owner',
-        cafeName: '',
-        whatsappNumber: '',
-        tables: [],
-        logoUrl: '',
-        faviconUrl: '',
-        slug: '',
-        theme: { primaryColor: '#d4a843', secondaryColor: '#b8860b', mode: 'light' },
-      };
-
-      // Merge saved settings
-      const savedSettings = localStorage.getItem('cafeSettings');
-      if (savedSettings) {
-        try {
-          const parsed = JSON.parse(savedSettings);
-          Object.assign(userData, parsed);
-        } catch (e) {}
+    try {
+      const response = await api.post('/auth/login', { username, password });
+      if (response.data.success) {
+        const userData = response.data.data;
+        setUser(userData);
+        localStorage.setItem('adminData', JSON.stringify(userData));
+        return { success: true, user: userData };
+      } else {
+        setError(response.data.message || 'Login failed');
+        return { success: false, error: response.data.message };
       }
-
-      localStorage.setItem('adminData', JSON.stringify(userData));
-      setUser(userData);
-      return { success: true, user: userData };
-    } else {
-      setError('Invalid username or password');
-      return { success: false, error: 'Invalid credentials' };
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Network error. Please try again.';
+      setError(msg);
+      return { success: false, error: msg };
     }
   };
 
-  // Change password – saves to localStorage
-  const changePassword = async (oldPassword, newPassword, confirmPassword) => {
-    return new Promise((resolve, reject) => {
-      if (newPassword !== confirmPassword) {
-        reject(new Error('New password and confirmation do not match'));
-        return;
+  // Change password – calls backend
+  const changePassword = async (currentPassword, newPassword, confirmPassword) => {
+    try {
+      const response = await api.put('/auth/change-password', {
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+      if (response.data.success) {
+        return { success: true, message: response.data.message };
+      } else {
+        throw new Error(response.data.message || 'Password change failed');
       }
-      if (newPassword.length < 6) {
-        reject(new Error('New password must be at least 6 characters'));
-        return;
-      }
-
-      const savedPassword = localStorage.getItem('ownerPassword') || import.meta.env.VITE_OWNER_PASSWORD || 'admin123';
-      if (oldPassword !== savedPassword) {
-        reject(new Error('Current password is incorrect'));
-        return;
-      }
-
-      // Save new password
-      localStorage.setItem('ownerPassword', newPassword);
-      resolve({ success: true, message: 'Password changed successfully' });
-    });
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Failed to change password';
+      throw new Error(msg);
+    }
   };
 
-  const logout = () => {
+  // Logout – clear session on backend and frontend
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      console.debug('Logout error (ignored):', err.message);
+    }
     localStorage.removeItem('adminData');
     setUser(null);
   };
 
+  // Update user data (e.g., settings) – keeps localStorage in sync
   const updateUserData = (updatedData) => {
     if (user) {
       const newUser = { ...user, ...updatedData };
       setUser(newUser);
       localStorage.setItem('adminData', JSON.stringify(newUser));
 
+      // Also update cafeSettings separately if needed (keep existing behaviour)
       const settings = {
         cafeName: newUser.cafeName,
         whatsappNumber: newUser.whatsappNumber,

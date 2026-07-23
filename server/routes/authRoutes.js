@@ -4,16 +4,16 @@ const {
   loginUser,
   logoutUser,
   getProfile,
+  changePassword,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
 // Public routes
 router.post('/login', loginUser);
-router.post('/logout', logoutUser);
 
-// Protected route – get profile (uses protect middleware)
+// Protected routes (require session)
+router.post('/logout', protect, logoutUser);
 router.get('/me', protect, getProfile);
-
-// All other auth routes are removed (create-owner, change-password, update-profile)
+router.put('/change-password', protect, changePassword);
 
 module.exports = router;
