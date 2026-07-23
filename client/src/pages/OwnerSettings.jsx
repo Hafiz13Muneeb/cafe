@@ -20,23 +20,17 @@ const OwnerSettings = () => {
   const [slug, setSlug] = useState(user?.slug || '');
   const [email, setEmail] = useState(user?.email || '');
 
-  // 🚀 ULTIMATE CLEANER: Ye purane DB kachre (brackets/quotes) ko saaf kar dega
   const cleanTablesData = (data) => {
     if (!data) return [];
-    // Agar array hai toh string banayen, phir saaf karein
     let str = Array.isArray(data) ? data.join(',') : String(data);
-    // Regex se brackets [, ], quotes ", ', aur slashes \ nikal dein
     str = str.replace(/[\[\]"'\\]/g, '');
-    // Wapas clean array mein convert karein
     return str.split(',').map(t => t.trim()).filter(Boolean);
   };
 
   const [tables, setTables] = useState(() => cleanTablesData(user?.tables));
-
   const [primaryColor, setPrimaryColor] = useState(user?.theme?.primaryColor || '#d4a843');
   const [secondaryColor, setSecondaryColor] = useState(user?.theme?.secondaryColor || '#b8860b');
   const [mode, setMode] = useState(user?.theme?.mode || 'light');
-
   const [logoPreview, setLogoPreview] = useState(user?.logoUrl || '');
   const [faviconPreview, setFaviconPreview] = useState(user?.faviconUrl || '');
 
@@ -72,10 +66,7 @@ const OwnerSettings = () => {
           setEmail(data.email || '');
           setLogoPreview(data.logoUrl || '');
           setFaviconPreview(data.faviconUrl || '');
-          
-          // Data fetch hotay hi clean karein
           setTables(cleanTablesData(data.tables));
-          
           if (data.theme) {
             setPrimaryColor(data.theme.primaryColor || '#d4a843');
             setSecondaryColor(data.theme.secondaryColor || '#b8860b');
@@ -97,18 +88,14 @@ const OwnerSettings = () => {
   const handleCafeSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     if (tables.length === 0) {
       showMessage('Please enter at least one table number/name.', 'error');
       setLoading(false);
       return;
     }
-
     try {
-      // Backend par 100% clean array bhej rahay hain
       const payload = { cafeName, whatsappNumber, tables, slug, email };
       const res = await api.put('/settings', payload);
-      
       if (res.data.success) {
         updateUserData({ cafeName, whatsappNumber, tables, slug, email });
         showMessage('Cafe settings saved successfully!');
@@ -120,7 +107,6 @@ const OwnerSettings = () => {
     }
   };
 
-  // ... (Baqi functions waisay hi)
   const handleAppearanceSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -190,7 +176,7 @@ const OwnerSettings = () => {
       {message.text && (
         <div
           className={`mb-4 p-3 border-2 border-[var(--border-color)] font-bold text-sm sm:text-base ${
-            message.type === 'success' ? 'bg-[#222] text-white' : 'bg-red-300 text-[#222]'
+            message.type === 'success' ? 'bg-primary text-white' : 'bg-red-300 text-[#222]'
           }`}
           role="alert"
         >
@@ -205,7 +191,7 @@ const OwnerSettings = () => {
             onClick={() => setActiveTab(item.id)}
             className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm sm:text-base font-bold transition-all ${
               activeTab === item.id
-                ? 'bg-[#222] text-white border-2 border-[#222]'
+                ? 'bg-primary text-white border-2 border-[var(--border-color)]'
                 : 'text-[var(--text-color)] hover:bg-[var(--text-color)]/10'
             }`}
           >
@@ -215,7 +201,7 @@ const OwnerSettings = () => {
         ))}
       </div>
 
-      <div className="bg-[var(--bg-color)] p-4 sm:p-6 border-2 border-[var(--border-color)] min-h-[400px]">
+      <div className="p-4 sm:p-6 border-2 border-[var(--border-color)] bg-[var(--card-bg)] shadow-[6px_6px_0px_0px_var(--border-color)] min-h-[400px]">
         {activeTab === 'cafe' && (
           <CafeSettings
             cafeName={cafeName} setCafeName={setCafeName}

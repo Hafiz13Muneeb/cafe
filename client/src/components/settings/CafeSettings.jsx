@@ -14,7 +14,6 @@ const CafeSettings = ({
   const [newTable, setNewTable] = useState('');
 
   const handleAddTable = () => {
-    // Naya table add hotay waqt bhi kachra saaf kar dein
     const cleanVal = newTable.replace(/[\[\]"'\\]/g, '').trim();
     if (cleanVal && !tables.includes(cleanVal)) {
       setTables([...tables, cleanVal]);
@@ -63,7 +62,7 @@ const CafeSettings = ({
           {tables.map((t, index) => (
             <div
               key={index}
-              className="flex items-center gap-2 bg-[#222] text-white px-3 py-1.5 text-sm border-2 border-[#222]"
+              className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 text-sm border-2 border-[var(--border-color)]"
             >
               <span>{t}</span>
               <button
