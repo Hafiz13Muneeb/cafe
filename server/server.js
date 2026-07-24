@@ -1,3 +1,4 @@
+
 // server/server.js - Single-cafe version with session-based authentication
 const express = require('express');
 const cors = require('cors');
